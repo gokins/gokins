@@ -1,16 +1,14 @@
-### Hi there 👋
+```
+you can be just the one you wanna be 
+I know that we all got one thing 
+that we all share together
+we got that one nice dream
+we live for 
+you never know what life could bring 
+cause nothing last for ever 
+just hold on to the team you play for
+I know you could reach the top 
+make sure that you won't stop 
+be the one that you wanna be
 
-<!--
-**gokins/gokins** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-
-Here are some ideas to get you started:
-
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+```
