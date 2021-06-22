@@ -11,14 +11,15 @@ import (
 )
 
 type BuildTask struct {
+	egn  *BuildEngine
 	bd   *runtime.Build
 	ctx  context.Context
 	cncl context.CancelFunc
 }
 
-func NewBuildTask(bd *runtime.Build) *BuildTask {
-	c := &BuildTask{bd: bd}
-	c.ctx, c.cncl = context.WithTimeout(comm.Ctx, time.Hour*3)
+func NewBuildTask(egn *BuildEngine, bd *runtime.Build) *BuildTask {
+	c := &BuildTask{egn: egn, bd: bd}
+	c.ctx, c.cncl = context.WithTimeout(comm.Ctx, time.Hour*2+time.Minute*5)
 	return c
 }
 

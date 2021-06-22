@@ -67,7 +67,7 @@ func (c *BuildEngine) run() {
 		c.tskwlk.Lock()
 		c.taskw.Remove(e)
 		c.tskwlk.Unlock()
-		v := NewBuildTask(e.Value.(*runtime.Build))
+		v := NewBuildTask(c, e.Value.(*runtime.Build))
 		c.tskslk.Lock()
 		c.tasks[v.bd.Id] = v
 		c.tskslk.Unlock()
