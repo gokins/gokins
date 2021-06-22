@@ -3,6 +3,8 @@ package server
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/gokins/comm"
+	"github.com/gokins-main/gokins/route"
+	"github.com/gokins-main/gokins/utils"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -22,4 +24,9 @@ func runWeb() {
 		comm.HbtpEgn.Stop()
 		comm.Cancel()
 	}
+	regApi()
+}
+
+func regApi() {
+	utils.GinRegController(comm.WebEgn, &route.ApiController{})
 }
