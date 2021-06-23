@@ -5,6 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime/debug"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/go-git/go-git/v5"
 	ghttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/gokins-main/core/common"
@@ -13,12 +20,6 @@ import (
 	"github.com/gokins-main/gokins/util/gitex"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"runtime/debug"
-	"strings"
-	"sync"
-	"time"
 )
 
 type taskStage struct {
@@ -55,8 +56,9 @@ type BuildTask struct {
 	joblk sync.Mutex
 	jobls *list.List
 
-	isClone  bool
-	repoPath string
+	buildPath string
+	isClone   bool
+	repoPath  string
 }
 
 func (c *BuildTask) status(stat, errs string, event ...string) {
@@ -95,7 +97,17 @@ func (c *BuildTask) run() {
 		c.endtm = time.Now()
 		c.build.Finished = time.Now()
 		c.updateBuild()
+		if c.isClone {
+			os.RemoveAll(c.repoPath)
+		}
 	}()
+
+	c.buildPath = filepath.Join(comm.WorkPath, common.PathBuild, c.build.Id)
+	err := os.MkdirAll(c.buildPath, 0750)
+	if err != nil {
+		c.status(common.BuildStatusError, "build path err:"+err.Error(), common.BuildEventPath)
+		return
+	}
 
 	c.bngtm = time.Now()
 	c.stages = make(map[string]*taskStage)
@@ -108,7 +120,11 @@ func (c *BuildTask) run() {
 		return
 	}
 	c.build.Status = common.BuildStatusPreparation
-	//c.getrepo()
+	err = c.getRepo()
+	if err != nil {
+		c.status(common.BuildStatusError, "repo err", common.BuildEventGetRepo)
+		return
+	}
 	c.build.Status = common.BuildStatusRunning
 	for _, v := range c.build.Stages {
 		v.Status = common.BuildStatusPending
@@ -259,7 +275,7 @@ func (c *BuildTask) runStage(stage *runtime.Stage) {
 
 	stage.Status = common.BuildStatusOk
 }
-func (c *BuildTask) runStep(stage *taskStage, step *jobSync) {
+func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 	defer stage.wg.Done()
 	defer func() {
 		if err := recover(); err != nil {
@@ -268,9 +284,9 @@ func (c *BuildTask) runStep(stage *taskStage, step *jobSync) {
 		}
 	}()
 
-	step.RLock()
-	dendons := step.step.DependsOn
-	step.RUnlock()
+	job.RLock()
+	dendons := job.step.DependsOn
+	job.RUnlock()
 	if len(dendons) > 0 {
 		ls := make([]*jobSync, 0)
 		for _, v := range dendons {
@@ -278,13 +294,13 @@ func (c *BuildTask) runStep(stage *taskStage, step *jobSync) {
 				continue
 			}
 			e, ok := stage.jobs[v]
-			//core.Log.Debugf("job(%s) depend %s(ok:%t)",step.step.Name,v,ok)
+			//core.Log.Debugf("job(%s) depend %s(ok:%t)",job.step.Name,v,ok)
 			if !ok {
-				step.status(common.BuildStatusError, fmt.Sprintf("depend on %s not found", v))
+				job.status(common.BuildStatusError, fmt.Sprintf("depend on %s not found", v))
 				return
 			}
-			if e.step.Name == step.step.Name {
-				step.status(common.BuildStatusError, fmt.Sprintf("depend on %s is your self", step.step.Name))
+			if e.step.Name == job.step.Name {
+				job.status(common.BuildStatusError, fmt.Sprintf("depend on %s is your self", job.step.Name))
 				return
 			}
 			ls = append(ls, e)
@@ -292,7 +308,7 @@ func (c *BuildTask) runStep(stage *taskStage, step *jobSync) {
 		for !hbtp.EndContext(comm.Ctx) {
 			time.Sleep(time.Millisecond * 100)
 			if c.ctrlend {
-				step.status(common.BuildStatusCancel, "")
+				job.status(common.BuildStatusCancel, "")
 				return
 			}
 			waitln := len(ls)
@@ -303,13 +319,13 @@ func (c *BuildTask) runStep(stage *taskStage, step *jobSync) {
 				if vStats == common.BuildStatusOk {
 					waitln--
 				} else if vStats == common.BuildStatusCancel {
-					step.status(common.BuildStatusCancel, "")
+					job.status(common.BuildStatusCancel, "")
 					return
 				} else if vStats == common.BuildStatusError {
 					if v.step.ErrIgnore {
 						waitln--
 					} else {
-						step.status(common.BuildStatusError, fmt.Sprintf("depend on %s is err", v.step.Name))
+						job.status(common.BuildStatusError, fmt.Sprintf("depend on %s is err", v.step.Name))
 						return
 					}
 				}
@@ -320,33 +336,35 @@ func (c *BuildTask) runStep(stage *taskStage, step *jobSync) {
 		}
 	}
 
-	step.Lock()
-	step.step.Status = common.BuildStatusPreparation
-	step.step.Started = time.Now()
-	step.Unlock()
-	c.updateStep(step.step)
-	err := Mgr.jobEgn.Put(step)
+	job.Lock()
+	job.step.Status = common.BuildStatusPreparation
+	job.step.Started = time.Now()
+	job.step.IsClone = c.isClone
+	job.step.RepoPath = c.repoPath
+	job.Unlock()
+	c.updateStep(job.step)
+	err := Mgr.jobEgn.Put(job)
 	if err != nil {
-		step.status(common.BuildStatusError, fmt.Sprintf("command run err:%v", err))
+		job.status(common.BuildStatusError, fmt.Sprintf("command run err:%v", err))
 		return
 	}
 	for !hbtp.EndContext(comm.Ctx) {
-		step.Lock()
-		stats := step.step.Status
-		step.Unlock()
+		job.Lock()
+		stats := job.step.Status
+		job.Unlock()
 		if common.BuildStatusEnded(stats) {
 			break
 		}
 		if c.ctrlend && time.Since(c.ctrlendtm).Seconds() > 3 {
-			step.status(common.BuildStatusError, "cancel")
+			job.status(common.BuildStatusError, "cancel")
 			break
 		}
 		time.Sleep(time.Millisecond * 10)
 	}
-	step.Lock()
-	defer step.Unlock()
-	if c.ctrlend && step.step.Status == common.BuildStatusError {
-		step.step.Status = common.BuildStatusCancel
+	job.Lock()
+	defer job.Unlock()
+	if c.ctrlend && job.step.Status == common.BuildStatusError {
+		job.step.Status = common.BuildStatusCancel
 	}
 }
 
@@ -365,7 +383,8 @@ func (c *BuildTask) getRepo() error {
 		return nil
 	}
 
-	clonePath, err := gitClone(c.ctx, c.build.Id, c.build.Repo)
+	clonePath := filepath.Join(c.buildPath, common.PathRepo)
+	err = gitClone(c.ctx, clonePath, c.build.Repo)
 	if err != nil {
 		return err
 	}
@@ -374,13 +393,8 @@ func (c *BuildTask) getRepo() error {
 	return nil
 }
 
-func gitClone(ctx context.Context, buildId string, repo *runtime.Repository) (clonePath string, errs error) {
-	clonePath = filepath.Join(comm.WorkPath, common.PathRepo, buildId)
-	defer func() {
-		if errs != nil {
-			_ = removeRepo(clonePath)
-		}
-	}()
+func gitClone(ctx context.Context, dir string, repo *runtime.Repository) error {
+	clonePath := filepath.Join(dir, common.PathRepo)
 	bauth := &ghttp.BasicAuth{
 		Username: repo.Name,
 		Password: repo.Token,
@@ -392,24 +406,13 @@ func gitClone(ctx context.Context, buildId string, repo *runtime.Repository) (cl
 	logrus.Debugf("gitClone : clone url: %s sha: %s", repo.CloneURL, repo.Sha)
 	repository, err := gitex.CloneRepo(clonePath, gc, ctx)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if repo.Sha != "" {
 		err = gitex.CheckOutHash(repository, repo.Sha)
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
-	return clonePath, nil
-}
-
-func removeRepo(path string) error {
-	defer func() {
-		if err := recover(); err != nil {
-			logrus.Warnf("removeRepo recover:%v", err)
-			logrus.Warnf("removeRepo stack:%s", string(debug.Stack()))
-		}
-	}()
-	logrus.Debugf("removeRepo path: %s", path)
-	return os.RemoveAll(path)
+	return nil
 }
