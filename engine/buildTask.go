@@ -3,12 +3,18 @@ package engine
 import (
 	"container/list"
 	"context"
+	"errors"
 	"fmt"
+	"github.com/go-git/go-git/v5"
+	ghttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/gokins/comm"
+	gitex2 "github.com/gokins-main/gokins/util/gitex"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
+	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -48,6 +54,9 @@ type BuildTask struct {
 
 	joblk sync.Mutex
 	jobls *list.List
+
+	isClone  bool
+	repoPath string
 }
 
 func (c *BuildTask) status(stat, errs string, event ...string) {
@@ -339,4 +348,68 @@ func (c *BuildTask) runStep(stage *taskStage, step *jobSync) {
 	if c.ctrlend && step.step.Status == common.BuildStatusError {
 		step.step.Status = common.BuildStatusCancel
 	}
+}
+
+func (c *BuildTask) getRepo() error {
+	repo := c.build.Repo
+	if repo == nil {
+		return errors.New("getRepo err:  repo is empty ")
+	}
+	if repo.CloneURL == "" {
+		return errors.New("getRepo err:  cloneUrl is empty ")
+	}
+	s, err := os.Stat(repo.CloneURL)
+	if err == nil && s.IsDir() {
+		c.isClone = false
+		c.repoPath = repo.CloneURL
+		return nil
+	}
+
+	clonePath, err := gitClone(c.ctx, c.build.Id, c.build.Repo)
+	if err != nil {
+		return err
+	}
+	c.isClone = true
+	c.repoPath = clonePath
+	return nil
+}
+
+func gitClone(ctx context.Context, buildId string, repo *runtime.Repository) (clonePath string, errs error) {
+	clonePath = filepath.Join(comm.WorkPath, common.PathRepo, buildId)
+	defer func() {
+		if errs != nil {
+			_ = removeRepo(clonePath)
+		}
+	}()
+	bauth := &ghttp.BasicAuth{
+		Username: repo.Name,
+		Password: repo.Token,
+	}
+	gc := &git.CloneOptions{
+		URL:  repo.CloneURL,
+		Auth: bauth,
+	}
+	logrus.Debugf("gitClone : clone url: %s sha: %s", repo.CloneURL, repo.Sha)
+	repository, err := gitex2.CloneRepo(clonePath, gc, ctx)
+	if err != nil {
+		return "", err
+	}
+	if repo.Sha != "" {
+		err = gitex2.CheckOutHash(repository, repo.Sha)
+		if err != nil {
+			return "", err
+		}
+	}
+	return clonePath, nil
+}
+
+func removeRepo(path string) error {
+	defer func() {
+		if err := recover(); err != nil {
+			logrus.Panicf("RemoveRepo : %v", err)
+			logrus.Panicf("%s", string(debug.Stack()))
+		}
+	}()
+	logrus.Debugf("removeRepo path: %s", path)
+	return os.RemoveAll(path)
 }
