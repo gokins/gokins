@@ -69,7 +69,7 @@ func (c *BuildEngine) run() {
 		c.tskwlk.Unlock()
 		v := NewBuildTask(c, e.Value.(*runtime.Build))
 		c.tskslk.Lock()
-		c.tasks[v.bd.Id] = v
+		c.tasks[v.build.Id] = v
 		c.tskslk.Unlock()
 		go c.startBuild(v)
 	}
@@ -77,7 +77,7 @@ func (c *BuildEngine) run() {
 func (c *BuildEngine) startBuild(v *BuildTask) {
 	v.run()
 	c.tskslk.Lock()
-	delete(c.tasks, v.bd.Id)
+	delete(c.tasks, v.build.Id)
 	c.tskslk.Unlock()
 }
 func (c *BuildEngine) Put(bd *runtime.Build) {

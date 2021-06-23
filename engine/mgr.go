@@ -12,10 +12,12 @@ var Mgr = &Manager{}
 
 type Manager struct {
 	buildEgn *BuildEngine
+	jobEgn   *JobEngine
 }
 
 func Start() error {
 	Mgr.buildEgn = StartBuildEngine()
+	Mgr.jobEgn = StartJobEngine()
 	go func() {
 		for !hbtp.EndContext(comm.Ctx) {
 			Mgr.run()

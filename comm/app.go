@@ -3,7 +3,6 @@ package comm
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"xorm.io/xorm"
 )
 
@@ -12,12 +11,12 @@ var (
 	cncl context.CancelFunc
 )
 var (
-	Cfg      = Config{}
-	Db       *xorm.Engine
-	WebEgn   = gin.Default()
-	HbtpEgn  *hbtp.Engine
-	WebHost  = ""
-	HbtpHost = ""
+	Cfg    = Config{}
+	Db     *xorm.Engine
+	WebEgn = gin.Default()
+	//HbtpEgn  *hbtp.Engine
+	WebHost = ""
+	//HbtpHost = ""
 )
 
 func init() {

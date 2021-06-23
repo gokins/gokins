@@ -26,6 +26,7 @@ func Run() error {
 		//return err
 		comm.Cfg.Server.Secret = "123456"
 	}
+	core.SWorkPath = core.WorkPath
 	/*err = initDb()
 	if err != nil {
 		return err
@@ -34,8 +35,9 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	go runWeb()
-	runHbtp()
+	//go runWeb()
+	//runHbtp()
+	runWeb()
 	hbtp.Infof("gokins running in %s", core.WorkPath)
 	return nil
 }

@@ -1,4 +1,4 @@
-package utils
+package util
 
 import (
 	"fmt"
@@ -10,7 +10,6 @@ import (
 
 type GinController interface {
 	GetPath() string // 必须"/"开头
-	//GetMid()gin.HandlerFunc
 	Routes(g gin.IRoutes)
 }
 
