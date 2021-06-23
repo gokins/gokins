@@ -10,7 +10,7 @@ import (
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/gokins/comm"
-	gitex2 "github.com/gokins-main/gokins/util/gitex"
+	"github.com/gokins-main/gokins/util/gitex"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -390,12 +390,12 @@ func gitClone(ctx context.Context, buildId string, repo *runtime.Repository) (cl
 		Auth: bauth,
 	}
 	logrus.Debugf("gitClone : clone url: %s sha: %s", repo.CloneURL, repo.Sha)
-	repository, err := gitex2.CloneRepo(clonePath, gc, ctx)
+	repository, err := gitex.CloneRepo(clonePath, gc, ctx)
 	if err != nil {
 		return "", err
 	}
 	if repo.Sha != "" {
-		err = gitex2.CheckOutHash(repository, repo.Sha)
+		err = gitex.CheckOutHash(repository, repo.Sha)
 		if err != nil {
 			return "", err
 		}
