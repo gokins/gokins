@@ -46,3 +46,7 @@ func (c *Manager) run() {
 	}()
 
 }
+
+func (c *Manager) BuildEgn() *BuildEngine {
+	return c.buildEgn
+}
