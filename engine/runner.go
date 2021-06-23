@@ -30,3 +30,12 @@ func (c *shellRunner) Update(m *runners.UpdateJobInfo) error {
 	step.Unlock()
 	return nil
 }
+func (c *shellRunner) CheckCancel(buildId string) bool {
+	Mgr.buildEgn.tskslk.RLock()
+	defer Mgr.buildEgn.tskslk.RUnlock()
+	v, ok := Mgr.buildEgn.tasks[buildId]
+	if !ok {
+		return true
+	}
+	return v.ctrlend
+}
