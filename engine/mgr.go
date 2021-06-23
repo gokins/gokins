@@ -2,6 +2,7 @@ package engine
 
 import (
 	"github.com/gokins-main/gokins/comm"
+	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"runtime/debug"
@@ -13,11 +14,20 @@ var Mgr = &Manager{}
 type Manager struct {
 	buildEgn *BuildEngine
 	jobEgn   *JobEngine
+	shellRun *runners.Engine
 }
 
 func Start() error {
 	Mgr.buildEgn = StartBuildEngine()
 	Mgr.jobEgn = StartJobEngine()
+	Mgr.shellRun = runners.NewEngine(runners.Config{
+		Workspace: comm.WorkPath,
+		Plugin:    []string{"shell@sh"},
+	}, &shellRunner{})
+	err := Mgr.shellRun.Start(comm.Ctx)
+	if err != nil {
+		return err
+	}
 	go func() {
 		for !hbtp.EndContext(comm.Ctx) {
 			Mgr.run()

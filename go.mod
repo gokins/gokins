@@ -8,6 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gokins-main/core v0.0.0-20210622095351-4e4f8ce44617
+	github.com/gokins-main/runner v0.0.0-00010101000000-000000000000
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.5
 	github.com/sirupsen/logrus v1.8.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
@@ -15,4 +16,7 @@ require (
 	xorm.io/xorm v1.1.0
 )
 
-replace github.com/gokins-main/core => ../core
+replace (
+	github.com/gokins-main/core => ../core
+	github.com/gokins-main/runner => ../runner
+)

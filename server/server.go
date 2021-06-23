@@ -15,18 +15,17 @@ import (
 )
 
 func Run() error {
-	if core.WorkPath == "" {
+	if comm.WorkPath == "" {
 		pth := filepath.Join(utils2.HomePath(), ".gokins")
-		core.WorkPath = utils2.EnvDefault("GOKINS_WORKPATH", pth)
+		comm.WorkPath = utils2.EnvDefault("GOKINS_WORKPATH", pth)
 	}
-	os.MkdirAll(core.WorkPath, 0750)
-	core.InitLog()
+	os.MkdirAll(comm.WorkPath, 0750)
+	core.InitLog(comm.WorkPath)
 	err := parseConfig()
 	if err != nil {
 		//return err
 		comm.Cfg.Server.Secret = "123456"
 	}
-	core.SWorkPath = core.WorkPath
 	/*err = initDb()
 	if err != nil {
 		return err
@@ -38,13 +37,13 @@ func Run() error {
 	//go runWeb()
 	//runHbtp()
 	runWeb()
-	hbtp.Infof("gokins running in %s", core.WorkPath)
+	hbtp.Infof("gokins running in %s", comm.WorkPath)
 	return nil
 }
 func parseConfig() error {
-	bts, err := ioutil.ReadFile(filepath.Join(core.WorkPath, "app.yml"))
+	bts, err := ioutil.ReadFile(filepath.Join(comm.WorkPath, "app.yml"))
 	if err != nil {
-		bts, err = ioutil.ReadFile(filepath.Join(core.WorkPath, "app.yaml"))
+		bts, err = ioutil.ReadFile(filepath.Join(comm.WorkPath, "app.yaml"))
 	}
 	if err != nil {
 		return err
@@ -56,7 +55,7 @@ func initConfig() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(core.WorkPath, "app.yml"), bts, 0644)
+	return ioutil.WriteFile(filepath.Join(comm.WorkPath, "app.yml"), bts, 0644)
 }
 
 func initDb() error {

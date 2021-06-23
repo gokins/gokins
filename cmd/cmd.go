@@ -24,7 +24,7 @@ func Run() {
 func regs() {
 	app.Flag("web", "gokins web host").Default(":8030").StringVar(&comm.WebHost)
 	//app.Flag("hbtp", "gokins hbtp host").Default(":8031").StringVar(&comm.HbtpHost)
-	app.Flag("workdir", "gokins work path").Short('w').StringVar(&core.WorkPath)
+	app.Flag("workdir", "gokins work path").Short('w').StringVar(&comm.WorkPath)
 	cmd := app.Command("run", "run process").Default().
 		Action(run)
 	cmd.Flag("debug", "debug log show").BoolVar(&core.Debug)
@@ -43,9 +43,9 @@ func getArgs() []string {
 		args = append(args, "--hbtp")
 		args = append(args, comm.HbtpHost)
 	}*/
-	if core.WorkPath != "" {
+	if comm.WorkPath != "" {
 		args = append(args, "--workdir")
-		args = append(args, core.WorkPath)
+		args = append(args, comm.WorkPath)
 	}
 	return args
 }
