@@ -406,8 +406,8 @@ func gitClone(ctx context.Context, buildId string, repo *runtime.Repository) (cl
 func removeRepo(path string) error {
 	defer func() {
 		if err := recover(); err != nil {
-			logrus.Panicf("RemoveRepo : %v", err)
-			logrus.Panicf("%s", string(debug.Stack()))
+			logrus.Warnf("removeRepo recover:%v", err)
+			logrus.Warnf("removeRepo stack:%s", string(debug.Stack()))
 		}
 	}()
 	logrus.Debugf("removeRepo path: %s", path)
