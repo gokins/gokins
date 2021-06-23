@@ -36,7 +36,7 @@ type Step struct {
 	DisplayName     string            `yaml:"displayName,omitempty" json:"displayName"`
 	Name            string            `yaml:"name,omitempty" json:"name"`
 	Environments    map[string]string `yaml:"environments,omitempty" json:"environments"`
-	Commands        []interface{}     `yaml:"commands,omitempty" json:"commands"`
+	Commands        interface{}       `yaml:"commands,omitempty" json:"commands"`
 	DependsOn       []string          `yaml:"dependsOn,omitempty" json:"dependsOn"`
 	Image           string            `yaml:"image,omitempty" json:"image"`
 	Artifacts       []*Artifact       `yaml:"artifacts,omitempty" json:"artifacts"`
