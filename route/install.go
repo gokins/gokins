@@ -77,6 +77,8 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 	var err error
 	if m.Datasource.Driver == "mysql" {
 		dbwait, dataul, err = migrates.InitMysqlMigrate(m.Datasource.Host, m.Datasource.Name, m.Datasource.User, m.Datasource.Pass)
+	} else {
+		dataul, err = migrates.InitSqliteMigrate()
 	}
 	if err != nil {
 		if dbwait {

@@ -11,6 +11,7 @@ require (
 	github.com/gokins-main/core v0.0.0-20210622095351-4e4f8ce44617
 	github.com/gokins-main/runner v0.0.0-00010101000000-000000000000
 	github.com/golang-migrate/migrate/v4 v4.14.1
+	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.5
 	github.com/sirupsen/logrus v1.8.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
