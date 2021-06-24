@@ -1,16 +1,22 @@
 package server
 
 import (
+	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gokins-main/core"
 	utils2 "github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/engine"
+	"github.com/gokins-main/gokins/migrates"
+	"github.com/gokins-main/gokins/route"
+	"github.com/gokins-main/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"gopkg.in/yaml.v2"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 	"xorm.io/xorm"
 )
 
@@ -21,23 +27,34 @@ func Run() error {
 	}
 	os.MkdirAll(comm.WorkPath, 0750)
 	core.InitLog(comm.WorkPath)
+	go runWeb()
 	err := parseConfig()
 	if err != nil {
-		//return err
-		comm.Cfg.Server.Secret = "123456"
+		logrus.Debugf("parseConfig err:%v", err)
+		comm.WebEgn.GET("/install", route.Install)
+		util.GinRegController(comm.WebEgn, &route.InstallController{})
+		for !comm.Installed {
+			time.Sleep(time.Millisecond * 100)
+			if hbtp.EndContext(comm.Ctx) {
+				return errors.New("ctx dead")
+			}
+		}
 	}
-	/*err = initDb()
+	err = initDb()
 	if err != nil {
 		return err
-	}*/
+	}
+	comm.Installed = true
+	regApi()
 	err = engine.Start()
 	if err != nil {
 		return err
 	}
-	//go runWeb()
-	//runHbtp()
-	runWeb()
+	go runHbtp()
 	hbtp.Infof("gokins running in %s", comm.WorkPath)
+	for !hbtp.EndContext(comm.Ctx) {
+		time.Sleep(time.Millisecond * 100)
+	}
 	return nil
 }
 func parseConfig() error {
@@ -50,20 +67,21 @@ func parseConfig() error {
 	}
 	return yaml.Unmarshal(bts, &comm.Cfg)
 }
-func initConfig() error {
-	bts, err := yaml.Marshal(&comm.Cfg)
+
+func initDb() error {
+	var err error
+	dvs := "mysql"
+	ul := comm.Cfg.Datasource.Url
+	if comm.Cfg.Datasource.Driver != "" {
+		dvs = comm.Cfg.Datasource.Driver
+	}
+	if dvs == "mysql" {
+		err = migrates.UpMysqlMigrate(ul)
+	}
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(comm.WorkPath, "app.yml"), bts, 0644)
-}
-
-func initDb() error {
-	dvs := "mysql"
-	if comm.Cfg.Database.Driver != "" {
-		dvs = comm.Cfg.Database.Driver
-	}
-	db, err := xorm.NewEngine(dvs, comm.Cfg.Database.Url)
+	db, err := xorm.NewEngine(dvs, comm.Cfg.Datasource.Url)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,6 @@ func runWeb() {
 		}
 	}()
 	comm.WebEgn = gin.Default()
-	regApi()
 	err := comm.WebEgn.Run(comm.WebHost)
 	if err != nil {
 		logrus.Errorf("Web err:%v", err)
@@ -28,7 +27,5 @@ func runWeb() {
 }
 
 func regApi() {
-	comm.WebEgn.GET("/install", route.Install)
-	util.GinRegController(comm.WebEgn, &route.InstallController{})
 	util.GinRegController(comm.WebEgn, &route.ApiController{})
 }

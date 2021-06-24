@@ -6,7 +6,7 @@ import (
 	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/util"
 	"github.com/gokins-main/gokins/yml"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 )
 

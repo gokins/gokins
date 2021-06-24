@@ -7,8 +7,8 @@ type Config struct {
 		HbtpHost string `yaml:"hbtpHost"`
 		Secret   string `yaml:"secret"`
 	} `yaml:"server"`
-	Database struct {
+	Datasource struct {
 		Driver string `yaml:"driver"`
 		Url    string `yaml:"url"`
-	} `yaml:"database"`
+	} `yaml:"datasource"`
 }

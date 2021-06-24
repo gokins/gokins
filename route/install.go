@@ -5,8 +5,11 @@ import (
 	"github.com/gokins-main/core"
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/gokins/comm"
+	"github.com/gokins-main/gokins/migrates"
 	"github.com/gokins-main/gokins/util"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 )
 
@@ -17,12 +20,13 @@ type installConfig struct {
 		HbtpHost string `json:"hbtpHost"`
 		Secret   string `json:"secret"`
 	} `json:"server"`
-	Database struct {
+	Datasource struct {
 		Driver string `json:"driver"`
 		Host   string `json:"host"`
 		Name   string `json:"name"`
+		User   string `json:"user"`
 		Pass   string `json:"pass"`
-	} `json:"database"`
+	} `json:"datasource"`
 }
 type InstallController struct{}
 
@@ -49,23 +53,62 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 		c.String(500, "hbtp host err:%s", m.Server.HbtpHost)
 		return
 	}
-	if m.Database.Driver == "mysql" {
-		if !common.RegHost2.MatchString(m.Database.Host) {
-			c.String(500, "dbhost err:%s", m.Database.Host)
+	if m.Datasource.Driver == "mysql" {
+		if !common.RegHost2.MatchString(m.Datasource.Host) {
+			c.String(500, "dbhost err:%s", m.Datasource.Host)
 			return
 		}
-		if m.Database.Name == "" {
-			c.String(500, "dbname err:%s", m.Database.Name)
+		if m.Datasource.Name == "" {
+			c.String(500, "dbname err:%s", m.Datasource.Name)
 			return
 		}
-		if strings.Contains(m.Database.Name, ":") || strings.Contains(m.Database.Pass, ":") {
+		if strings.Contains(m.Datasource.Name, ":") || strings.Contains(m.Datasource.Pass, ":") {
 			c.String(500, "(dbname & dbport) can't contains ':'")
 			return
 		}
 	} else {
-		m.Database.Driver = "sqlite"
+		m.Datasource.Driver = "sqlite"
 	}
 
+	dbwait := false
+	dataul := ""
+	var err error
+	if m.Datasource.Driver == "mysql" {
+		dbwait, dataul, err = migrates.InitMysqlMigrate(m.Datasource.Host, m.Datasource.Name, m.Datasource.User, m.Datasource.Pass)
+	}
+	if err != nil {
+		if dbwait {
+			c.String(512, "wait")
+		} else {
+			c.String(500, "init db err:%v", err)
+		}
+		return
+	}
+	if dataul == "" {
+		c.String(513, "datasource info err")
+		return
+	}
+
+	comm.Cfg.Server.Host = m.Server.Host
+	comm.Cfg.Server.HbtpHost = m.Server.HbtpHost
+	comm.Cfg.Server.Secret = m.Server.Secret
+	comm.Cfg.Datasource.Driver = m.Datasource.Driver
+	comm.Cfg.Datasource.Url = dataul
+	err = initConfig()
+	if err != nil {
+		c.String(500, "init config err:%v", err)
+		return
+	}
+	comm.Installed = true
+	c.String(200, "ok")
+}
+
+func initConfig() error {
+	bts, err := yaml.Marshal(&comm.Cfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filepath.Join(comm.WorkPath, "app.yml"), bts, 0644)
 }
 
 func Install(c *gin.Context) {
@@ -92,6 +135,10 @@ func Install(c *gin.Context) {
             color: #443ad6;
         }
         
+        .content div {
+            margin-bottom: 10px;
+        }
+        
         #msgDiv {
             color: red;
         }
@@ -100,12 +147,29 @@ func Install(c *gin.Context) {
 
 <body>
     <div class="content">
-        <div>host:<input id="hostTxt" style="width: 500px;" /></div>
-        <div>port:<input id="portTxt" style="width: 500px;" /></div>
-        <div>dbhost:<input id="dbhostTxt" style="width: 500px;" value="180.76.38.108" /></div>
-        <div>dbport:<input id="dbportTxt" style="width: 500px;" value="3306" /></div>
-        <div>dbpass:<input id="dbpassTxt" style="width: 500px;" /></div>
-        <div>是否启用内置runner:<input type="checkbox" id="isMainRun" checked="checked" /></div>
+        <div>访问地址:<input id="hostTxt" style="width: 500px;" /></div>
+        <div>插件服务:
+            <select id="plugServ">
+            <option value="">不启用</option>
+            <option value="1">内网</option>
+            <option value="2">外网</option>
+          </select>
+            <input id="plugPort" style="width: 100px;" placeholder="端口" />
+            <input id="plugSecret" style="width: 300px;" placeholder="密码" />
+        </div>
+        <div>数据库:
+            <select id="dbDriver">
+              <option value="sqlite">sqlite</option>
+          <option value="mysql">mysql</option>
+        </select>
+
+        </div>
+        <div id="mysqlDiv">
+            <div>dbhost:<input id="dbhostTxt" style="width: 500px;" value="localhost:3306" /></div>
+            <div>dbname:<input id="dbnameTxt" style="width: 500px;" value="gokins" /></div>
+            <div>dbuser:<input id="dbuserTxt" style="width: 500px;" value="root" /></div>
+            <div>dbpass:<input id="dbpassTxt" style="width: 500px;" /></div>
+        </div>
         <div id="msgDiv"></div>
         <div style="margin-top: 20px;"><button id="subBtn" type="button" onclick="onInstal()">立即安装</button></div>
     </div>
@@ -113,12 +177,6 @@ func Install(c *gin.Context) {
     <script src="http://180.76.38.108:7039/test/jquery-2.1.0.js"></script>
     <script>
         var msgDiv = $('#msgDiv');
-        var hostTxt = $('#hostTxt');
-        var portTxt = $('#portTxt');
-        var dbhostTxt = $('#dbhostTxt');
-        var dbportTxt = $('#dbportTxt');
-        var dbpassTxt = $('#dbpassTxt');
-        var isMainRun = $('#isMainRun');
         var subBtn = $('#subBtn');
         var service = axios.create({
             baseURL: "/api", // api base_url
@@ -128,47 +186,107 @@ func Install(c *gin.Context) {
         });
 
         var regul = /^(https?:)\/\/([\w\.]+)(:\d+)?/;
+        var reghost = /^([\w\.]+)(:\d+)?$/;
+
+        function plugChange() {
+            switch ($('#plugServ').val()) {
+                case '1':
+                    $('#plugSecret').val('');
+                    $('#plugPort').removeAttr('disabled');
+                    $('#plugSecret').prop('disabled', 'disabled');
+                    break
+                case '2':
+                    $('#plugPort').removeAttr('disabled');
+                    $('#plugSecret').removeAttr('disabled');
+                    break
+                default:
+                    $('#plugPort').val('');
+                    $('#plugSecret').val('');
+                    $('#plugPort').prop('disabled', 'disabled');
+                    $('#plugSecret').prop('disabled', 'disabled');
+                    break
+            }
+        }
+        plugChange()
+        $('#plugServ').on('change', plugChange);
+
+        function dbChange() {
+            switch ($('#dbDriver').val()) {
+                case 'mysql':
+                    $('#mysqlDiv').show();
+                    break
+                default:
+                    $('#mysqlDiv').hide();
+                    break
+            }
+        }
+        dbChange()
+        $('#dbDriver').on('change', dbChange);
 
         function onInstal() {
             try {
                 var csjs = {
                     "server": {
-                        "host": hostTxt.val(),
-                        "port": portTxt.val(),
-                        "login-key": "",
-                        limit: {
-                            "build": 5,
-                        }
-                    },
-                    "runner": {
-                        "port": "",
-                        "secret": "",
-                        "main-runner": isMainRun.prop('checked')
+                        "host": $('#hostTxt').val()
                     },
                     "datasource": {
-                        "host": dbhostTxt.val(),
-                        "port": dbportTxt.val(),
-                        "username": "root",
-                        "password": dbpassTxt.val(),
-                        "database": "gitee-go-dev"
-                    },
+                        "driver": ''
+                    }
                 };
                 if (!regul.test(csjs.server.host)) {
                     msgDiv.text('参数错误:host格式错误');
                     return
                 }
-                if (!/^\d+$/.test(csjs.server.port)) {
-                    msgDiv.text('参数错误:port格式错误');
-                    return
+                switch ($('#plugServ').val()) {
+                    case '1':
+                        var hbtpPort = $('#plugPort').val();
+                        if (!/^\d+$/.test(hbtpPort)) {
+                            msgDiv.text('参数错误:port格式错误');
+                            return
+                        }
+                        csjs.server.hbtpHost = '127.0.0.1:' + hbtpPort;
+                        break
+                    case '2':
+                        var hbtpPort = $('#plugPort').val();
+                        if (!/^\d+$/.test(hbtpPort)) {
+                            msgDiv.text('参数错误:port格式错误');
+                            return
+                        }
+                        csjs.server.hbtpHost = ':' + hbtpPort;
+                        csjs.server.secret = $('#plugSecret').val();
+                        break
                 }
-                if (csjs.datasource.host == '' || csjs.datasource.password == '') {
-                    msgDiv.text('参数错误:数据库密码未填写');
-                    return
+                switch ($('#dbDriver').val()) {
+                    case 'mysql':
+                        var dburl = '';
+                        var dbhost = $('#dbhostTxt').val();
+                        var dbname = $('#dbnameTxt').val();
+                        var dbuser = $('#dbuserTxt').val();
+                        var dbpass = $('#dbpassTxt').val();
+                        if (!reghost.test(dbhost)) {
+                            msgDiv.text('参数错误:dbhost格式错误');
+                            return
+                        }
+                        if (dbname == '') {
+                            msgDiv.text('参数错误:dbname必填');
+                            return
+                        }
+                        if (dbuser == '') {
+                            msgDiv.text('参数错误:dbuser必填');
+                            return
+                        }
+                        csjs.datasource.driver = 'mysql';
+                        csjs.datasource.host = dbhost;
+                        csjs.datasource.name = dbname;
+                        csjs.datasource.user = dbuser;
+                        csjs.datasource.pass = dbpass;
+                        break
+                    default:
+                        csjs.datasource.driver = 'sqlite';
+                        break
                 }
-                if (!/^\d+$/.test(csjs.datasource.port)) {
-                    msgDiv.text('参数错误:dbport格式错误');
-                    return
-                }
+
+                console.log('start install', csjs);
                 subBtn.attr('disabled', 'disabled');
                 service.post('/install', csjs).then(function(res) {
                     subBtn.removeAttr('disabled');
@@ -188,9 +306,7 @@ func Install(c *gin.Context) {
         if (regul.test(hrefs)) {
             var mts = hrefs.match(regul);
             console.log('match', mts);
-            hostTxt.val(mts[0]);
-            if (mts.length >= 3)
-                portTxt.val(mts[3].replace(':', ''));
+            $('#hostTxt').val(mts[0]);
         }
     </script>
 </body>
