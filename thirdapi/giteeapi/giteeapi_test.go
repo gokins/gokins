@@ -2,7 +2,6 @@ package giteeapi
 
 import (
 	"fmt"
-	"io/ioutil"
 	"testing"
 )
 
@@ -25,15 +24,8 @@ import (
 
 func TestGiteeCreateFile(t *testing.T) {
 	newDefault := NewDefault()
-	repos, err := newDefault.Repositories.GetRepos("abd17cf076f3a208cc359302dfaadc42", "all", Pushed, OrderDesc, "", 1, 20)
+	_, err := newDefault.Repositories.GetRepos("abd17cf076f3a208cc359302dfaadc42", "all", "pushed", "desc", "", 1, 20)
 	if err != nil {
 		fmt.Println("err", err)
-	} else {
-		all, err := ioutil.ReadAll(repos.Body)
-		if err != nil {
-			fmt.Println("err", err)
-		}
-		fmt.Println(string(all))
 	}
-
 }
