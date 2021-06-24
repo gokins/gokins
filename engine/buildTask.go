@@ -428,7 +428,7 @@ func (c *BuildTask) getRepo() error {
 }
 
 func gitClone(ctx context.Context, dir string, repo *runtime.Repository) error {
-	clonePath := filepath.Join(dir, common.PathRepo)
+	clonePath := filepath.Join(dir)
 	bauth := &ghttp.BasicAuth{
 		Username: repo.Name,
 		Password: repo.Token,
