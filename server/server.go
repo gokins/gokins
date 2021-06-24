@@ -25,9 +25,11 @@ func Run() error {
 		pth := filepath.Join(utils2.HomePath(), ".gokins")
 		comm.WorkPath = utils2.EnvDefault("GOKINS_WORKPATH", pth)
 	}
+
 	os.MkdirAll(comm.WorkPath, 0750)
 	core.InitLog(comm.WorkPath)
 	go runWeb()
+
 	err := parseConfig()
 	if err != nil {
 		logrus.Debugf("parseConfig err:%v", err)
@@ -40,16 +42,20 @@ func Run() error {
 			}
 		}
 	}
+
 	err = initDb()
 	if err != nil {
 		return err
 	}
+
 	comm.Installed = true
 	regApi()
+
 	err = engine.Start()
 	if err != nil {
 		return err
 	}
+
 	go runHbtp()
 	hbtp.Infof("gokins running in %s", comm.WorkPath)
 	for !hbtp.EndContext(comm.Ctx) {

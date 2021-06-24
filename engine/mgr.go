@@ -20,13 +20,15 @@ type Manager struct {
 func Start() error {
 	Mgr.buildEgn = StartBuildEngine()
 	Mgr.jobEgn = StartJobEngine()
-	Mgr.shellRun = runners.NewEngine(runners.Config{
-		Workspace: comm.WorkPath,
-		Plugin:    []string{"shell@sh"},
-	}, &shellRunner{})
-	err := Mgr.shellRun.Start(comm.Ctx)
-	if err != nil {
-		return err
+	if len(comm.Cfg.Server.Shells) > 0 {
+		Mgr.shellRun = runners.NewEngine(runners.Config{
+			Workspace: comm.WorkPath,
+			Plugin:    comm.Cfg.Server.Shells,
+		}, &baseRunner{})
+		err := Mgr.shellRun.Start(comm.Ctx)
+		if err != nil {
+			return err
+		}
 	}
 	go func() {
 		for !hbtp.EndContext(comm.Ctx) {

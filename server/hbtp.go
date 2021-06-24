@@ -19,5 +19,6 @@ func runHbtp() {
 	err := comm.HbtpEgn.Run(comm.Cfg.Server.HbtpHost)
 	if err != nil {
 		logrus.Errorf("Hbtp err:%v", err)
+		comm.Cancel()
 	}
 }
