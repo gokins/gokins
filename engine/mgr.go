@@ -6,7 +6,6 @@ import (
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"runtime/debug"
-	"strings"
 	"time"
 )
 
@@ -21,10 +20,10 @@ type Manager struct {
 func Start() error {
 	Mgr.buildEgn = StartBuildEngine()
 	Mgr.jobEgn = StartJobEngine()
-	if comm.Cfg.Server.Shells != "" {
+	if len(comm.Cfg.Server.Shells) > 0 {
 		Mgr.shellRun = runners.NewEngine(runners.Config{
 			Workspace: comm.WorkPath,
-			Plugin:    strings.Split(comm.Cfg.Server.Shells, ","),
+			Plugin:    comm.Cfg.Server.Shells,
 		}, &baseRunner{})
 		err := Mgr.shellRun.Start(comm.Ctx)
 		if err != nil {

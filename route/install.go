@@ -93,12 +93,12 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 	}
 
 	comm.Cfg.Server.Host = m.Server.Host
-	comm.Cfg.Server.Shells = "shell@sh"
+	comm.Cfg.Server.Shells = []string{"shell@sh", "shell@bash"}
 	if runtime.GOOS == "windows" {
-		comm.Cfg.Server.Shells = "shell@cmd"
+		comm.Cfg.Server.Shells = []string{"shell@cmd", "shell@powershell"}
 	}
 	if m.Server.NoRun {
-		comm.Cfg.Server.Shells = ""
+		comm.Cfg.Server.Shells = nil
 	}
 	comm.Cfg.Server.HbtpHost = m.Server.HbtpHost
 	comm.Cfg.Server.Secret = m.Server.Secret
