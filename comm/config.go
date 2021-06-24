@@ -6,6 +6,7 @@ type Config struct {
 		RunLimit int    `yaml:"runLimit"`
 		HbtpHost string `yaml:"hbtpHost"`
 		Secret   string `yaml:"secret"`
+		Shells   string `yaml:"shells"`
 	} `yaml:"server"`
 	Datasource struct {
 		Driver string `yaml:"driver"`

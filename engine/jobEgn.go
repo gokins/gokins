@@ -7,6 +7,7 @@ import (
 	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/comm"
+	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"runtime/debug"
@@ -30,6 +31,8 @@ type executer struct {
 type jobSync struct {
 	sync.RWMutex
 	step   *runtime.Step
+	runjb  *runners.RunJob
+	cmdmp  map[string]*runners.CmdContent
 	runed  bool
 	ended  bool
 	cncled bool
@@ -124,7 +127,7 @@ func (c *JobEngine) Put(job *jobSync) error {
 	e.jobwt.PushBack(job)
 	return nil
 }
-func (c *JobEngine) Pull(plugs []string) *runtime.Step {
+func (c *JobEngine) Pull(plugs []string) *runners.RunJob {
 	for _, v := range plugs {
 		if v == "" {
 			continue
@@ -155,7 +158,7 @@ func (c *JobEngine) Pull(plugs []string) *runtime.Step {
 		}
 		ex.Unlock()
 		if job != nil {
-			return job.step
+			return job.runjb
 		}
 	}
 	return nil

@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -19,6 +20,7 @@ type installConfig struct {
 		RunLimit int    `json:"runLimit"`
 		HbtpHost string `json:"hbtpHost"`
 		Secret   string `json:"secret"`
+		NoRun    bool   `json:"noRun"`
 	} `json:"server"`
 	Datasource struct {
 		Driver string `json:"driver"`
@@ -83,6 +85,7 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 			c.String(500, "init db err:%v", err)
 		}
 		return
+
 	}
 	if dataul == "" {
 		c.String(513, "datasource info err")
@@ -90,6 +93,13 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 	}
 
 	comm.Cfg.Server.Host = m.Server.Host
+	comm.Cfg.Server.Shells = "shell@sh"
+	if runtime.GOOS == "windows" {
+		comm.Cfg.Server.Shells = "shell@cmd"
+	}
+	if m.Server.NoRun {
+		comm.Cfg.Server.Shells = ""
+	}
 	comm.Cfg.Server.HbtpHost = m.Server.HbtpHost
 	comm.Cfg.Server.Secret = m.Server.Secret
 	comm.Cfg.Datasource.Driver = m.Datasource.Driver
