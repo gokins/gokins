@@ -255,6 +255,38 @@ VALUES
     `json_content` longtext NULL,
     PRIMARY KEY (`id`) USING BTREE
   );
+CREATE TABLE `t_pipeline_version` (
+    `id` varchar(64) NOT NULL,
+    `number` bigint(20) NULL DEFAULT NULL COMMENT '构建次数',
+    `trigger` varchar(100) NULL DEFAULT NULL COMMENT '触发方式',
+    `events` varchar(100) NULL DEFAULT NULL COMMENT '事件push、pr、note',
+    `ref` varchar(255) NULL DEFAULT NULL,
+    `branch` varchar(255) NULL DEFAULT NULL,
+    `repo_id` varchar(64) NULL DEFAULT NULL,
+    `repo_name` varchar(255) NULL DEFAULT NULL,
+    `commit_sha` varchar(255) NULL DEFAULT NULL,
+    `commit_message` text NULL COMMENT '提交信息',
+    `pipeline_name` varchar(255) NULL DEFAULT NULL,
+    `pipeline_display_name` varchar(255) NULL DEFAULT NULL,
+    `pipeline_id` varchar(64) NULL DEFAULT NULL,
+    `version` varchar(255) NULL DEFAULT NULL,
+    `yml_content` longtext NULL,
+    `created` datetime(0) NULL DEFAULT NULL,
+    `create_user` varchar(255) NULL DEFAULT NULL,
+    `create_user_id` varchar(64) NULL DEFAULT NULL,
+    `deleted` tinyint(1) NULL DEFAULT 0,
+    `target_repo_name` varchar(255) NULL DEFAULT NULL,
+    `target_repo_sha` varchar(255) NULL DEFAULT NULL,
+    `target_repo_ref` varchar(255) NULL DEFAULT NULL,
+    `target_repo_clone_url` varchar(255) NULL DEFAULT NULL,
+    `status` varchar(100) NULL DEFAULT NULL COMMENT '构建状态',
+    `error` varchar(500) NULL DEFAULT NULL COMMENT '错误信息',
+    `note` varchar(255) NULL DEFAULT NULL,
+    `title` varchar(255) DEFAULT NULL,
+    `pr_number` bigint(20) DEFAULT NULL,
+    `repo_clone_url` varchar(255) NULL DEFAULT NULL,
+    PRIMARY KEY (`id`) USING BTREE
+  );
 -- ----------------------------
   -- Table structure for t_role
   -- ----------------------------
@@ -324,7 +356,7 @@ CREATE TABLE `t_user` (
     `pass` varchar(255) NULL DEFAULT NULL,
     `nick` varchar(100) NULL DEFAULT NULL,
     `avatar` varchar(500) NULL DEFAULT NULL,
-    `create_time` datetime(0) NULL DEFAULT NULL,
+    `created` datetime(0) NULL DEFAULT NULL,
     `login_time` datetime(0) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
   );
@@ -354,7 +386,7 @@ VALUES
     `readtm` datetime(0) NULL DEFAULT NULL,
     `status` int(11) NULL DEFAULT 0,
     `deleted` int(1) NULL DEFAULT 0,
-    `deleted_time` datetime(0) NULL DEFAULT NULL,
+    `deleted` datetime(0) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
   );
 CREATE TABLE `t_user_repo` (
@@ -382,7 +414,7 @@ CREATE TABLE `t_user_token` (
     `expires_in` bigint(20) NULL DEFAULT 0,
     `expires_time` datetime(0) NULL DEFAULT NULL,
     `refresh_time` datetime(0) NULL DEFAULT NULL,
-    `create_time` datetime(0) NULL DEFAULT NULL,
+    `created` datetime(0) NULL DEFAULT NULL,
     `tokens` text NULL,
     `uinfos` text NULL,
     PRIMARY KEY (`id`) USING BTREE

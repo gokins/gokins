@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS `t_hook`;
 DROP TABLE IF EXISTS `t_job`;
 DROP TABLE IF EXISTS `t_message`;
 DROP TABLE IF EXISTS `t_pipeline`;
+DROP TABLE IF EXISTS `t_pipeline_version`;
 DROP TABLE IF EXISTS `t_stage`;
 DROP TABLE IF EXISTS `t_variable`;
 DROP TABLE IF EXISTS `t_param`;
