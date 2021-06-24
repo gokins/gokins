@@ -4,17 +4,21 @@ import (
 	"errors"
 	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/runner/runners"
+	"time"
 )
 
 type shellRunner struct {
 }
 
 func (c *shellRunner) PullJob(plugs []string) (*runtime.Step, error) {
-	v := Mgr.jobEgn.Pull(plugs)
-	if v == nil {
-		return nil, errors.New("not found")
+	tms := time.Now()
+	for time.Since(tms).Seconds() < 5 {
+		v := Mgr.jobEgn.Pull(plugs)
+		if v != nil {
+			return v, nil
+		}
 	}
-	return v, nil
+	return nil, errors.New("not found")
 }
 func (c *shellRunner) Update(m *runners.UpdateJobInfo) error {
 	Mgr.jobEgn.joblk.RLock()
