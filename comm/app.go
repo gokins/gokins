@@ -15,8 +15,9 @@ var (
 	Db     *xorm.Engine
 	WebEgn = gin.Default()
 	//HbtpEgn  *hbtp.Engine
-	WorkPath = ""
-	WebHost  = ""
+	Installed = false
+	WorkPath  = ""
+	WebHost   = ""
 	//HbtpHost = ""
 )
 

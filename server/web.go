@@ -28,5 +28,7 @@ func runWeb() {
 }
 
 func regApi() {
+	comm.WebEgn.GET("/install", route.Install)
+	util.GinRegController(comm.WebEgn, &route.InstallController{})
 	util.GinRegController(comm.WebEgn, &route.ApiController{})
 }
