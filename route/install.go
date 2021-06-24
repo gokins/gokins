@@ -82,7 +82,7 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 	}
 	if err != nil {
 		if dbwait {
-			c.String(512, "wait")
+			c.String(500, "init db err:%v", err)
 		} else {
 			c.String(500, "init db err:%v", err)
 		}

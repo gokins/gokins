@@ -70,7 +70,7 @@ func prebuild(b *runtime.Build) error {
 	buildId := utils.NewXid()
 	b.Id = buildId
 	b.Repo = &runtime.Repository{
-		Name:     "SuperHeroJim",
+		Name:     "",
 		Token:    "",
 		Sha:      "",
 		CloneURL: "https://gitee.com/SuperHeroJim/gokins-test.git",
