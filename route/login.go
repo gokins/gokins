@@ -1,7 +1,6 @@
 package route
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -57,7 +56,7 @@ func (LoginController) login(c *gin.Context, m *bean.LoginReq) {
 		return
 	}
 	token, err := util.CreateToken(jwt.MapClaims{
-		"uid": fmt.Sprintf("%d", usr.Id),
+		"uid": usr.Id,
 	}, key, time.Hour*24*5)
 	if err != nil {
 		c.String(500, "create token err:%v", err)
@@ -65,7 +64,7 @@ func (LoginController) login(c *gin.Context, m *bean.LoginReq) {
 	}
 	rt := &bean.LoginRes{
 		Token:         token,
-		Id:            fmt.Sprintf("%d", usr.Id),
+		Id:            usr.Id,
 		Name:          usr.Name,
 		Nick:          usr.Nick,
 		Avatar:        usr.Avatar,
