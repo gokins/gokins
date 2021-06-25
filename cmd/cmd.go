@@ -8,6 +8,8 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
 )
 
 const Version = "0.1.1"
@@ -64,6 +66,13 @@ func start(pc *kingpin.ParseContext) error {
 	return nil
 }
 func run(pc *kingpin.ParseContext) error {
+	csig := make(chan os.Signal, 1)
+	signal.Notify(csig, os.Interrupt, syscall.SIGALRM)
+	go func() {
+		s := <-csig
+		hbtp.Debugf("get signal(%d):%s", s, s.String())
+		comm.Cancel()
+	}()
 	if core.Debug {
 		hbtp.Debug = true
 	}

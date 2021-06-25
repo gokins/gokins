@@ -21,14 +21,15 @@ func Start() error {
 	Mgr.buildEgn = StartBuildEngine()
 	Mgr.jobEgn = StartJobEngine()
 	if len(comm.Cfg.Server.Shells) > 0 {
-		Mgr.shellRun = runners.NewEngine(runners.Config{
+		runr := runners.NewEngine(runners.Config{
 			Workspace: comm.WorkPath,
 			Plugin:    comm.Cfg.Server.Shells,
 		}, &baseRunner{})
-		err := Mgr.shellRun.Start(comm.Ctx)
+		err := runr.Start(comm.Ctx)
 		if err != nil {
 			return err
 		}
+		Mgr.shellRun = runr
 	}
 	go func() {
 		for !hbtp.EndContext(comm.Ctx) {
@@ -36,6 +37,9 @@ func Start() error {
 			time.Sleep(time.Second)
 		}
 		Mgr.buildEgn.Stop()
+		if Mgr.shellRun != nil {
+			Mgr.shellRun.Stop()
+		}
 	}()
 	return nil
 }

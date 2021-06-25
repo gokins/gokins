@@ -2,6 +2,7 @@ package comm
 
 import (
 	"context"
+	"github.com/boltdb/bolt"
 	"github.com/gin-gonic/gin"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"xorm.io/xorm"
@@ -14,6 +15,7 @@ var (
 var (
 	Cfg       = Config{}
 	Db        *xorm.Engine
+	BCache    *bolt.DB
 	WebEgn    = gin.Default()
 	HbtpEgn   *hbtp.Engine
 	Installed = false

@@ -7,7 +7,6 @@ import (
 	utils2 "github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/engine"
-	"github.com/gokins-main/gokins/migrates"
 	"github.com/gokins-main/gokins/route"
 	"github.com/gokins-main/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
@@ -17,7 +16,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"xorm.io/xorm"
 )
 
 func Run() error {
@@ -47,6 +45,11 @@ func Run() error {
 	if err != nil {
 		return err
 	}
+	err = initCache()
+	if err != nil {
+		return err
+	}
+	defer comm.BCache.Close()
 
 	regApi()
 	comm.Installed = true
@@ -60,6 +63,7 @@ func Run() error {
 	for !hbtp.EndContext(comm.Ctx) {
 		time.Sleep(time.Millisecond * 100)
 	}
+	time.Sleep(time.Second)
 	return nil
 }
 func parseConfig() error {
@@ -71,29 +75,4 @@ func parseConfig() error {
 		return err
 	}
 	return yaml.Unmarshal(bts, &comm.Cfg)
-}
-
-func initDb() error {
-	var err error
-	dvs := "mysql"
-	ul := comm.Cfg.Datasource.Url
-	if comm.Cfg.Datasource.Driver != "" {
-		dvs = comm.Cfg.Datasource.Driver
-	}
-	if !comm.Installed {
-		if dvs == "mysql" {
-			err = migrates.UpMysqlMigrate(ul)
-		} else {
-			err = migrates.UpSqliteMigrate(ul)
-		}
-	}
-	if err != nil {
-		return err
-	}
-	db, err := xorm.NewEngine(dvs, comm.Cfg.Datasource.Url)
-	if err != nil {
-		return err
-	}
-	comm.Db = db
-	return nil
 }
