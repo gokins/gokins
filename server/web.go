@@ -27,6 +27,7 @@ func runWeb() {
 }
 
 func regApi() {
+	comm.WebEgn.Use(util.MidAccessAllowFun)
 	util.GinRegController(comm.WebEgn, &route.ApiController{})
 	util.GinRegController(comm.WebEgn, &route.LoginController{})
 }
