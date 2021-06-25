@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gokins-main/core/utils"
+	"github.com/gokins-main/gokins/model"
 	"github.com/gokins-main/gokins/util"
 	"github.com/gokins-main/runner/runners"
 	"os"
@@ -209,10 +210,16 @@ func (c *BuildTask) check() bool {
 				c.build.Error = fmt.Sprintf("build Job.%s is repeat", e.Name)
 				return false
 			}
-			vs.jobs[e.Name] = &jobSync{
+			job := &jobSync{
 				step:  e,
-				cmdmp: make(map[string]*runners.CmdContent),
+				cmdmp: make(map[string]*cmdSync),
 			}
+			if err := c.genCmds(job); err != nil {
+				c.build.Event = common.BuildEventCheckParam
+				c.build.Error = fmt.Sprintf("build Job.%s Commands err", e.Name)
+				return false
+			}
+			vs.jobs[e.Name] = job
 		}
 	}
 	/*for _,v:=range stages{
@@ -232,6 +239,58 @@ func (c *BuildTask) check() bool {
 	return true
 }
 
+func (c *BuildTask) genCmds(job *jobSync) error {
+	runjb := &runners.RunJob{
+		Id:              job.step.Id,
+		StageId:         job.step.StageId,
+		BuildId:         job.step.BuildId,
+		Step:            job.step.Step,
+		Name:            job.step.Name,
+		Environments:    job.step.Environments,
+		Artifacts:       job.step.Artifacts,
+		DependArtifacts: job.step.DependArtifacts,
+		IsClone:         c.isClone,
+		RepoPath:        c.repoPath,
+	}
+	var err error
+	switch job.step.Commands.(type) {
+	case string:
+		c.appendcmds(runjb, utils.NewXid(), job.step.Commands.(string))
+	case []interface{}:
+		err = c.gencmds(runjb, job.step.Commands.([]interface{}))
+	default:
+		err = errors.New("commands format err")
+	}
+	if err != nil {
+		return err
+	}
+	if len(runjb.Commands) <= 0 {
+		return errors.New("command format empty")
+	}
+	job.runjb = runjb
+	for i, v := range runjb.Commands {
+		job.cmdmp[v.Id] = &cmdSync{
+			cmd:    v,
+			status: common.BuildStatusPending,
+		}
+		cmd := &model.TCmdLine{
+			Id:      v.Id,
+			GroupId: v.Gid,
+			BuildId: job.step.BuildId,
+			JobId:   job.step.Id,
+			Status:  common.BuildStatusPending,
+			Num:     i + 1,
+			Content: v.Conts,
+			Created: time.Now(),
+		}
+		_, err = comm.Db.InsertOne(cmd)
+		if err != nil {
+			comm.Db.Where("build_id=? and job_id=?", cmd.BuildId, cmd.JobId).Delete(cmd)
+			return err
+		}
+	}
+	return nil
+}
 func (c *BuildTask) runStage(stage *runtime.Stage) {
 	defer func() {
 		stage.Finished = time.Now()
@@ -292,38 +351,10 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 		}
 	}()
 
-	job.runjb = &runners.RunJob{
-		Id:              job.step.Id,
-		StageId:         job.step.StageId,
-		BuildId:         job.step.BuildId,
-		Step:            job.step.Step,
-		Name:            job.step.Name,
-		Environments:    job.step.Environments,
-		Artifacts:       job.step.Artifacts,
-		DependArtifacts: job.step.DependArtifacts,
-		IsClone:         c.isClone,
-		RepoPath:        c.repoPath,
-	}
-	var err error
-	switch job.step.Commands.(type) {
-	case string:
-		c.appendcmds(job, utils.NewXid(), job.step.Commands.(string))
-	case []interface{}:
-		err = c.gencmds(job, job.step.Commands.([]interface{}))
-	default:
-		err = errors.New("commands format err")
-	}
-	if err != nil {
-		job.status(common.BuildStatusError, err.Error(), common.BuildEventJobCmds)
-		return
-	}
 	if len(job.runjb.Commands) <= 0 {
 		job.status(common.BuildStatusError, "command format empty", common.BuildEventJobCmds)
 		return
 	}
-	/*for _,v:=range job.runjb.Commands{
-
-	}*/
 
 	job.RLock()
 	dendons := job.step.DependsOn
@@ -382,7 +413,7 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 	job.step.Started = time.Now()
 	job.Unlock()
 	c.updateStep(job.step)
-	err = Mgr.jobEgn.Put(job)
+	err := Mgr.jobEgn.Put(job)
 	if err != nil {
 		job.status(common.BuildStatusError, fmt.Sprintf("command run err:%v", err))
 		return
@@ -460,7 +491,7 @@ func gitClone(ctx context.Context, dir string, repo *runtime.Repository) error {
 	return nil
 }
 
-func (c *BuildTask) appendcmds(job *jobSync, gid string, conts string) {
+func (c *BuildTask) appendcmds(runjb *runners.RunJob, gid string, conts string) {
 	if gid == "" {
 		return
 	}
@@ -470,12 +501,11 @@ func (c *BuildTask) appendcmds(job *jobSync, gid string, conts string) {
 		Conts: conts,
 		Times: time.Now(),
 	}
-	logrus.Debugf("append cmd(%d)-%s:%s", len(job.runjb.Commands), gid, m.Conts)
+	logrus.Debugf("append cmd(%d)-%s:%s", len(runjb.Commands), gid, m.Conts)
 	//job.Commands[m.Id] = m
-	job.runjb.Commands = append(job.runjb.Commands, m)
-	job.cmdmp[m.Id] = m
+	runjb.Commands = append(runjb.Commands, m)
 }
-func (c *BuildTask) gencmds(job *jobSync, cmds []interface{}) (rterr error) {
+func (c *BuildTask) gencmds(runjb *runners.RunJob, cmds []interface{}) (rterr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			logrus.Warnf("BuildTask gencmds recover:%v", err)
@@ -488,21 +518,21 @@ func (c *BuildTask) gencmds(job *jobSync, cmds []interface{}) (rterr error) {
 		case string:
 			gid := utils.NewXid()
 			//grp:=&hbtpBean.CmdGroupJson{Id: utils.NewXid()}
-			c.appendcmds(job, gid, v.(string))
+			c.appendcmds(runjb, gid, v.(string))
 		case []interface{}:
 			gid := utils.NewXid()
 			for _, v1 := range v.([]interface{}) {
-				c.appendcmds(job, gid, fmt.Sprintf("%v", v1))
+				c.appendcmds(runjb, gid, fmt.Sprintf("%v", v1))
 			}
 		case map[interface{}]interface{}:
 			for _, v1 := range v.(map[interface{}]interface{}) {
 				gid := utils.NewXid()
 				switch v1.(type) {
 				case string:
-					c.appendcmds(job, gid, fmt.Sprintf("%v", v1))
+					c.appendcmds(runjb, gid, fmt.Sprintf("%v", v1))
 				case []interface{}:
 					for _, v2 := range v1.([]interface{}) {
-						c.appendcmds(job, gid, fmt.Sprintf("%v", v2))
+						c.appendcmds(runjb, gid, fmt.Sprintf("%v", v2))
 					}
 				}
 			}
@@ -511,10 +541,10 @@ func (c *BuildTask) gencmds(job *jobSync, cmds []interface{}) (rterr error) {
 				gid := utils.NewXid()
 				switch v1.(type) {
 				case string:
-					c.appendcmds(job, gid, fmt.Sprintf("%v", v1))
+					c.appendcmds(runjb, gid, fmt.Sprintf("%v", v1))
 				case []interface{}:
 					for _, v2 := range v1.([]interface{}) {
-						c.appendcmds(job, gid, fmt.Sprintf("%v", v2))
+						c.appendcmds(runjb, gid, fmt.Sprintf("%v", v2))
 					}
 				}
 			}
@@ -523,6 +553,41 @@ func (c *BuildTask) gencmds(job *jobSync, cmds []interface{}) (rterr error) {
 	return nil
 }
 
+func (c *BuildTask) UpJob(job *jobSync, stat, errs string, code int) {
+	if job == nil || stat == "" {
+		return
+	}
+	job.Lock()
+	job.step.Status = stat
+	job.step.Error = errs
+	job.step.ExitCode = code
+	job.Unlock()
+	go c.updateStep(job.step)
+}
+func (c *BuildTask) UpJobCmd(job *jobSync, cmdid string, fs int) {
+	if job == nil || cmdid == "" {
+		return
+	}
+	job.RLock()
+	cmd, ok := job.cmdmp[cmdid]
+	job.RUnlock()
+	if !ok {
+		return
+	}
+	cmd.Lock()
+	defer cmd.Unlock()
+	switch fs {
+	case 1:
+		cmd.status = common.BuildStatusRunning
+		cmd.started = time.Now()
+	case 2:
+		cmd.status = common.BuildStatusOk
+		cmd.finished = time.Now()
+	default:
+		return
+	}
+	go c.updateStepCmd(cmd)
+}
 func (c *BuildTask) Show() (*runtime.BuildShow, bool) {
 	if c.stopd() {
 		return nil, false
