@@ -33,8 +33,8 @@ func Start() error {
 	}
 	go func() {
 		for !hbtp.EndContext(comm.Ctx) {
-			Mgr.run()
-			time.Sleep(time.Second)
+			//Mgr.run()
+			time.Sleep(time.Millisecond * 100)
 		}
 		Mgr.buildEgn.Stop()
 		if Mgr.shellRun != nil {

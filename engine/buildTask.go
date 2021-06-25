@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"container/list"
 	"context"
 	"errors"
 	"fmt"
@@ -43,20 +42,17 @@ func (c *taskStage) status(stat, errs string, event ...string) {
 
 type BuildTask struct {
 	egn   *BuildEngine
-	build *runtime.Build
 	ctx   context.Context
 	cncl  context.CancelFunc
+	bdlk  sync.RWMutex
+	build *runtime.Build
 
 	bngtm     time.Time
 	endtm     time.Time
-	ctrlend   bool //手动停止
 	ctrlendtm time.Time
 
-	staglk sync.Mutex
+	staglk sync.RWMutex
 	stages map[string]*taskStage
-
-	joblk sync.Mutex
-	jobls *list.List
 
 	buildPath string
 	isClone   bool
@@ -64,8 +60,8 @@ type BuildTask struct {
 }
 
 func (c *BuildTask) status(stat, errs string, event ...string) {
-	//c.Lock()
-	//defer c.Unlock()
+	c.bdlk.Lock()
+	defer c.bdlk.Unlock()
 	c.build.Status = stat
 	c.build.Error = errs
 	if len(event) > 0 {
@@ -75,14 +71,23 @@ func (c *BuildTask) status(stat, errs string, event ...string) {
 
 func NewBuildTask(egn *BuildEngine, bd *runtime.Build) *BuildTask {
 	c := &BuildTask{egn: egn, build: bd}
-	c.ctx, c.cncl = context.WithTimeout(comm.Ctx, time.Hour*2+time.Minute*5)
 	return c
 }
 
 func (c *BuildTask) stopd() bool {
+	if c.ctx == nil {
+		return true
+	}
 	return hbtp.EndContext(c.ctx)
 }
 func (c *BuildTask) stop() {
+	c.ctrlendtm = time.Time{}
+	if c.cncl != nil {
+		c.cncl()
+	}
+}
+func (c *BuildTask) Cancel() {
+	c.ctrlendtm = time.Now()
 	if c.cncl != nil {
 		c.cncl()
 	}
@@ -113,7 +118,6 @@ func (c *BuildTask) run() {
 
 	c.bngtm = time.Now()
 	c.stages = make(map[string]*taskStage)
-	c.jobls = list.New()
 
 	c.build.Started = time.Now()
 	c.build.Status = common.BuildStatusPending
@@ -121,6 +125,7 @@ func (c *BuildTask) run() {
 		c.build.Status = common.BuildStatusError
 		return
 	}
+	c.ctx, c.cncl = context.WithTimeout(comm.Ctx, time.Hour*2+time.Minute*5)
 	c.build.Status = common.BuildStatusPreparation
 	err = c.getRepo()
 	if err != nil {
@@ -167,7 +172,7 @@ func (c *BuildTask) check() bool {
 			c.build.Error = "build Stages is empty"
 			return false
 		}
-		if _, ok := c.stages[v.Name]; ok {
+		if _, ok := stages[v.Name]; ok {
 			c.build.Event = common.BuildEventCheckParam
 			c.build.Error = fmt.Sprintf("build Stages.%s is repeat", v.Name)
 			return false
@@ -241,15 +246,15 @@ func (c *BuildTask) runStage(stage *runtime.Stage) {
 	stage.Status = common.BuildStatusRunning
 	//c.logfile.WriteString(fmt.Sprintf("\n****************Stage+ %s\n", stage.Name))
 	c.updateStage(stage)
-	c.staglk.Lock()
+	c.staglk.RLock()
 	stg, ok := c.stages[stage.Name]
-	c.staglk.Unlock()
+	c.staglk.RUnlock()
 	if !ok {
 		stg.status(common.BuildStatusError, fmt.Sprintf("not found stage?:%s", stage.Name))
 		return
 	}
 
-	c.staglk.Lock()
+	c.staglk.RLock()
 	for _, v := range stage.Steps {
 		jb, ok := stg.jobs[v.Name]
 		if !ok {
@@ -259,7 +264,7 @@ func (c *BuildTask) runStage(stage *runtime.Stage) {
 		stg.wg.Add(1)
 		go c.runStep(stg, jb)
 	}
-	c.staglk.Unlock()
+	c.staglk.RUnlock()
 	stg.wg.Wait()
 	for _, v := range stg.jobs {
 		v.RLock()
@@ -343,7 +348,7 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 		}
 		for !hbtp.EndContext(comm.Ctx) {
 			time.Sleep(time.Millisecond * 100)
-			if c.ctrlend {
+			if c.stopd() {
 				job.status(common.BuildStatusCancel, "")
 				return
 			}
@@ -389,17 +394,21 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 		if common.BuildStatusEnded(stats) {
 			break
 		}
-		if c.ctrlend && time.Since(c.ctrlendtm).Seconds() > 3 {
-			job.status(common.BuildStatusError, "cancel")
+		if c.stopd() && time.Since(c.ctrlendtm).Seconds() > 3 {
+			job.status(common.BuildStatusCancel, "cancel")
 			break
 		}
+		/*if c.ctrlend && time.Since(c.ctrlendtm).Seconds() > 3 {
+			job.status(common.BuildStatusError, "cancel")
+			break
+		}*/
 		time.Sleep(time.Millisecond * 10)
 	}
 	job.Lock()
 	defer job.Unlock()
-	if c.ctrlend && job.step.Status == common.BuildStatusError {
+	/*if c.ctrlend && job.step.Status == common.BuildStatusError {
 		job.step.Status = common.BuildStatusCancel
-	}
+	}*/
 }
 
 func (c *BuildTask) getRepo() error {
@@ -512,4 +521,67 @@ func (c *BuildTask) gencmds(job *jobSync, cmds []interface{}) (rterr error) {
 		}
 	}
 	return nil
+}
+
+func (c *BuildTask) Show() (*runtime.BuildShow, bool) {
+	if c.stopd() {
+		return nil, false
+	}
+	rtbd := &runtime.BuildShow{
+		Id:         c.build.Id,
+		PipelineId: c.build.PipelineId,
+		Status:     c.build.Status,
+		Error:      c.build.Error,
+		Event:      c.build.Event,
+		Started:    c.build.Started,
+		Finished:   c.build.Finished,
+		Created:    c.build.Created,
+		Updated:    c.build.Updated,
+	}
+	for _, v := range c.build.Stages {
+		c.staglk.RLock()
+		stg, ok := c.stages[v.Name]
+		c.staglk.RUnlock()
+		if !ok {
+			continue
+		}
+		stg.RLock()
+		rtstg := &runtime.StageShow{
+			Id:       stg.stage.Id,
+			BuildId:  stg.stage.BuildId,
+			Status:   stg.stage.Status,
+			Event:    stg.stage.Event,
+			Error:    stg.stage.Error,
+			Started:  stg.stage.Started,
+			Stopped:  stg.stage.Stopped,
+			Finished: stg.stage.Finished,
+			Created:  stg.stage.Created,
+			Updated:  stg.stage.Updated,
+		}
+		stg.RUnlock()
+		rtbd.Stages = append(rtbd.Stages, rtstg)
+		for _, st := range v.Steps {
+			c.staglk.RLock()
+			job, ok := stg.jobs[st.Name]
+			c.staglk.RUnlock()
+			if !ok {
+				continue
+			}
+			job.RLock()
+			rtstg.Steps = append(rtstg.Steps, &runtime.StepShow{
+				Id:       job.step.Id,
+				StageId:  job.step.StageId,
+				BuildId:  job.step.BuildId,
+				Status:   job.step.Status,
+				Event:    job.step.Event,
+				Error:    job.step.Error,
+				ExitCode: job.step.ExitCode,
+				Started:  job.step.Started,
+				Stopped:  job.step.Stopped,
+				Finished: job.step.Finished,
+			})
+			job.RUnlock()
+		}
+	}
+	return rtbd, true
 }

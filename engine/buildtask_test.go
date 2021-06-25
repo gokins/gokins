@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"context"
 	"fmt"
 	"github.com/gokins-main/core/runtime"
 	"testing"
@@ -9,7 +8,6 @@ import (
 
 func TestGitClone(t *testing.T) {
 	task := BuildTask{
-		ctx: context.TODO(),
 		build: &runtime.Build{
 			Id: "1231",
 			Repo: &runtime.Repository{

@@ -46,7 +46,7 @@ func (c *baseRunner) CheckCancel(buildId string) bool {
 	if !ok {
 		return true
 	}
-	return v.ctrlend
+	return v.stopd()
 }
 
 func (c *baseRunner) UpdateCmd(jobid, cmdid string, fs int) error {
