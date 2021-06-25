@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/boltdb/bolt"
+	"github.com/gokins-main/core"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/migrates"
 	"github.com/sirupsen/logrus"
@@ -31,6 +32,7 @@ func initDb() error {
 	if err != nil {
 		return err
 	}
+	db.ShowSQL(core.Debug)
 	comm.Db = db
 	return nil
 }
