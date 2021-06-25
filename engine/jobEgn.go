@@ -28,11 +28,18 @@ type executer struct {
 	tms   time.Time
 	jobwt *list.List
 }
+type cmdSync struct {
+	sync.RWMutex
+	cmd      *runners.CmdContent
+	status   string
+	started  time.Time
+	finished time.Time
+}
 type jobSync struct {
 	sync.RWMutex
 	step   *runtime.Step
 	runjb  *runners.RunJob
-	cmdmp  map[string]*runners.CmdContent
+	cmdmp  map[string]*cmdSync
 	runed  bool
 	ended  bool
 	cncled bool
@@ -162,4 +169,13 @@ func (c *JobEngine) Pull(plugs []string) *runners.RunJob {
 		}
 	}
 	return nil
+}
+func (c *JobEngine) GetJob(id string) (*jobSync, bool) {
+	if id == "" {
+		return nil, false
+	}
+	Mgr.jobEgn.joblk.RLock()
+	defer Mgr.jobEgn.joblk.RUnlock()
+	job, ok := c.jobs[id]
+	return job, ok
 }

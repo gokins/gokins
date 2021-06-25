@@ -69,6 +69,7 @@ func prebuild(b *runtime.Build) error {
 	pipelineId := utils.NewXid()
 	buildId := utils.NewXid()
 	b.Id = buildId
+	b.PipelineId = pipelineId
 	b.Repo = &runtime.Repository{
 		Name:     "",
 		Token:    "",
@@ -77,7 +78,6 @@ func prebuild(b *runtime.Build) error {
 	}
 	for _, stage := range b.Stages {
 		stage.Id = utils.NewXid()
-		stage.PipelineId = pipelineId
 		stage.BuildId = buildId
 		for _, step := range stage.Steps {
 			step.Id = utils.NewXid()

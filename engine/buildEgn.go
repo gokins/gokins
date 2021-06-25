@@ -77,11 +77,17 @@ func (c *BuildEngine) run() {
 func (c *BuildEngine) startBuild(v *BuildTask) {
 	v.run()
 	c.tskslk.Lock()
+	defer c.tskslk.Unlock()
 	delete(c.tasks, v.build.Id)
-	c.tskslk.Unlock()
 }
 func (c *BuildEngine) Put(bd *runtime.Build) {
 	c.tskwlk.Lock()
-	c.tskwlk.Unlock()
+	defer c.tskwlk.Unlock()
 	c.taskw.PushBack(bd)
+}
+func (c *BuildEngine) Get(buildid string) (*BuildTask, bool) {
+	c.tskslk.Lock()
+	defer c.tskslk.Unlock()
+	v, ok := c.tasks[buildid]
+	return v, ok
 }
