@@ -25,8 +25,8 @@ func SetParam(key string, data []byte, tit ...string) error {
 		e.Title = tit[0]
 	}
 	e.Data = string(data)
-	if ok && e.Id > 0 {
-		_, err = db.Cols("title", "data").Where("id=?", e.Id).Update(e)
+	if ok && e.Aid > 0 {
+		_, err = db.Cols("title", "data").Where("aid=?", e.Aid).Update(e)
 	} else {
 		e.Name = key
 		e.Times = time.Now()

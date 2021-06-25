@@ -68,14 +68,14 @@ func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	job := &model.TJob{}
-	ok, _ := comm.Db.Where("id=?", jobId).Get(job)
+	tstp := &model.TStep{}
+	ok, _ := comm.Db.Where("id=?", jobId).Get(tstp)
 	if !ok {
 		c.String(404, "Not Found")
 		return
 	}
-	dir := filepath.Join(comm.WorkPath, common.PathBuild, job.BuildId, common.PathJobs)
-	logpth := filepath.Join(dir, fmt.Sprintf("%v.log", job.Id))
+	dir := filepath.Join(comm.WorkPath, common.PathBuild, tstp.BuildId, common.PathJobs)
+	logpth := filepath.Join(dir, fmt.Sprintf("%v.log", tstp.Id))
 	fl, err := os.Open(logpth)
 	if err != nil {
 		c.String(404, "Not Found File")

@@ -4,13 +4,13 @@ import (
 	"time"
 )
 
-type TJob struct {
+type TStep struct {
 	Id                string    `xorm:"not null pk VARCHAR(64)" json:"id"`
 	BuildId           string    `xorm:"VARCHAR(64)" json:"buildId"`
 	StageId           string    `xorm:"comment('流水线id') VARCHAR(100)" json:"stageId"`
 	DisplayName       string    `xorm:"VARCHAR(255)" json:"displayName"`
 	PipelineVersionId string    `xorm:"comment('流水线id') VARCHAR(64)" json:"pipelineVersionId"`
-	Job               string    `xorm:"VARCHAR(255)" json:"job"`
+	Step              string    `xorm:"VARCHAR(255)" json:"step"`
 	Status            string    `xorm:"comment('构建状态') VARCHAR(100)" json:"status"`
 	ExitCode          int64     `xorm:"comment('退出码') BIGINT(20)" json:"exitCode"`
 	Error             string    `xorm:"comment('错误信息') VARCHAR(500)" json:"error"`

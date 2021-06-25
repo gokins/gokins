@@ -277,7 +277,7 @@ func (c *BuildTask) genCmds(job *jobSync) error {
 			Id:      v.Id,
 			GroupId: v.Gid,
 			BuildId: job.step.BuildId,
-			JobId:   job.step.Id,
+			StepId:  job.step.Id,
 			Status:  common.BuildStatusPending,
 			Num:     i + 1,
 			Content: v.Conts,
@@ -285,7 +285,7 @@ func (c *BuildTask) genCmds(job *jobSync) error {
 		}
 		_, err = comm.Db.InsertOne(cmd)
 		if err != nil {
-			comm.Db.Where("build_id=? and job_id=?", cmd.BuildId, cmd.JobId).Delete(cmd)
+			comm.Db.Where("build_id=? and job_id=?", cmd.BuildId, cmd.StepId).Delete(cmd)
 			return err
 		}
 	}

@@ -5,8 +5,8 @@ import (
 )
 
 type TMessage struct {
-	Id      int64     `xorm:"pk autoincr BIGINT(20)" json:"id"`
-	Xid     string    `xorm:"not null pk VARCHAR(64)" json:"xid"`
+	Id      string    `xorm:"not null pk VARCHAR(64)" json:"id"`
+	Aid     int64     `xorm:"not null pk autoincr BIGINT(20)" json:"aid"`
 	Uid     string    `xorm:"comment('发送者（可空）') VARCHAR(64)" json:"uid"`
 	Title   string    `xorm:"VARCHAR(255)" json:"title"`
 	Content string    `xorm:"LONGTEXT" json:"content"`

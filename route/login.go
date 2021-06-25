@@ -32,7 +32,7 @@ func (LoginController) info(c *gin.Context) {
 		rt.Nick = usr.Nick
 		rt.Avatar = usr.Avatar
 		rt.LoginTime = usr.LoginTime.Format(common.TimeFmt)
-		rt.RegTime = usr.CreateTime.Format(common.TimeFmt)
+		rt.RegTime = usr.Created.Format(common.TimeFmt)
 	}
 	c.JSON(200, rt)
 }
