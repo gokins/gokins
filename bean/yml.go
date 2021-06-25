@@ -1,6 +1,6 @@
-package yml
+package bean
 
-type YML struct {
+type Pipeline struct {
 	Name        string              `yaml:"name,omitempty" json:"name"`
 	Version     string              `yaml:"version,omitempty" json:"version"`
 	DisplayName string              `yaml:"displayName,omitempty" json:"displayName"`

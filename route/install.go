@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core"
 	"github.com/gokins-main/core/common"
+	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/migrates"
 	"github.com/gokins-main/gokins/util"
@@ -95,6 +96,7 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 	}
 
 	comm.Cfg.Server.Host = m.Server.Host
+	comm.Cfg.Server.LoginKey = utils.RandomString(32)
 	comm.Cfg.Server.Shells = []string{"shell@sh", "shell@bash"}
 	if runtime.GOOS == "windows" {
 		comm.Cfg.Server.Shells = []string{"shell@cmd", "shell@powershell"}

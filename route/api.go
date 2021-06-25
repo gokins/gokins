@@ -5,9 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/core/utils"
+	"github.com/gokins-main/gokins/bean"
 	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/util"
-	"github.com/gokins-main/gokins/yml"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 )
@@ -22,7 +22,7 @@ func (c *ApiController) Routes(g gin.IRoutes) {
 }
 func (ApiController) test(c *gin.Context) {
 	all, err := ioutil.ReadAll(c.Request.Body)
-	y := &yml.YML{}
+	y := &bean.Pipeline{}
 	err = yaml.Unmarshal(all, y)
 	if err != nil {
 		c.JSON(200, gin.H{

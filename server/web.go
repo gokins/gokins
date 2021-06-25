@@ -28,4 +28,8 @@ func runWeb() {
 
 func regApi() {
 	util.GinRegController(comm.WebEgn, &route.ApiController{})
+	util.GinRegController(comm.WebEgn, &route.LoginController{})
+}
+func http404(c *gin.Context) {
+
 }
