@@ -6,6 +6,7 @@
 *.dylib
 
 # Test binary, built with `go test -c`
+/dbm.bat
 /install.html
 *.test
 *.bak

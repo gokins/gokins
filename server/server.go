@@ -48,9 +48,8 @@ func Run() error {
 		return err
 	}
 
-	comm.Installed = true
 	regApi()
-
+	comm.Installed = true
 	err = engine.Start()
 	if err != nil {
 		return err
@@ -81,8 +80,12 @@ func initDb() error {
 	if comm.Cfg.Datasource.Driver != "" {
 		dvs = comm.Cfg.Datasource.Driver
 	}
-	if dvs == "mysql" {
-		err = migrates.UpMysqlMigrate(ul)
+	if !comm.Installed {
+		if dvs == "mysql" {
+			err = migrates.UpMysqlMigrate(ul)
+		} else {
+			err = migrates.UpSqliteMigrate(ul)
+		}
 	}
 	if err != nil {
 		return err

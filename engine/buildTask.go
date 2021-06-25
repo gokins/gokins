@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gokins-main/core/utils"
+	"github.com/gokins-main/gokins/util"
 	"github.com/gokins-main/runner/runners"
 	"os"
 	"path/filepath"
@@ -19,7 +20,6 @@ import (
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/util/gitex"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 )
@@ -438,12 +438,12 @@ func gitClone(ctx context.Context, dir string, repo *runtime.Repository) error {
 		Auth: bauth,
 	}
 	logrus.Debugf("gitClone : clone url: %s sha: %s", repo.CloneURL, repo.Sha)
-	repository, err := gitex.CloneRepo(clonePath, gc, ctx)
+	repository, err := util.CloneRepo(clonePath, gc, ctx)
 	if err != nil {
 		return err
 	}
 	if repo.Sha != "" {
-		err = gitex.CheckOutHash(repository, repo.Sha)
+		err = util.CheckOutHash(repository, repo.Sha)
 		if err != nil {
 			return err
 		}

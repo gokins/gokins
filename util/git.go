@@ -1,4 +1,4 @@
-package gitex
+package util
 
 import (
 	"context"
