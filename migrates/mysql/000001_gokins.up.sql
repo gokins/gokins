@@ -22,7 +22,7 @@ CREATE TABLE `t_cmd_line` (
   `id` varchar(64) NOT NULL,
   `group_id` varchar(64) NULL DEFAULT NULL,
   `build_id` varchar(64) NULL DEFAULT NULL,
-  `job_id` varchar(64) NULL DEFAULT NULL,
+  `step_id` varchar(64) NULL DEFAULT NULL,
   `status` varchar(50) NULL DEFAULT NULL,
   `num` int(11) NULL DEFAULT NULL,
   `content` text NULL,
@@ -44,15 +44,15 @@ CREATE TABLE `t_hook` (
 -- Records of t_hook
 -- ----------------------------
 -- ----------------------------
--- Table structure for t_job
+-- Table structure for t_step
 -- ----------------------------
-CREATE TABLE `t_job` (
+CREATE TABLE `t_step` (
   `id` varchar(64) NOT NULL,
   `build_id` varchar(64) NULL DEFAULT NULL,
   `stage_id` varchar(100) NULL DEFAULT NULL COMMENT '流水线id',
   `display_name` varchar(255) NULL DEFAULT NULL,
   `pipeline_version_id` varchar(64) NULL DEFAULT NULL COMMENT '流水线id',
-  `job` varchar(255) NULL DEFAULT NULL,
+  `step` varchar(255) NULL DEFAULT NULL,
   `status` varchar(100) NULL DEFAULT NULL COMMENT '构建状态',
   `exit_code` bigint(20) NULL DEFAULT NULL COMMENT '退出码',
   `error` varchar(500) NULL DEFAULT NULL COMMENT '错误信息',
@@ -72,7 +72,7 @@ CREATE TABLE `t_job` (
   PRIMARY KEY (`id`) USING BTREE
 );
 -- ----------------------------
--- Records of t_job
+-- Records of t_step
 -- ----------------------------
 -- ----------------------------
 -- Table structure for t_message
