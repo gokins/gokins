@@ -5,6 +5,7 @@ import (
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/migrates"
 	"github.com/sirupsen/logrus"
+	"os"
 	"path/filepath"
 	"xorm.io/xorm"
 )
@@ -35,7 +36,9 @@ func initDb() error {
 }
 
 func initCache() error {
-	db, err := bolt.Open(filepath.Join(comm.WorkPath, "cache.db"), 0640, nil)
+	pth := filepath.Join(comm.WorkPath, "cache.dat")
+	os.Remove(pth)
+	db, err := bolt.Open(pth, 0640, nil)
 	if err != nil {
 		logrus.Errorf("InitCache err:%v", err)
 		return err
