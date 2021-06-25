@@ -83,7 +83,7 @@ CREATE TABLE `t_message` (
   `created` datetime(0) NULL DEFAULT NULL,
   `infos` text NULL,
   `url` varchar(500) NULL DEFAULT NULL,
-  PRIMARY KEY (`id`, `aid`) USING BTREE
+  PRIMARY KEY (`aid`, `id`) USING BTREE
 );
 CREATE TABLE `t_org` (
   `id` varchar(64) NOT NULL,
@@ -95,7 +95,7 @@ CREATE TABLE `t_org` (
   `created` datetime(0) NULL DEFAULT NULL,
   `deleted` int(1) NULL DEFAULT 0,
   `deleted_time` datetime(0) NULL DEFAULT NULL,
-  PRIMARY KEY (`id`, `aid`) USING BTREE
+  PRIMARY KEY (`aid`, `id`) USING BTREE
 );
 CREATE TABLE `t_org_pipe` (
   `aid` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -164,7 +164,7 @@ CREATE TABLE `t_user` (
   `avatar` varchar(500) NULL DEFAULT NULL,
   `created` datetime(0) NULL DEFAULT NULL,
   `login_time` datetime(0) NULL DEFAULT NULL,
-  PRIMARY KEY (`id`, `aid`) USING BTREE
+  PRIMARY KEY (`aid`, `id`) USING BTREE
 );
 -- ----------------------------
 -- Records of t_user
