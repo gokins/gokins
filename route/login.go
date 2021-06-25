@@ -2,6 +2,8 @@ package route
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/common"
@@ -10,7 +12,6 @@ import (
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/service"
 	"github.com/gokins-main/gokins/util"
-	"time"
 )
 
 type LoginController struct{}
@@ -27,7 +28,7 @@ func (LoginController) info(c *gin.Context) {
 	usr, ok := service.CurrUserCache(c)
 	if ok {
 		rt.Login = true
-		rt.Id = fmt.Sprintf("%d", usr.Id)
+		rt.Id = usr.Id
 		rt.Name = usr.Name
 		rt.Nick = usr.Nick
 		rt.Avatar = usr.Avatar
