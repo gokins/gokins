@@ -386,7 +386,7 @@ VALUES
     `readtm` datetime(0) NULL DEFAULT NULL,
     `status` int(11) NULL DEFAULT 0,
     `deleted` int(1) NULL DEFAULT 0,
-    `deleted` datetime(0) NULL DEFAULT NULL,
+    `deleted_time` datetime(0) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
   );
 CREATE TABLE `t_user_repo` (
