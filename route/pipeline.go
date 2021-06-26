@@ -11,6 +11,7 @@ import (
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"gopkg.in/yaml.v3"
 	"net/http"
+	"time"
 )
 
 type PipelineController struct{}
@@ -135,6 +136,7 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 	name := m.GetString("name")
 	content := m.GetString("content")
+	orgId := m.GetString("orgId")
 	if name == "" || content == "" {
 		c.String(500, "param err")
 		return
@@ -168,6 +170,20 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
+	}
+
+	if orgId != "" {
+		top := &model.TOrgPipe{
+			OrgId:   orgId,
+			PipeId:  pipeline.Id,
+			Created: time.Now(),
+			Public:  0,
+		}
+		_, err = comm.Db.InsertOne(top)
+		if err != nil {
+			c.String(500, "db err:"+err.Error())
+			return
+		}
 	}
 	c.JSON(http.StatusOK, "ok")
 }
