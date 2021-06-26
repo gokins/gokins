@@ -2,6 +2,7 @@ package comm
 
 import (
 	"context"
+
 	"github.com/boltdb/bolt"
 	"github.com/gin-gonic/gin"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
@@ -18,6 +19,7 @@ var (
 	BCache    *bolt.DB
 	WebEgn    = gin.Default()
 	HbtpEgn   *hbtp.Engine
+	IsMySQL   = false
 	Installed = false
 	WorkPath  = ""
 	WebHost   = ""

@@ -1,13 +1,14 @@
 package server
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/boltdb/bolt"
 	"github.com/gokins-main/core"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/migrates"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
 	"xorm.io/xorm"
 )
 
@@ -18,8 +19,9 @@ func initDb() error {
 	if comm.Cfg.Datasource.Driver != "" {
 		dvs = comm.Cfg.Datasource.Driver
 	}
+	comm.IsMySQL = dvs == "mysql"
 	if !comm.Installed {
-		if dvs == "mysql" {
+		if comm.IsMySQL {
 			err = migrates.UpMysqlMigrate(ul)
 		} else {
 			err = migrates.UpSqliteMigrate(ul)

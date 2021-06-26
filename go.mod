@@ -17,6 +17,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+	xorm.io/builder v0.3.8
 	xorm.io/xorm v1.1.0
 )
 

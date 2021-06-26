@@ -1,163 +1,130 @@
 package comm
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"github.com/boltdb/bolt"
-	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"github.com/sirupsen/logrus"
-	"time"
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/gokins-main/gokins/bean"
+	"xorm.io/builder"
+	"xorm.io/xorm"
 )
 
-var mainCacheBucket = []byte("mainCacheBucket")
+type SesFuncHandler = func(ses *xorm.Session)
 
-func CacheSet(key string, data []byte, outm ...time.Duration) error {
-	if BCache == nil {
-		return errors.New("cache not init")
-	}
-	err := BCache.Update(func(tx *bolt.Tx) error {
-		var err error
-		bk := tx.Bucket(mainCacheBucket)
-		if bk == nil {
-			bk, err = tx.CreateBucket(mainCacheBucket)
-			if err != nil {
-				return err
-			}
-		}
-		if data == nil {
-			return bk.Delete([]byte(key))
-		}
-		buf := &bytes.Buffer{}
-		var outms []byte
-		if len(outm) > 0 {
-			outms = []byte(time.Now().Add(outm[0]).Format(time.RFC3339Nano))
-		} else {
-			outms = []byte(time.Now().Add(time.Hour).Format(time.RFC3339Nano))
-		}
-		buf.Write(hbtp.BigIntToByte(int64(len(outms)), 4))
-		buf.Write(outms)
-		buf.Write(data)
-		return bk.Put([]byte(key), buf.Bytes())
-	})
-	return err
-}
-func CacheSets(key string, data interface{}, outm ...time.Duration) error {
-	if BCache == nil {
-		return errors.New("cache not init")
-	}
+func findCount(cds builder.Cond, data interface{}) (int64, error) {
 	if data == nil {
-		return CacheSet(key, nil)
+		return 0, errors.New("needs a pointer to a slice")
 	}
-	bts, err := json.Marshal(data)
+	of := reflect.TypeOf(data)
+	if of.Kind() == reflect.Ptr {
+		of = of.Elem()
+	}
+
+	if of.Kind() == reflect.Slice {
+		sty := of.Elem()
+		if sty.Kind() == reflect.Ptr {
+			sty = sty.Elem()
+		}
+		pv := reflect.New(sty)
+
+		ses := Db.NewSession()
+		defer ses.Close()
+		return ses.Where(cds).Count(pv.Interface())
+	}
+	return 0, errors.New("GetCount err : not found any data")
+}
+
+func FindPage(ses *xorm.Session, ls interface{}, page int64, size ...int64) (*bean.Page, error) {
+	count, err := findCount(ses.Conds(), ls)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return CacheSet(key, bts, outm...)
+	return findPages(ses, ls, count, page, size...)
 }
-func parseCacheData(bts []byte) []byte {
-	if bts == nil {
-		return nil
+func findPages(ses *xorm.Session, ls interface{}, count, page int64, size ...int64) (*bean.Page, error) {
+	var pageno int64 = 1
+	var sizeno int64 = 10
+	var pagesno int64 = 0
+	//var count=c.FindCount(pars)
+	if page > 0 {
+		pageno = page
 	}
-	ln := int(hbtp.BigByteToInt(bts[:4]))
-	tms := string(bts[4 : ln+4])
-	outm, err := time.Parse(time.RFC3339Nano, tms)
+	if len(size) > 0 && size[0] > 0 {
+		sizeno = size[0]
+	}
+	start := (pageno - 1) * sizeno
+	err := ses.Limit(int(sizeno), int(start)).Find(ls)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	if time.Since(outm).Milliseconds() < 0 {
-		return bts[4+ln:]
+	pagest := count / sizeno
+	if count%sizeno > 0 {
+		pagesno = pagest + 1
+	} else {
+		pagesno = pagest
 	}
-	return nil
+	return &bean.Page{
+		Page:  pageno,
+		Pages: pagesno,
+		Size:  sizeno,
+		Total: count,
+		Data:  ls,
+	}, nil
 }
-
-var KeyNotFoundErr = errors.New("key not found")
-var KeyOutTimeErr = errors.New("key is timeout")
-
-func CacheGet(key string) ([]byte, error) {
-	if BCache == nil {
-		return nil, errors.New("cache not init")
+func FindPages(gen *bean.PageGen, ls interface{}, page int64, size ...int64) (*bean.Page, error) {
+	var count int64
+	counts := "count(*)"
+	if gen.CountCols != "" {
+		counts = fmt.Sprintf("count(%s)", gen.CountCols)
 	}
-	var rt []byte
-	err := BCache.View(func(tx *bolt.Tx) error {
-		bk := tx.Bucket(mainCacheBucket)
-		if bk == nil {
-			return KeyNotFoundErr
-		}
-		bts := bk.Get([]byte(key))
-		if bts == nil {
-			return KeyNotFoundErr
-		}
-		rt = parseCacheData(bts)
-		if rt == nil {
-			bk.Delete([]byte(key))
-			return KeyOutTimeErr
-		}
-		return nil
-	})
-	if time.Since(mainCacheClearTime).Hours() > 30 {
-		go mainCacheClear()
-	}
-	return rt, err
-}
-func CacheGets(key string, data interface{}) error {
-	if BCache == nil {
-		return errors.New("cache not init")
-	}
-	if data == nil {
-		return errors.New("data not be nil")
-	}
-	bts, err := CacheGet(key)
+	sqls := strings.Replace(gen.SQL, "{{select}}", counts, 1)
+	sqls = strings.Replace(sqls, "{{limit}}", "", 1)
+	_, err := Db.SQL(sqls, gen.Args...).Get(&count)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return json.Unmarshal(bts, data)
-}
 
-func CacheFlush() error {
-	if BCache == nil {
-		return errors.New("cache not init")
+	var pageno int64 = 1
+	var sizeno int64 = 10
+	var pagesno int64 = 0
+	//var count=c.FindCount(pars)
+	if page > 0 {
+		pageno = page
 	}
-	err := BCache.Update(func(tx *bolt.Tx) error {
-		return tx.DeleteBucket(mainCacheBucket)
-	})
-	return err
-}
-
-var mainCacheClearTime time.Time
-
-func mainCacheClear() {
-	defer func() {
-		if err := recover(); err != nil {
-			logrus.Errorf("mainCacheClear recover err:%v", err)
-		}
-	}()
-
-	if BCache == nil {
-		return
+	if len(size) > 0 && size[0] > 0 {
+		sizeno = size[0]
 	}
-	/*if time.Now().Hour()!=3|| time.Since(mainCacheClearTime).Hours() < 30 {
-		return
-	}*/
-	mainCacheClearTime = time.Now()
-	/*if err := CacheFlush(); err != nil {
-		logrus.Errorf("mainCacheClear err:%v", err)
-	}*/
-	err := BCache.Update(func(tx *bolt.Tx) error {
-		bk := tx.Bucket(mainCacheBucket)
-		if bk == nil {
-			return nil
-		}
-		bk.ForEach(func(k, v []byte) error {
-			data := parseCacheData(v)
-			if data == nil {
-				return bk.Delete(k)
-			}
-			return nil
-		})
-		return nil
-	})
+	start := (pageno - 1) * sizeno
+
+	starts := ""
+	if start > 0 {
+		starts = fmt.Sprintf("%d,", start)
+	}
+	ses := Db.NewSession()
+	defer ses.Close()
+	sqls = strings.Replace(gen.SQL, "{{select}}", gen.FindCols, 1)
+	if strings.Contains(sqls, "{{limit}}") {
+		sqls = strings.Replace(sqls, "{{limit}}", fmt.Sprintf("LIMIT %s%d", starts, sizeno), 1)
+	} else {
+		sqls += fmt.Sprintf("\nLIMIT %s%d", starts, sizeno)
+	}
+	err = ses.SQL(sqls, gen.Args...).Find(ls)
 	if err != nil {
-		logrus.Errorf("mainCacheClear err:%v", err)
+		return nil, err
 	}
+	pagest := count / sizeno
+	if count%sizeno > 0 {
+		pagesno = pagest + 1
+	} else {
+		pagesno = pagest
+	}
+	return &bean.Page{
+		Page:  pageno,
+		Pages: pagesno,
+		Size:  sizeno,
+		Total: count,
+		Data:  ls,
+	}, nil
 }
