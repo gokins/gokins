@@ -1,4 +1,4 @@
-package giteepremium
+package giteepremiumapi
 
 //
 //func TestGiteePremiumContents(t *testing.T) {

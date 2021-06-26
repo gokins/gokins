@@ -1,4 +1,4 @@
-package giteepremium
+package giteepremiumapi
 
 //api 路径
 const (

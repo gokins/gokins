@@ -1,4 +1,4 @@
-package giteepremium
+package giteepremiumapi
 
 import (
 	"github.com/gokins-main/gokins/thirdapi"

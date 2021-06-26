@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/gokins-main/gokins/hook"
 	"github.com/gokins-main/gokins/thirdapi"
-	"github.com/gokins-main/gokins/thirdapi/giteaapi"
 	"github.com/sirupsen/logrus"
 	"hash"
 	"io"
@@ -238,27 +237,27 @@ func convertPullRequestURL(gc *giteaCommentHook, cl *thirdapi.Client) (*giteaPul
 			logrus.Warnf("%s", string(debug.Stack()))
 		}
 	}()
-
-	client := cl.Repositories.(*giteaapi.RepositoryService)
-	tk := &pipeline.TUserToken{}
-	ok, _ := comm.DBMain.GetDB().Where("openid=?", gc.Sender.Id).Get(tk)
-	if !ok {
-		logrus.Error("convertPullRequestURL not found user token")
-		return nil, errors.New("convertPullRequestURL not found user token")
-	}
-
-	quest, err := client.GetPullQuest(tk.AccessToken, gc.Repository.Owner.Login, gc.Repository.Name, gc.Issue.Number)
-	if err != nil {
-		logrus.Errorf("convertPullRequestURL.GetPullQuest err : %v", err)
-		return nil, err
-	}
-	requestURL := &giteaPullRequestURL{}
-	err = json.Unmarshal(quest, requestURL)
-	if err != nil {
-		logrus.Errorf("gitea convertPullRequestURL Unmarshal err %v", err)
-		return nil, err
-	}
-	return requestURL, nil
+	//TODO 请求gitea api 获取pr 详情
+	//client := cl.Repositories.(*giteaapi.RepositoryService)
+	//tk := &pipeline.TUserToken{}
+	//ok, _ := comm.DBMain.GetDB().Where("openid=?", gc.Sender.Id).Get(tk)
+	//if !ok {
+	//	logrus.Error("convertPullRequestURL not found user token")
+	//	return nil, errors.New("convertPullRequestURL not found user token")
+	//}
+	//
+	//quest, err := client.GetPullQuest(tk.AccessToken, gc.Repository.Owner.Login, gc.Repository.Name, gc.Issue.Number)
+	//if err != nil {
+	//	logrus.Errorf("convertPullRequestURL.GetPullQuest err : %v", err)
+	//	return nil, err
+	//}
+	//requestURL := &giteaPullRequestURL{}
+	//err = json.Unmarshal(quest, requestURL)
+	//if err != nil {
+	//	logrus.Errorf("gitea convertPullRequestURL Unmarshal err %v", err)
+	//	return nil, err
+	//}
+	return nil, nil
 }
 
 func convertCommentHook(gp *giteaCommentHook, cl *thirdapi.Client) (*hook.PullRequestCommentHook, error) {

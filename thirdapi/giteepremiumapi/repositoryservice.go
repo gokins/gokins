@@ -1,10 +1,10 @@
-package giteepremium
+package giteepremiumapi
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gokins-main/core/bean/thirdbean"
+	"github.com/gokins-main/gokins/bean/thirdbean"
 	"github.com/gokins-main/gokins/thirdapi"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
