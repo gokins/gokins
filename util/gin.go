@@ -2,10 +2,11 @@ package util
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"reflect"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 type GinController interface {

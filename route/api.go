@@ -2,6 +2,8 @@ package route
 
 import (
 	"errors"
+	"io/ioutil"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/core/utils"
@@ -9,7 +11,6 @@ import (
 	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/util"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 )
 
 type ApiController struct{}
@@ -18,7 +19,11 @@ func (ApiController) GetPath() string {
 	return "/api"
 }
 func (c *ApiController) Routes(g gin.IRoutes) {
+	g.Any("/", c.hello)
 	g.POST("/builds", util.GinReqParseJson(c.test))
+}
+func (ApiController) hello(c *gin.Context) {
+	c.String(200, "hello world")
 }
 func (ApiController) test(c *gin.Context) {
 	all, err := ioutil.ReadAll(c.Request.Body)

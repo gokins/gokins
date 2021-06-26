@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gokins-main/core"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/route"
 	"github.com/gokins-main/gokins/util"
@@ -28,7 +29,9 @@ func runWeb() {
 }
 
 func regApi() {
-	comm.WebEgn.Use(util.MidAccessAllowFun)
+	if core.Debug {
+		comm.WebEgn.Use(util.MidAccessAllowFun)
+	}
 	util.GinRegController(comm.WebEgn, &route.ApiController{})
 	util.GinRegController(comm.WebEgn, &route.LoginController{})
 	util.GinRegController(comm.WebEgn, &route.OrgController{})
