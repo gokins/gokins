@@ -88,14 +88,16 @@ CREATE TABLE `t_message` (
 CREATE TABLE `t_org` (
   `id` varchar(64) NOT NULL,
   `aid` BIGINT NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NULL DEFAULT NULL,
-  `title` varchar(200) NULL DEFAULT NULL,
+  `uid` varchar(64) NULL DEFAULT NULL,
+  `name` varchar(200) NULL DEFAULT NULL,
   `desc` TEXT NULL DEFAULT NULL,
   `public` INT(1) NULL DEFAULT 0 COMMENT '公开',
-  `created` datetime(0) NULL DEFAULT NULL,
+  `created` datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
+  `updated` datetime(0) NULL DEFAULT NULL COMMENT '更新时间',
   `deleted` int(1) NULL DEFAULT 0,
   `deleted_time` datetime(0) NULL DEFAULT NULL,
-  PRIMARY KEY (`aid`, `id`) USING BTREE
+  PRIMARY KEY (`aid`, `id`) USING BTREE,
+  INDEX `uid`(`uid`) USING BTREE
 );
 CREATE TABLE `t_org_pipe` (
   `aid` bigint(20) NOT NULL AUTO_INCREMENT,

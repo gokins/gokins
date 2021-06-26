@@ -1,5 +1,9 @@
 package bean
 
+type IdsRes struct {
+	Id  string `json:"id"`
+	Aid int64  `json:"aid"`
+}
 type LoginReq struct {
 	Name string `json:"name"`
 	Pass string `json:"pass"`

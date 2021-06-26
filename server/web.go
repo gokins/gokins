@@ -1,13 +1,14 @@
 package server
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/route"
 	"github.com/gokins-main/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 func runWeb() {
@@ -30,6 +31,7 @@ func regApi() {
 	comm.WebEgn.Use(util.MidAccessAllowFun)
 	util.GinRegController(comm.WebEgn, &route.ApiController{})
 	util.GinRegController(comm.WebEgn, &route.LoginController{})
+	util.GinRegController(comm.WebEgn, &route.OrgController{})
 }
 func http404(c *gin.Context) {
 
