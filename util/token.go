@@ -1,12 +1,13 @@
 package util
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 func CreateToken(claims jwt.MapClaims, key string, tmout time.Duration) (string, error) {
@@ -76,7 +77,7 @@ func getTokenAuth(c *gin.Context) string {
 	if err != nil {
 		return ""
 	}
-	strings.Replace(aths, "TOKEN ", "", 1)
+	aths = strings.Replace(aths, "TOKEN ", "", 1)
 	return aths
 }
 func GetTokens(s string, key string) jwt.MapClaims {

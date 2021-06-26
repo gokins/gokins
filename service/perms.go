@@ -5,7 +5,7 @@ import (
 	"github.com/gokins-main/gokins/model"
 )
 
-func CheckPermission(uid int64, perms string) bool {
+func CheckPermission(uid string, perms string) bool {
 	usr, ok := GetUser(uid)
 	if !ok {
 		return false

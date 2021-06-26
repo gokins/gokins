@@ -2,15 +2,15 @@ package service
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/model"
 	"github.com/gokins-main/gokins/util"
 	"github.com/sirupsen/logrus"
-	"strconv"
 )
 
-func GetUser(uid int64) (*model.TUser, bool) {
+func GetUser(uid string) (*model.TUser, bool) {
 	e := &model.TUser{}
 	ok, err := comm.Db.Where("id=?", uid).Get(e)
 	if err != nil {
@@ -27,10 +27,10 @@ func FindUserName(name string) (*model.TUser, bool) {
 	return e, ok
 }
 
-func GetUserCache(uid int64) (*model.TUser, bool) {
+func GetUserCache(uid string) (*model.TUser, bool) {
 	var ok bool
 	e := &model.TUser{}
-	uids := fmt.Sprintf("user:%d", uid)
+	uids := fmt.Sprintf("user:%s", uid)
 	err := comm.CacheGets(uids, e)
 	if err == nil {
 		return e, true
@@ -59,9 +59,5 @@ func CurrUserCache(c *gin.Context) (*model.TUser, bool) {
 	if !ok {
 		return nil, false
 	}
-	uidi, err := strconv.ParseInt(uids, 10, 64)
-	if err != nil {
-		return nil, false
-	}
-	return GetUserCache(uidi)
+	return GetUserCache(uids)
 }
