@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/bean"
@@ -25,6 +26,7 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/pipelines", util.GinReqParseJson(c.getPipelines))
 	g.POST("/new", util.GinReqParseJson(c.new))
 	g.POST("/info", util.GinReqParseJson(c.info))
+	g.POST("/save", util.GinReqParseJson(c.save))
 }
 func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
@@ -133,6 +135,38 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 	c.JSON(http.StatusOK, page)
 }
 
+func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
+	name := m.GetString("name")
+	content := m.GetString("content")
+	pipelineId := m.GetString("pipelineId")
+	if pipelineId == "" {
+		c.String(500, "param err")
+		return
+	}
+	y := &bean.Pipeline{}
+	err := json.Unmarshal([]byte(content), y)
+	err = y.Check()
+	if err != nil {
+		c.String(500, "yaml Check err:"+err.Error())
+		return
+	}
+	js, err := y.ToJson()
+	if err != nil {
+		c.String(500, "yaml ToJson err:"+err.Error())
+		return
+	}
+	pipeline := &model.TPipeline{
+		Name:        name,
+		DisplayName: y.DisplayName,
+		JsonContent: string(js),
+	}
+	_, err = comm.Db.Cols("name , display_name,json_content").Where("id = ?", pipelineId).Update(pipeline)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+}
+
 func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 	name := m.GetString("name")
 	content := m.GetString("content")
@@ -152,7 +186,7 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "yaml Check err:"+err.Error())
 		return
 	}
-	json, err := y.ToJson()
+	js, err := y.ToJson()
 	if err != nil {
 		c.String(500, "yaml ToJson err:"+err.Error())
 		return
@@ -163,7 +197,7 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		Name:         name,
 		DisplayName:  y.DisplayName,
 		PipelineType: "",
-		JsonContent:  string(json),
+		JsonContent:  string(js),
 		CreateUserId: usr.Id,
 	}
 	_, err = comm.Db.InsertOne(pipeline)
