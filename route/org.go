@@ -226,6 +226,10 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 	ne := &model.TUserOrg{}
 	isup, _ := comm.Db.Where("uid=? and org_id=?", usr.Id, org.Id).Get(ne)
 	lgusr := service.GetMidLgUser(c)
+	if usr.Id == lgusr.Id {
+		c.String(511, "can't add yourself")
+		return
+	}
 	if adm {
 		if org.Uid != lgusr.Id {
 			c.String(405, "no permission")
