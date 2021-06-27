@@ -98,10 +98,7 @@ func (OrgController) info(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	org := &models.TOrg{}
-	ok, _ := comm.Db.Where("id=?", id).Get(org)
-	if !ok {
-		ok, _ = comm.Db.Where("aid=?", id).Get(org)
-	}
+	ok := service.GetOrg(id, org)
 	if !ok || org.Deleted == 1 {
 		c.String(404, "not found org")
 		return

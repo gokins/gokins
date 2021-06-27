@@ -2,6 +2,9 @@ package route
 
 import (
 	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/bean"
@@ -11,8 +14,6 @@ import (
 	"github.com/gokins-main/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"gopkg.in/yaml.v3"
-	"net/http"
-	"time"
 )
 
 type PipelineController struct{}
@@ -36,6 +37,12 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
+	org := &model.TOrg{}
+	ok := service.GetOrg(orgId, org)
+	if !ok || org.Deleted == 1 {
+		c.String(404, "not found org")
+		return
+	}
 	usr := service.GetMidLgUser(c)
 	ls := make([]*model.TPipeline, 0)
 	var err error
@@ -51,7 +58,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id 
 			where top.org_id = ? 
 		    `
-			gen.Args = append(gen.Args, orgId)
+			gen.Args = append(gen.Args, org.Id)
 			if q != "" {
 				gen.SQL += "\nAND pipe.name like ? "
 				gen.Args = append(gen.Args, "%"+q+"%")
@@ -67,7 +74,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		}
 
 		usero := &model.TUserOrg{}
-		get, err := comm.Db.Where("uid =? and org_id =?", usr.Id, orgId).Get(usero)
+		get, err := comm.Db.Where("uid =? and org_id =?", usr.Id, org.Id).Get(usero)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
 			return
@@ -95,7 +102,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 			return
 		}
 
-		gen.Args = append(gen.Args, orgId)
+		gen.Args = append(gen.Args, org.Id)
 		if q != "" {
 			gen.SQL += "\nAND pipe.name like ? "
 			gen.Args = append(gen.Args, "%"+q+"%")
@@ -207,16 +214,20 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 	}
 
 	if orgId != "" {
-		top := &model.TOrgPipe{
-			OrgId:   orgId,
-			PipeId:  pipeline.Id,
-			Created: time.Now(),
-			Public:  0,
-		}
-		_, err = comm.Db.InsertOne(top)
-		if err != nil {
-			c.String(500, "db err:"+err.Error())
-			return
+		org := &model.TOrg{}
+		ok := service.GetOrg(orgId, org)
+		if ok {
+			top := &model.TOrgPipe{
+				OrgId:   org.Id,
+				PipeId:  pipeline.Id,
+				Created: time.Now(),
+				Public:  0,
+			}
+			_, err = comm.Db.InsertOne(top)
+			if err != nil {
+				c.String(500, "db err:"+err.Error())
+				return
+			}
 		}
 	}
 	c.JSON(http.StatusOK, "ok")
