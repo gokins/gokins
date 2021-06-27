@@ -38,7 +38,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	org := &model.TOrg{}
-	ok := service.GetOrg(orgId, org)
+	ok := service.GetIdOrAid(orgId, org)
 	if !ok || org.Deleted == 1 {
 		c.String(404, "not found org")
 		return
@@ -215,7 +215,7 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 
 	if orgId != "" {
 		org := &model.TOrg{}
-		ok := service.GetOrg(orgId, org)
+		ok := service.GetIdOrAid(orgId, org)
 		if ok {
 			top := &model.TOrgPipe{
 				OrgId:   org.Id,

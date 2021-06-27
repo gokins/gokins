@@ -24,6 +24,7 @@ func (c *OrgController) Routes(g gin.IRoutes) {
 	g.POST("/list", util.GinReqParseJson(c.list))
 	g.POST("/new", util.GinReqParseJson(c.new))
 	g.POST("/info", util.GinReqParseJson(c.info))
+	g.POST("/save", util.GinReqParseJson(c.save))
 }
 
 func (OrgController) list(c *gin.Context, m *hbtp.Map) {
@@ -98,10 +99,62 @@ func (OrgController) info(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	org := &models.TOrg{}
-	ok := service.GetOrg(id, org)
+	ok := service.GetIdOrAid(id, org)
 	if !ok || org.Deleted == 1 {
 		c.String(404, "not found org")
 		return
 	}
-	c.JSON(200, org)
+	usr := &models.TUser{}
+	ok = service.GetIdOrAid(org.Uid, usr)
+	if !ok {
+		c.String(404, "not found user?")
+		return
+	}
+	c.JSON(200, hbtp.Map{
+		"org":  org,
+		"user": usr,
+	})
+}
+func (OrgController) save(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	name := m.GetString("name")
+	desc := m.GetString("desc")
+	pub := m.GetBool("public")
+	if name == "" {
+		c.String(500, "param err")
+		return
+	}
+	org := &model.TOrg{}
+	ok := service.GetIdOrAid(id, org)
+	if !ok || org.Deleted == 1 {
+		c.String(404, "not found org")
+		return
+	}
+	usr := service.GetMidLgUser(c)
+	if org.Uid != usr.Id {
+		urg := &model.TUserOrg{}
+		ok, _ = comm.Db.Where("uid=? and org_id=?", usr.Id, org.Id).Get(urg)
+		if !ok || urg.PermAdm != 1 {
+			c.String(405, "no permission")
+			return
+		}
+	}
+	ne := &model.TOrg{
+		Name:    name,
+		Desc:    desc,
+		Updated: time.Now(),
+	}
+	if pub {
+		ne.Public = 1
+	}
+	_, err := comm.Db.Cols("name", "desc", "public", "updated").
+		Where("id=?", org.Id).Update(ne)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.JSON(200, &bean.IdsRes{
+		Id:  ne.Id,
+		Aid: ne.Aid,
+	})
 }
