@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/model"
@@ -60,4 +59,44 @@ func CurrUserCache(c *gin.Context) (*model.TUser, bool) {
 		return nil, false
 	}
 	return GetUserCache(uids)
+}
+func IsAdmin(usr *model.TUser) bool {
+	return usr.Id == "admin"
+}
+func IsOrgAdmin(uid, orgId string) bool {
+	usero, ok := GetUserOrg(uid, orgId)
+	if !ok {
+		return false
+	}
+	return usero.PermAdm != 0
+}
+func GetUsePermRwr(uid, orgId string) int {
+	usero, ok := GetUserOrg(uid, orgId)
+	if !ok {
+		return 0
+	}
+	return usero.PermRw
+}
+func HasOrgExec(uid, orgId string) bool {
+	usero, ok := GetUserOrg(uid, orgId)
+	if !ok {
+		return false
+	}
+	return usero.PermExec != 0
+}
+func GetUserOrg(uid, orgId string) (*model.TUserOrg, bool) {
+	torg := &model.TOrg{}
+	ok := GetIdOrAid(orgId, torg)
+	if !ok {
+		return nil, false
+	}
+	usero := &model.TUserOrg{}
+	get, err := comm.Db.Where("uid =? and org_id =?", uid, torg.Id).Get(usero)
+	if err != nil {
+		logrus.Debugf("HasOrgExec db err:%v", err)
+	}
+	if !get {
+		return nil, false
+	}
+	return usero, true
 }
