@@ -34,6 +34,7 @@ func regApi() {
 	}
 	util.GinRegController(comm.WebEgn, &route.ApiController{})
 	util.GinRegController(comm.WebEgn, &route.LoginController{})
+	util.GinRegController(comm.WebEgn, &route.UserController{})
 	util.GinRegController(comm.WebEgn, &route.OrgController{})
 	util.GinRegController(comm.WebEgn, &route.PipelineController{})
 }

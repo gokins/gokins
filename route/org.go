@@ -1,6 +1,7 @@
 package route
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +25,10 @@ func (c *OrgController) Routes(g gin.IRoutes) {
 	g.POST("/list", util.GinReqParseJson(c.list))
 	g.POST("/new", util.GinReqParseJson(c.new))
 	g.POST("/info", util.GinReqParseJson(c.info))
+	g.POST("/users", util.GinReqParseJson(c.users))
 	g.POST("/save", util.GinReqParseJson(c.save))
+	g.POST("/user/edit", util.GinReqParseJson(c.userEdit))
+	g.POST("/user/rm", util.GinReqParseJson(c.userRm))
 }
 
 func (OrgController) list(c *gin.Context, m *hbtp.Map) {
@@ -110,9 +114,50 @@ func (OrgController) info(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "not found user?")
 		return
 	}
+
 	c.JSON(200, hbtp.Map{
 		"org":  org,
 		"user": usr,
+	})
+}
+func (OrgController) users(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	if id == "" {
+		c.String(500, "param err")
+		return
+	}
+	org := &models.TOrg{}
+	ok := service.GetIdOrAid(id, org)
+	if !ok || org.Deleted == 1 {
+		c.String(404, "not found org")
+		return
+	}
+	var usrs []*models.TUserOrgInfo
+	if comm.IsMySQL {
+		ses := comm.Db.SQL(`
+		select usr.*,urg.perm_adm,urg.perm_rw,urg.perm_exec,urg.created as join_time from t_user usr
+		JOIN t_user_org urg ON urg.org_id=?
+		where usr.id=urg.uid
+		ORDER BY urg.created ASC
+		`, org.Id)
+		err := ses.Find(&usrs)
+		if err != nil {
+			c.String(500, "db err:"+err.Error())
+			return
+		}
+	}
+	var usrsAdm []*models.TUserOrgInfo
+	var usrsOtr []*models.TUserOrgInfo
+	for _, v := range usrs {
+		if v.PermAdm == 1 {
+			usrsAdm = append(usrsAdm, v)
+		} else {
+			usrsOtr = append(usrsOtr, v)
+		}
+	}
+	c.JSON(200, hbtp.Map{
+		"adms": usrsAdm,
+		"usrs": usrsOtr,
 	})
 }
 func (OrgController) save(c *gin.Context, m *hbtp.Map) {
@@ -157,4 +202,108 @@ func (OrgController) save(c *gin.Context, m *hbtp.Map) {
 		Id:  ne.Id,
 		Aid: ne.Aid,
 	})
+}
+func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	uid := m.GetString("uid")
+	adm := m.GetBool("adm")
+	rw := m.GetBool("rw")
+	ex := m.GetBool("ex")
+	isadd := m.GetBool("add")
+	org := &model.TOrg{}
+	ok := service.GetIdOrAid(id, org)
+	if !ok || org.Deleted == 1 {
+		c.String(404, "not found org")
+		return
+	}
+	usr := &models.TUser{}
+	ok = service.GetIdOrAid(uid, usr)
+	if !ok {
+		c.String(404, "not found user")
+		return
+	}
+	var err error
+	ne := &model.TUserOrg{}
+	isup, _ := comm.Db.Where("uid=? and org_id=?", usr.Id, org.Id).Get(ne)
+	lgusr := service.GetMidLgUser(c)
+	if adm {
+		if org.Uid != lgusr.Id {
+			c.String(405, "no permission")
+			return
+		}
+		ne.PermAdm = 1
+	} else {
+		if org.Uid != lgusr.Id {
+			urg := &model.TUserOrg{}
+			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
+			if !ok || urg.PermAdm != 1 {
+				c.String(405, "no permission")
+				return
+			}
+		}
+		ne.PermAdm = 0
+	}
+	if !isadd {
+		if rw {
+			ne.PermRw = 1
+		} else {
+			ne.PermRw = 0
+		}
+		if ex {
+			ne.PermExec = 1
+		} else {
+			ne.PermExec = 0
+		}
+	}
+	if isup {
+		_, err = comm.Db.Cols("perm_adm", "perm_rw", "perm_exec").Where("aid=?", ne.Aid).Update(ne)
+	} else {
+		ne.Uid = usr.Id
+		ne.OrgId = org.Id
+		ne.Created = time.Now()
+		_, err = comm.Db.InsertOne(ne)
+	}
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, fmt.Sprintf("%d", ne.Aid))
+}
+
+func (OrgController) userRm(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	uid := m.GetString("uid")
+	org := &model.TOrg{}
+	ok := service.GetIdOrAid(id, org)
+	if !ok || org.Deleted == 1 {
+		c.String(404, "not found org")
+		return
+	}
+	usr := &models.TUser{}
+	ok = service.GetIdOrAid(uid, usr)
+	if !ok {
+		c.String(404, "not found user")
+		return
+	}
+	ne := &model.TUserOrg{}
+	ok, _ = comm.Db.Where("uid=? and org_id=?", usr.Id, org.Id).Get(ne)
+	if !ok {
+		c.String(404, "not found user org")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	if org.Uid != lgusr.Id {
+		urg := &model.TUserOrg{}
+		ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
+		if !ok || urg.PermAdm != 1 {
+			c.String(405, "no permission")
+			return
+		}
+	}
+	_, err := comm.Db.Where("aid=?", ne.Aid).Delete(ne)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, fmt.Sprintf("%d", ne.Aid))
 }
