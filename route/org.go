@@ -29,6 +29,8 @@ func (c *OrgController) Routes(g gin.IRoutes) {
 	g.POST("/save", util.GinReqParseJson(c.save))
 	g.POST("/user/edit", util.GinReqParseJson(c.userEdit))
 	g.POST("/user/rm", util.GinReqParseJson(c.userRm))
+	g.POST("/pipe/add", util.GinReqParseJson(c.pipeAdd))
+	g.POST("/pipe/rm", util.GinReqParseJson(c.pipeRm))
 }
 
 func (OrgController) list(c *gin.Context, m *hbtp.Map) {
@@ -39,6 +41,7 @@ func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 
 	var err error
 	var page *bean.Page
+	lgusr := service.GetMidLgUser(c)
 	if comm.IsMySQL {
 		gen := &bean.PageGen{
 			CountCols: "org.id",
@@ -47,9 +50,15 @@ func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 		gen.SQL = `
 		select {{select}} from t_org org
 		LEFT JOIN t_user_org urg on urg.uid=?
-		where deleted!=1
+		where org.deleted!=1
 		and (org.uid=? or org.id=urg.org_id)
 		`
+		if lgusr.Id == "admin" {
+			gen.SQL = `
+			select {{select}} from t_org org
+			where org.deleted!=1
+			`
+		}
 		gen.Args = append(gen.Args, usr.Id)
 		gen.Args = append(gen.Args, usr.Id)
 		if q != "" {
@@ -175,13 +184,15 @@ func (OrgController) save(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "not found org")
 		return
 	}
-	usr := service.GetMidLgUser(c)
-	if org.Uid != usr.Id {
-		urg := &model.TUserOrg{}
-		ok, _ = comm.Db.Where("uid=? and org_id=?", usr.Id, org.Id).Get(urg)
-		if !ok || urg.PermAdm != 1 {
-			c.String(405, "no permission")
-			return
+	lgusr := service.GetMidLgUser(c)
+	if lgusr.Id != "admin" {
+		if org.Uid != lgusr.Id {
+			urg := &model.TUserOrg{}
+			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
+			if !ok || urg.PermAdm != 1 {
+				c.String(405, "no permission")
+				return
+			}
 		}
 	}
 	ne := &model.TOrg{
@@ -230,22 +241,24 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 		c.String(511, "can't add yourself")
 		return
 	}
-	if adm {
-		if org.Uid != lgusr.Id {
-			c.String(405, "no permission")
-			return
-		}
-		ne.PermAdm = 1
-	} else {
-		if org.Uid != lgusr.Id {
-			urg := &model.TUserOrg{}
-			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
-			if !ok || urg.PermAdm != 1 {
+	if lgusr.Id != "admin" {
+		if adm {
+			if org.Uid != lgusr.Id {
 				c.String(405, "no permission")
 				return
 			}
+			ne.PermAdm = 1
+		} else {
+			if org.Uid != lgusr.Id {
+				urg := &model.TUserOrg{}
+				ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
+				if !ok || urg.PermAdm != 1 {
+					c.String(405, "no permission")
+					return
+				}
+			}
+			ne.PermAdm = 0
 		}
-		ne.PermAdm = 0
 	}
 	if !isadd {
 		if rw {
@@ -296,15 +309,83 @@ func (OrgController) userRm(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	lgusr := service.GetMidLgUser(c)
-	if org.Uid != lgusr.Id {
-		urg := &model.TUserOrg{}
-		ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
-		if !ok || urg.PermAdm != 1 {
-			c.String(405, "no permission")
-			return
+	if lgusr.Id != "admin" {
+		if org.Uid != lgusr.Id {
+			urg := &model.TUserOrg{}
+			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
+			if !ok || urg.PermAdm != 1 {
+				c.String(405, "no permission")
+				return
+			}
 		}
 	}
 	_, err := comm.Db.Where("aid=?", ne.Aid).Delete(ne)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, fmt.Sprintf("%d", ne.Aid))
+}
+
+func (OrgController) pipeAdd(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	pipeId := m.GetString("pipeId")
+	org := &model.TOrg{}
+	ok := service.GetIdOrAid(id, org)
+	if !ok || org.Deleted == 1 {
+		c.String(404, "not found org")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	if lgusr.Id != "admin" {
+		if org.Uid != lgusr.Id {
+			urg := &model.TUserOrg{}
+			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
+			if !ok || urg.PermAdm != 1 {
+				c.String(405, "no permission")
+				return
+			}
+		}
+	}
+	ne := &model.TOrgPipe{}
+	ok, _ = comm.Db.Where("org_id=? and pipe_id=?", org.Id, pipeId).Get(ne)
+	if ok {
+		c.String(511, "pipeline exist")
+		return
+	}
+	ne.OrgId = org.Id
+	ne.PipeId = pipeId
+	ne.Created = time.Now()
+	_, err := comm.Db.InsertOne(ne)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, fmt.Sprintf("%d", ne.Aid))
+}
+
+func (OrgController) pipeRm(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	pipeId := m.GetString("pipeId")
+	org := &model.TOrg{}
+	ok := service.GetIdOrAid(id, org)
+	if !ok || org.Deleted == 1 {
+		c.String(404, "not found org")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	if lgusr.Id != "admin" {
+		if org.Uid != lgusr.Id {
+			urg := &model.TUserOrg{}
+			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
+			if !ok || urg.PermAdm != 1 {
+				c.String(405, "no permission")
+				return
+			}
+		}
+	}
+	ne := &model.TOrgPipe{}
+	_, err := comm.Db.Where("org_id=? and pipe_id=?", org.Id, pipeId).Delete(ne)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
