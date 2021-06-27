@@ -35,7 +35,6 @@ func (c *OrgController) Routes(g gin.IRoutes) {
 
 func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 	var ls []*models.TOrgInfo
-	usr := service.GetMidLgUser(c)
 	q := m.GetString("q")
 	pg, _ := m.GetInt("page")
 
@@ -45,22 +44,23 @@ func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 	if comm.IsMySQL {
 		gen := &bean.PageGen{
 			CountCols: "org.id",
-			FindCols:  "org.*,urg.perm_adm,urg.perm_rw,urg.perm_exec",
+			FindCols:  "org.*",
 		}
 		gen.SQL = `
 		select {{select}} from t_org org
-		LEFT JOIN t_user_org urg on urg.uid=?
 		where org.deleted!=1
-		and (org.uid=? or org.id=urg.org_id)
 		`
-		if lgusr.Id == "admin" {
+		if lgusr.Id != "admin" {
+			gen.FindCols = "org.*,urg.perm_adm,urg.perm_rw,urg.perm_exec"
 			gen.SQL = `
 			select {{select}} from t_org org
+			LEFT JOIN t_user_org urg on urg.uid=?
 			where org.deleted!=1
+			and (org.uid=? or org.id=urg.org_id)
 			`
+			gen.Args = append(gen.Args, lgusr.Id)
+			gen.Args = append(gen.Args, lgusr.Id)
 		}
-		gen.Args = append(gen.Args, usr.Id)
-		gen.Args = append(gen.Args, usr.Id)
 		if q != "" {
 			gen.SQL += "\nAND org.name like ? "
 			gen.Args = append(gen.Args, "%"+q+"%")
@@ -238,7 +238,7 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 	isup, _ := comm.Db.Where("uid=? and org_id=?", usr.Id, org.Id).Get(ne)
 	lgusr := service.GetMidLgUser(c)
 	if usr.Id == lgusr.Id {
-		c.String(511, "can't add yourself")
+		c.String(511, "can't edit yourself")
 		return
 	}
 	if lgusr.Id != "admin" {
@@ -247,7 +247,6 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 				c.String(405, "no permission")
 				return
 			}
-			ne.PermAdm = 1
 		} else {
 			if org.Uid != lgusr.Id {
 				urg := &model.TUserOrg{}
@@ -257,8 +256,12 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 					return
 				}
 			}
-			ne.PermAdm = 0
 		}
+	}
+	if adm {
+		ne.PermAdm = 1
+	} else {
+		ne.PermAdm = 0
 	}
 	if !isadd {
 		if rw {
@@ -309,6 +312,10 @@ func (OrgController) userRm(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	lgusr := service.GetMidLgUser(c)
+	if usr.Id == lgusr.Id {
+		c.String(511, "can't remove yourself")
+		return
+	}
 	if lgusr.Id != "admin" {
 		if org.Uid != lgusr.Id {
 			urg := &model.TUserOrg{}
