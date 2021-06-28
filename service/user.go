@@ -110,7 +110,10 @@ type OrgPerm struct {
 func NewOrgPerm(lgusr *model.TUser, orgId string) *OrgPerm {
 	c := &OrgPerm{lgusr: lgusr}
 	org := &model.TOrg{}
-	ok := GetIdOrAid(orgId, org)
+	ok := false
+	if orgId != "" {
+		ok = GetIdOrAid(orgId, org)
+	}
 	if ok && org.Deleted != 1 {
 		c.org = org
 		usero := &model.TUserOrg{}
@@ -210,7 +213,10 @@ type PipePerm struct {
 func NewPipePerm(lgusr *model.TUser, pipeId string) *PipePerm {
 	c := &PipePerm{lgusr: lgusr}
 	pipe := &model.TPipeline{}
-	ok, _ := comm.Db.Where("id=?", pipeId).Get(pipe)
+	ok := false
+	if pipeId != "" {
+		ok, _ = comm.Db.Where("id=?", pipeId).Get(pipe)
+	}
 	if ok {
 		c.pipe = pipe
 		if comm.IsMySQL && lgusr != nil {
