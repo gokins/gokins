@@ -117,6 +117,11 @@ func (OrgController) info(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "not found org")
 		return
 	}
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), org.Id)
+	if !perm.CanRead() {
+		c.String(405, "no permission")
+		return
+	}
 	usr := &models.TUser{}
 	ok = service.GetIdOrAid(org.Uid, usr)
 	if !ok {

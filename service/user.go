@@ -147,13 +147,25 @@ func (c *OrgPerm) IsOrgAdmin() bool {
 	}
 	return false
 }
-func (c *OrgPerm) CanOrgRw() bool {
+func (c *OrgPerm) CanRead() bool {
+	if c.IsAdmin() || c.IsOrgPublic() || c.IsOrgOwner() || c.IsOrgAdmin() {
+		return true
+	}
+	return c.usrOrg != nil
+}
+func (c *OrgPerm) CanWrite() bool {
+	if c.IsAdmin() || c.IsOrgOwner() || c.IsOrgAdmin() {
+		return true
+	}
 	if c.usrOrg != nil && c.usrOrg.PermRw == 1 {
 		return true
 	}
 	return false
 }
-func (c *OrgPerm) CanOrgExec() bool {
+func (c *OrgPerm) CanExec() bool {
+	if c.IsAdmin() || c.IsOrgOwner() || c.IsOrgAdmin() {
+		return true
+	}
 	if c.usrOrg != nil && c.usrOrg.PermExec == 1 {
 		return true
 	}
@@ -173,4 +185,100 @@ func (c *OrgPerm) Org() *model.TOrg {
 //UserOrg maybe null
 func (c *OrgPerm) UserOrg() *model.TUserOrg {
 	return c.usrOrg
+}
+
+type UserPipeOrgPerm struct {
+	OrgId     string `xorm:"org_id"`
+	orgName   string `xorm:"org_name"`
+	orgUid    string `xorm:"org_uid"`
+	orgPublic int    `xorm:"org_public"`
+	OpPublic  int    `xorm:"op_public"`
+	CurUid    string `xorm:"cur_uid"`
+	PermAdm   int    `xorm:"perm_adm"`
+	PermRw    int    `xorm:"perm_rw"`
+	PermExec  int    `xorm:"perm_exec"`
+}
+type PipePerm struct {
+	lgusr *model.TUser
+	pipe  *model.TPipeline
+	perms []*UserPipeOrgPerm
+}
+
+func NewPipePerm(lgusr *model.TUser, pipeId string) *PipePerm {
+	c := &PipePerm{lgusr: lgusr}
+	pipe := &model.TPipeline{}
+	ok, _ := comm.Db.Where("id=?", pipeId).Get(pipe)
+	if ok {
+		c.pipe = pipe
+		if comm.IsMySQL && lgusr != nil {
+			ses := comm.Db.SQL(`
+select org.id as org_id,org.name as org_name,org.uid as org_uid,org.public as org_public,op.public as op_public,
+uo.uid as cur_uid,uo.perm_adm,uo.perm_rw,uo.perm_exec 
+from t_org org
+JOIN t_org_pipe op ON op.pipe_id=?
+LEFT JOIN t_user_org uo ON uo.uid=? and org.id=uo.org_id
+where org.deleted!=1 
+and (org.id=op.org_id)
+			`, pipe.Id, lgusr.Id)
+			ses.Find(&c.perms)
+		}
+	}
+	return c
+}
+func (c *PipePerm) IsAdmin() bool {
+	if c.lgusr != nil && IsAdmin(c.lgusr) {
+		return true
+	}
+	return false
+}
+func (c *PipePerm) IsPipeOwner() bool {
+	if c.pipe != nil && c.lgusr != nil && c.pipe.CreateUserId == c.lgusr.Id {
+		return true
+	}
+	return false
+}
+func (c *PipePerm) CanRead() bool {
+	if c.IsAdmin() || c.IsPipeOwner() {
+		return true
+	}
+	for _, v := range c.perms {
+		if c.lgusr != nil && v.orgUid == c.lgusr.Id {
+			return true
+		}
+		if v.orgPublic == 1 {
+			return true
+		}
+		if v.CurUid != "" {
+			return true
+		}
+	}
+	return false
+}
+func (c *PipePerm) CanWrite() bool {
+	if c.IsAdmin() || c.IsPipeOwner() {
+		return true
+	}
+	for _, v := range c.perms {
+		if c.lgusr != nil && v.orgUid == c.lgusr.Id {
+			return true
+		}
+		if v.CurUid != "" && (v.PermAdm == 1 || v.PermRw == 1) {
+			return true
+		}
+	}
+	return false
+}
+func (c *PipePerm) CanExec() bool {
+	if c.IsAdmin() || c.IsPipeOwner() {
+		return true
+	}
+	for _, v := range c.perms {
+		if c.lgusr != nil && v.orgUid == c.lgusr.Id {
+			return true
+		}
+		if v.CurUid != "" && (v.PermAdm == 1 || v.PermExec == 1) {
+			return true
+		}
+	}
+	return false
 }
