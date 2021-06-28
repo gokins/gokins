@@ -50,7 +50,7 @@ func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 		select {{select}} from t_org org
 		where org.deleted!=1
 		`
-		if lgusr.Id != "admin" {
+		if !service.IsAdmin(lgusr) {
 			gen.FindCols = "org.*,urg.perm_adm,urg.perm_rw,urg.perm_exec"
 			gen.SQL = `
 			select {{select}} from t_org org
@@ -185,7 +185,7 @@ func (OrgController) save(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	lgusr := service.GetMidLgUser(c)
-	if lgusr.Id != "admin" {
+	if !service.IsAdmin(lgusr) {
 		if org.Uid != lgusr.Id {
 			urg := &model.TUserOrg{}
 			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
@@ -241,7 +241,7 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 		c.String(511, "can't edit yourself")
 		return
 	}
-	if lgusr.Id != "admin" {
+	if !service.IsAdmin(lgusr) {
 		if adm {
 			if org.Uid != lgusr.Id {
 				c.String(405, "no permission")
@@ -316,7 +316,7 @@ func (OrgController) userRm(c *gin.Context, m *hbtp.Map) {
 		c.String(511, "can't remove yourself")
 		return
 	}
-	if lgusr.Id != "admin" {
+	if !service.IsAdmin(lgusr) {
 		if org.Uid != lgusr.Id {
 			urg := &model.TUserOrg{}
 			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
@@ -344,7 +344,7 @@ func (OrgController) pipeAdd(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	lgusr := service.GetMidLgUser(c)
-	if lgusr.Id != "admin" {
+	if !service.IsAdmin(lgusr) {
 		if org.Uid != lgusr.Id {
 			urg := &model.TUserOrg{}
 			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
@@ -381,7 +381,7 @@ func (OrgController) pipeRm(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	lgusr := service.GetMidLgUser(c)
-	if lgusr.Id != "admin" {
+	if !service.IsAdmin(lgusr) {
 		if org.Uid != lgusr.Id {
 			urg := &model.TUserOrg{}
 			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
