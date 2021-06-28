@@ -227,7 +227,7 @@ from t_org org
 JOIN t_org_pipe op ON op.pipe_id=?
 LEFT JOIN t_user_org uo ON uo.uid=? and org.id=uo.org_id
 where org.deleted!=1 
-and (org.id=op.org_id)
+and org.id=op.org_id
 			`, pipe.Id, lgusr.Id)
 			ses.Find(&c.perms)
 		}
