@@ -39,13 +39,16 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	org := &model.TOrg{}
-	ok := service.GetIdOrAid(orgId, org)
-	if !ok || org.Deleted == 1 {
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewOrgPerm(lgusr, orgId)
+	if perm.Org() == nil || perm.Org().Deleted == 1 {
 		c.String(404, "not found org")
 		return
 	}
-	lgusr := service.GetMidLgUser(c)
+	if !perm.CanRead() {
+		c.String(405, "No Auth")
+		return
+	}
 	ls := make([]*model.TPipeline, 0)
 	var err error
 	var page *bean.Page
@@ -54,57 +57,12 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 			CountCols: "top.pipe_id",
 			FindCols:  "pipe.*",
 		}
-		if !service.IsAdmin(lgusr) {
-			gen.SQL = `
+		gen.SQL = `
 			select {{select}} from t_pipeline pipe 
 			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id 
 			where top.org_id = ? 
 		    `
-			gen.Args = append(gen.Args, org.Id)
-			if q != "" {
-				gen.SQL += "\nAND pipe.name like ? "
-				gen.Args = append(gen.Args, "%"+q+"%")
-			}
-			gen.SQL += "\nORDER BY pipe.id DESC"
-			page, err = comm.FindPages(gen, &ls, pg, 20)
-			if err != nil {
-				c.String(500, "db err:"+err.Error())
-				return
-			}
-			c.JSON(http.StatusOK, page)
-			return
-		}
-
-		usero := &model.TUserOrg{}
-		get, err := comm.Db.Where("uid =? and org_id =?", lgusr.Id, org.Id).Get(usero)
-		if err != nil {
-			c.String(500, "db err:"+err.Error())
-			return
-		}
-		if !get {
-			c.JSON(http.StatusOK, gin.H{
-				"data": ls,
-			})
-			return
-		}
-		if usero.PermAdm != 0 {
-			gen.SQL = `
-			select {{select}} from t_pipeline pipe 
-			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id 
-			where top.org_id = ?  
-		    `
-		} else if usero.PermRw != 0 {
-			gen.SQL = `
-			select {{select}} from t_pipeline pipe
-			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id
-			where (top.org_id = ?  or t_org_pipe.public != 0 )
-		    `
-		} else {
-			c.JSON(http.StatusOK, page)
-			return
-		}
-
-		gen.Args = append(gen.Args, org.Id)
+		gen.Args = append(gen.Args, perm.Org().Id)
 		if q != "" {
 			gen.SQL += "\nAND pipe.name like ? "
 			gen.Args = append(gen.Args, "%"+q+"%")
@@ -131,7 +89,7 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 			session.Where("name = ?", q)
 		}
 		session.Desc("id")
-		if usr.Id != "admin" {
+		if !service.IsAdmin(usr) {
 			session.Where("create_user_id = ?", usr.Id)
 		}
 		page, err = comm.FindPage(session, &ls, pg)
@@ -140,7 +98,6 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 			return
 		}
 	}
-
 	c.JSON(http.StatusOK, page)
 }
 
@@ -148,26 +105,16 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 	name := m.GetString("name")
 	content := m.GetString("content")
 	pipelineId := m.GetString("pipelineId")
-	orgId := m.GetString("orgId")
 	if pipelineId == "" {
 		c.String(500, "param err")
 		return
 	}
 	usr := service.GetMidLgUser(c)
-	if !service.IsAdmin(usr) {
-		if orgId != "" && !service.IsOrgAdmin(usr.Id, orgId) && !(service.GetUsePermRwr(usr.Id, orgId) > 1) {
-			c.String(405, "No Auth")
-			return
-		} else {
-			tpipe := &model.TPipeline{}
-			ok, _ := comm.Db.Where("id=? and create_user_id = ?", pipelineId, usr.Id).Get(tpipe)
-			if !ok {
-				c.String(405, "No Auth")
-				return
-			}
-		}
+	perm := service.NewPipePerm(usr, pipelineId)
+	if !perm.CanWrite() {
+		c.String(405, "No Auth")
+		return
 	}
-
 	y := &bean.Pipeline{}
 	err := json.Unmarshal([]byte(content), y)
 	err = y.Check()
@@ -218,11 +165,10 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	usr := service.GetMidLgUser(c)
-	if !service.IsAdmin(usr) {
-		if orgId != "" && !service.IsOrgAdmin(usr.Id, orgId) && !(service.GetUsePermRwr(usr.Id, orgId) > 1) {
-			c.String(405, "No Auth")
-			return
-		}
+	perm := service.NewOrgPerm(usr, orgId)
+	if perm.Org() != nil && !perm.CanWrite() {
+		c.String(405, "No Auth")
+		return
 	}
 	pipeline := &model.TPipeline{
 		Id:           utils.NewXid(),
@@ -238,22 +184,19 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 
-	if orgId != "" {
-		org := &model.TOrg{}
-		ok := service.GetIdOrAid(orgId, org)
-		if ok {
-			top := &model.TOrgPipe{
-				OrgId:   org.Id,
-				PipeId:  pipeline.Id,
-				Created: time.Now(),
-				Public:  0,
-			}
-			_, err = comm.Db.InsertOne(top)
-			if err != nil {
-				c.String(500, "db err:"+err.Error())
-				return
-			}
+	if perm.Org() != nil {
+		top := &model.TOrgPipe{
+			OrgId:   perm.Org().Id,
+			PipeId:  pipeline.Id,
+			Created: time.Now(),
+			Public:  0,
 		}
+		_, err = comm.Db.InsertOne(top)
+		if err != nil {
+			c.String(500, "db err:"+err.Error())
+			return
+		}
+
 	}
 	c.JSON(http.StatusOK, "ok")
 }
@@ -262,6 +205,12 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 	id := m.GetString("id")
 	if id == "" {
 		c.String(500, "param err")
+		return
+	}
+	usr := service.GetMidLgUser(c)
+	perm := service.NewPipePerm(usr, id)
+	if !perm.CanRead() {
+		c.String(405, "No Auth")
 		return
 	}
 	pipe := &model.TPipeline{}
@@ -276,47 +225,27 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 
 func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
-	orgId := m.GetString("orgId")
 	repoId := m.GetString("repoId")
 	if pipelineId == "" {
 		c.String(500, "param err")
 		return
 	}
-
 	usr := service.GetMidLgUser(c)
-	tpipe := &model.TPipeline{}
-	ok, _ := comm.Db.Where("id=? and create_user_id = ?", pipelineId, usr.Id).Get(tpipe)
-	if service.IsAdmin(usr) || ok {
-		err := service.Run(pipelineId, repoId)
-		if err != nil {
-			c.String(500, err.Error())
-			return
-		}
-		c.JSON(http.StatusOK, "ok")
-		return
-	}
-
-	if orgId == "" {
+	perm := service.NewPipePerm(usr, pipelineId)
+	if !perm.CanExec() {
 		c.String(405, "No Auth")
 		return
 	}
-
-	if !service.IsOrgAdmin(usr.Id, orgId) && !service.HasOrgExec(usr.Id, orgId) {
-		c.String(405, "No Auth")
-		return
-	}
-
 	err := service.Run(pipelineId, repoId)
 	if err != nil {
 		c.String(500, err.Error())
 		return
 	}
-	c.JSON(200, tpipe)
+	c.JSON(200, "ok")
 }
 
 func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
-	orgId := m.GetString("orgId")
 	pg, _ := m.GetInt("page")
 
 	usr := service.GetMidLgUser(c)
@@ -324,35 +253,38 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	var err error
 	if pipelineId != "" {
-		tpipe := &model.TPipeline{}
-		ok, _ := comm.Db.Where("id=? and create_user_id = ?", pipelineId, usr.Id).Get(tpipe)
-		if service.IsAdmin(usr) || ok || service.IsOrgAdmin(usr.Id, orgId) {
-			if comm.IsMySQL {
-				where := comm.Db.Where("pipeline_id = ? and deleted != 1", pipelineId).Desc("id")
-				page, err = comm.FindPage(where, &ls, pg)
-				if err != nil {
-					c.String(500, "db err:"+err.Error())
-					return
-				}
-			}
-		} else {
+		perm := service.NewPipePerm(usr, pipelineId)
+		if !perm.CanRead() {
 			c.String(405, "No Auth")
 			return
 		}
-	} else {
-		//TODO 权限逻辑
-		if service.IsAdmin(usr) {
-			if comm.IsMySQL {
-				where := comm.Db.Where("deleted != 1").Desc("id")
-				page, err = comm.FindPage(where, &ls, pg)
-			}
-		}
-
-		tpipeIds := []*string{}
-		err = comm.Db.Table(&model.TPipeline{}).Cols("id").Where("create_user_id = ?", usr.Id).Find(&tpipeIds)
+		where := comm.Db.Where("pipeline_id = ? and deleted != 1", pipelineId).Desc("id")
+		page, err = comm.FindPage(where, &ls, pg)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
 			return
+		}
+	} else {
+		if service.IsAdmin(usr) {
+			where := comm.Db.Where(" deleted != 1").Desc("id")
+			page, err = comm.FindPage(where, &ls, pg)
+			if err != nil {
+				c.String(500, "db err:"+err.Error())
+				return
+			}
+		} else {
+			tpipeIds := []*string{}
+			err = comm.Db.Table(&model.TPipeline{}).Cols("id").Where("create_user_id = ?", usr.Id).Find(&tpipeIds)
+			if err != nil {
+				c.String(500, "db err:"+err.Error())
+				return
+			}
+			where := comm.Db.In("id", tpipeIds).Desc("id")
+			page, err = comm.FindPage(where, &ls, pg)
+			if err != nil {
+				c.String(500, "db err:"+err.Error())
+				return
+			}
 		}
 	}
 
