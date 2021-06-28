@@ -140,9 +140,12 @@ func (OrgController) users(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	org := &models.TOrg{}
-	ok := service.GetIdOrAid(id, org)
-	if !ok || org.Deleted == 1 {
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), id)
+	if !perm.CanRead() {
+		c.String(405, "no permission")
+		return
+	}
+	if perm.Org() == nil || perm.Org().Deleted == 1 {
 		c.String(404, "not found org")
 		return
 	}
@@ -153,7 +156,7 @@ func (OrgController) users(c *gin.Context, m *hbtp.Map) {
 		JOIN t_user_org urg ON urg.org_id=?
 		where usr.id=urg.uid
 		ORDER BY urg.created ASC
-		`, org.Id)
+		`, perm.Org().Id)
 		err := ses.Find(&usrs)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
@@ -183,22 +186,14 @@ func (OrgController) save(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	org := &model.TOrg{}
-	ok := service.GetIdOrAid(id, org)
-	if !ok || org.Deleted == 1 {
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), id)
+	if perm.Org() == nil || perm.Org().Deleted == 1 {
 		c.String(404, "not found org")
 		return
 	}
-	lgusr := service.GetMidLgUser(c)
-	if !service.IsAdmin(lgusr) {
-		if org.Uid != lgusr.Id {
-			urg := &model.TUserOrg{}
-			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
-			if !ok || urg.PermAdm != 1 {
-				c.String(405, "no permission")
-				return
-			}
-		}
+	if !perm.IsOrgAdmin() {
+		c.String(405, "no permission")
+		return
 	}
 	ne := &model.TOrg{
 		Name:    name,
@@ -209,7 +204,7 @@ func (OrgController) save(c *gin.Context, m *hbtp.Map) {
 		ne.Public = 1
 	}
 	_, err := comm.Db.Cols("name", "desc", "public", "updated").
-		Where("id=?", org.Id).Update(ne)
+		Where("id=?", perm.Org().Id).Update(ne)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
@@ -226,40 +221,34 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 	rw := m.GetBool("rw")
 	ex := m.GetBool("ex")
 	isadd := m.GetBool("add")
-	org := &model.TOrg{}
-	ok := service.GetIdOrAid(id, org)
-	if !ok || org.Deleted == 1 {
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), id)
+	if perm.Org() == nil || perm.Org().Deleted == 1 {
 		c.String(404, "not found org")
 		return
 	}
 	usr := &models.TUser{}
-	ok = service.GetIdOrAid(uid, usr)
+	ok := service.GetIdOrAid(uid, usr)
 	if !ok {
 		c.String(404, "not found user")
 		return
 	}
 	var err error
 	ne := &model.TUserOrg{}
-	isup, _ := comm.Db.Where("uid=? and org_id=?", usr.Id, org.Id).Get(ne)
-	lgusr := service.GetMidLgUser(c)
-	if usr.Id == lgusr.Id {
+	isup, _ := comm.Db.Where("uid=? and org_id=?", usr.Id, perm.Org().Id).Get(ne)
+	if usr.Id == perm.LgUser().Id {
 		c.String(511, "can't edit yourself")
 		return
 	}
-	if !service.IsAdmin(lgusr) {
+	if !perm.IsAdmin() {
 		if adm {
-			if org.Uid != lgusr.Id {
+			if !perm.IsOrgOwner() {
 				c.String(405, "no permission")
 				return
 			}
 		} else {
-			if org.Uid != lgusr.Id {
-				urg := &model.TUserOrg{}
-				ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
-				if !ok || urg.PermAdm != 1 {
-					c.String(405, "no permission")
-					return
-				}
+			if !perm.IsOrgAdmin() {
+				c.String(405, "no permission")
+				return
 			}
 		}
 	}
@@ -284,7 +273,7 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 		_, err = comm.Db.Cols("perm_adm", "perm_rw", "perm_exec").Where("aid=?", ne.Aid).Update(ne)
 	} else {
 		ne.Uid = usr.Id
-		ne.OrgId = org.Id
+		ne.OrgId = perm.Org().Id
 		ne.Created = time.Now()
 		_, err = comm.Db.InsertOne(ne)
 	}
@@ -298,38 +287,30 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 func (OrgController) userRm(c *gin.Context, m *hbtp.Map) {
 	id := m.GetString("id")
 	uid := m.GetString("uid")
-	org := &model.TOrg{}
-	ok := service.GetIdOrAid(id, org)
-	if !ok || org.Deleted == 1 {
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), id)
+	if perm.Org() == nil || perm.Org().Deleted == 1 {
 		c.String(404, "not found org")
 		return
 	}
 	usr := &models.TUser{}
-	ok = service.GetIdOrAid(uid, usr)
+	ok := service.GetIdOrAid(uid, usr)
 	if !ok {
 		c.String(404, "not found user")
 		return
 	}
 	ne := &model.TUserOrg{}
-	ok, _ = comm.Db.Where("uid=? and org_id=?", usr.Id, org.Id).Get(ne)
+	ok, _ = comm.Db.Where("uid=? and org_id=?", usr.Id, perm.Org().Id).Get(ne)
 	if !ok {
 		c.String(404, "not found user org")
 		return
 	}
-	lgusr := service.GetMidLgUser(c)
-	if usr.Id == lgusr.Id {
+	if usr.Id == perm.LgUser().Id {
 		c.String(511, "can't remove yourself")
 		return
 	}
-	if !service.IsAdmin(lgusr) {
-		if org.Uid != lgusr.Id {
-			urg := &model.TUserOrg{}
-			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
-			if !ok || urg.PermAdm != 1 {
-				c.String(405, "no permission")
-				return
-			}
-		}
+	if !perm.IsOrgAdmin() {
+		c.String(405, "no permission")
+		return
 	}
 	_, err := comm.Db.Where("aid=?", ne.Aid).Delete(ne)
 	if err != nil {
@@ -342,30 +323,22 @@ func (OrgController) userRm(c *gin.Context, m *hbtp.Map) {
 func (OrgController) pipeAdd(c *gin.Context, m *hbtp.Map) {
 	id := m.GetString("id")
 	pipeId := m.GetString("pipeId")
-	org := &model.TOrg{}
-	ok := service.GetIdOrAid(id, org)
-	if !ok || org.Deleted == 1 {
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), id)
+	if perm.Org() == nil || perm.Org().Deleted == 1 {
 		c.String(404, "not found org")
 		return
 	}
-	lgusr := service.GetMidLgUser(c)
-	if !service.IsAdmin(lgusr) {
-		if org.Uid != lgusr.Id {
-			urg := &model.TUserOrg{}
-			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
-			if !ok || urg.PermAdm != 1 {
-				c.String(405, "no permission")
-				return
-			}
-		}
+	if !perm.IsOrgAdmin() {
+		c.String(405, "no permission")
+		return
 	}
 	ne := &model.TOrgPipe{}
-	ok, _ = comm.Db.Where("org_id=? and pipe_id=?", org.Id, pipeId).Get(ne)
+	ok, _ := comm.Db.Where("org_id=? and pipe_id=?", perm.Org().Id, pipeId).Get(ne)
 	if ok {
 		c.String(511, "pipeline exist")
 		return
 	}
-	ne.OrgId = org.Id
+	ne.OrgId = perm.Org().Id
 	ne.PipeId = pipeId
 	ne.Created = time.Now()
 	_, err := comm.Db.InsertOne(ne)
@@ -379,25 +352,17 @@ func (OrgController) pipeAdd(c *gin.Context, m *hbtp.Map) {
 func (OrgController) pipeRm(c *gin.Context, m *hbtp.Map) {
 	id := m.GetString("id")
 	pipeId := m.GetString("pipeId")
-	org := &model.TOrg{}
-	ok := service.GetIdOrAid(id, org)
-	if !ok || org.Deleted == 1 {
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), id)
+	if perm.Org() == nil || perm.Org().Deleted == 1 {
 		c.String(404, "not found org")
 		return
 	}
-	lgusr := service.GetMidLgUser(c)
-	if !service.IsAdmin(lgusr) {
-		if org.Uid != lgusr.Id {
-			urg := &model.TUserOrg{}
-			ok, _ = comm.Db.Where("uid=? and org_id=?", lgusr.Id, org.Id).Get(urg)
-			if !ok || urg.PermAdm != 1 {
-				c.String(405, "no permission")
-				return
-			}
-		}
+	if !perm.IsOrgAdmin() {
+		c.String(405, "no permission")
+		return
 	}
 	ne := &model.TOrgPipe{}
-	_, err := comm.Db.Where("org_id=? and pipe_id=?", org.Id, pipeId).Delete(ne)
+	_, err := comm.Db.Where("org_id=? and pipe_id=?", perm.Org().Id, pipeId).Delete(ne)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return

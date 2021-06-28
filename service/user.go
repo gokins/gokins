@@ -142,19 +142,22 @@ func (c *OrgPerm) IsOrgPublic() bool {
 	return false
 }
 func (c *OrgPerm) IsOrgAdmin() bool {
+	if c.IsAdmin() || c.IsOrgOwner() {
+		return true
+	}
 	if c.usrOrg != nil && c.usrOrg.PermAdm == 1 {
 		return true
 	}
 	return false
 }
 func (c *OrgPerm) CanRead() bool {
-	if c.IsAdmin() || c.IsOrgPublic() || c.IsOrgOwner() || c.IsOrgAdmin() {
+	if c.IsOrgPublic() || c.IsOrgAdmin() {
 		return true
 	}
 	return c.usrOrg != nil
 }
 func (c *OrgPerm) CanWrite() bool {
-	if c.IsAdmin() || c.IsOrgOwner() || c.IsOrgAdmin() {
+	if c.IsOrgAdmin() {
 		return true
 	}
 	if c.usrOrg != nil && c.usrOrg.PermRw == 1 {
@@ -163,7 +166,7 @@ func (c *OrgPerm) CanWrite() bool {
 	return false
 }
 func (c *OrgPerm) CanExec() bool {
-	if c.IsAdmin() || c.IsOrgOwner() || c.IsOrgAdmin() {
+	if c.IsOrgAdmin() {
 		return true
 	}
 	if c.usrOrg != nil && c.usrOrg.PermExec == 1 {

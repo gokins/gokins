@@ -45,7 +45,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "not found org")
 		return
 	}
-	usr := service.GetMidLgUser(c)
+	lgusr := service.GetMidLgUser(c)
 	ls := make([]*model.TPipeline, 0)
 	var err error
 	var page *bean.Page
@@ -54,7 +54,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 			CountCols: "top.pipe_id",
 			FindCols:  "pipe.*",
 		}
-		if usr.Id == "admin" {
+		if !service.IsAdmin(lgusr) {
 			gen.SQL = `
 			select {{select}} from t_pipeline pipe 
 			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id 
@@ -76,7 +76,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		}
 
 		usero := &model.TUserOrg{}
-		get, err := comm.Db.Where("uid =? and org_id =?", usr.Id, org.Id).Get(usero)
+		get, err := comm.Db.Where("uid =? and org_id =?", lgusr.Id, org.Id).Get(usero)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
 			return
