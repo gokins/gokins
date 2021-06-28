@@ -74,6 +74,10 @@ type DependArtifact struct {
 }
 
 func (c *Pipeline) ToJson() ([]byte, error) {
+	c.ConvertCmd()
+	return json.Marshal(c)
+}
+func (c *Pipeline) ConvertCmd() {
 	for _, stage := range c.Stages {
 		for _, step := range stage.Steps {
 			v := step.Commands
@@ -91,8 +95,8 @@ func (c *Pipeline) ToJson() ([]byte, error) {
 			}
 		}
 	}
-	return json.Marshal(c)
 }
+
 func (c *Pipeline) Check() error {
 	stages := make(map[string]map[string]*Step)
 	if c.Stages == nil || len(c.Stages) <= 0 {

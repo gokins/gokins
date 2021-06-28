@@ -28,6 +28,8 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/new", util.GinReqParseJson(c.new))
 	g.POST("/info", util.GinReqParseJson(c.info))
 	g.POST("/save", util.GinReqParseJson(c.save))
+	g.POST("/run", util.GinReqParseJson(c.run))
+	g.POST("/pipelineVersions", util.GinReqParseJson(c.pipelineVersions))
 }
 func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
@@ -146,10 +148,26 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 	name := m.GetString("name")
 	content := m.GetString("content")
 	pipelineId := m.GetString("pipelineId")
+	orgId := m.GetString("orgId")
 	if pipelineId == "" {
 		c.String(500, "param err")
 		return
 	}
+	usr := service.GetMidLgUser(c)
+	if !service.IsAdmin(usr) {
+		if orgId != "" && !service.IsOrgAdmin(usr.Id, orgId) && !(service.GetUsePermRwr(usr.Id, orgId) > 1) {
+			c.String(405, "No Auth")
+			return
+		} else {
+			tpipe := &model.TPipeline{}
+			ok, _ := comm.Db.Where("id=? and create_user_id = ?", pipelineId, usr.Id).Get(tpipe)
+			if !ok {
+				c.String(405, "No Auth")
+				return
+			}
+		}
+	}
+
 	y := &bean.Pipeline{}
 	err := json.Unmarshal([]byte(content), y)
 	err = y.Check()
@@ -172,6 +190,7 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
+	c.JSON(http.StatusOK, "ok")
 }
 
 func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
@@ -199,6 +218,12 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	usr := service.GetMidLgUser(c)
+	if !service.IsAdmin(usr) {
+		if orgId != "" && !service.IsOrgAdmin(usr.Id, orgId) && !(service.GetUsePermRwr(usr.Id, orgId) > 1) {
+			c.String(405, "No Auth")
+			return
+		}
+	}
 	pipeline := &model.TPipeline{
 		Id:           utils.NewXid(),
 		Name:         name,
@@ -247,4 +272,90 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 	}
 
 	c.JSON(200, pipe)
+}
+
+func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
+	pipelineId := m.GetString("pipelineId")
+	orgId := m.GetString("orgId")
+	repoId := m.GetString("repoId")
+	if pipelineId == "" {
+		c.String(500, "param err")
+		return
+	}
+
+	usr := service.GetMidLgUser(c)
+	tpipe := &model.TPipeline{}
+	ok, _ := comm.Db.Where("id=? and create_user_id = ?", pipelineId, usr.Id).Get(tpipe)
+	if service.IsAdmin(usr) || ok {
+		err := service.Run(pipelineId, repoId)
+		if err != nil {
+			c.String(500, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, "ok")
+		return
+	}
+
+	if orgId == "" {
+		c.String(405, "No Auth")
+		return
+	}
+
+	if !service.IsOrgAdmin(usr.Id, orgId) && !service.HasOrgExec(usr.Id, orgId) {
+		c.String(405, "No Auth")
+		return
+	}
+
+	err := service.Run(pipelineId, repoId)
+	if err != nil {
+		c.String(500, err.Error())
+		return
+	}
+	c.JSON(200, tpipe)
+}
+
+func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
+	pipelineId := m.GetString("pipelineId")
+	orgId := m.GetString("orgId")
+	pg, _ := m.GetInt("page")
+
+	usr := service.GetMidLgUser(c)
+	ls := make([]*model.TPipelineVersion, 0)
+	var page *bean.Page
+	var err error
+	if pipelineId != "" {
+		tpipe := &model.TPipeline{}
+		ok, _ := comm.Db.Where("id=? and create_user_id = ?", pipelineId, usr.Id).Get(tpipe)
+		if service.IsAdmin(usr) || ok || service.IsOrgAdmin(usr.Id, orgId) {
+			if comm.IsMySQL {
+				where := comm.Db.Where("pipeline_id = ? and deleted != 1", pipelineId).Desc("id")
+				page, err = comm.FindPage(where, &ls, pg)
+				if err != nil {
+					c.String(500, "db err:"+err.Error())
+					return
+				}
+			}
+		} else {
+			c.String(405, "No Auth")
+			return
+		}
+	} else {
+		//TODO 权限逻辑
+		if service.IsAdmin(usr) {
+			if comm.IsMySQL {
+				where := comm.Db.Where("deleted != 1").Desc("id")
+				page, err = comm.FindPage(where, &ls, pg)
+			}
+		}
+
+		tpipeIds := []*string{}
+		err = comm.Db.Table(&model.TPipeline{}).Cols("id").Where("create_user_id = ?", usr.Id).Find(&tpipeIds)
+		if err != nil {
+			c.String(500, "db err:"+err.Error())
+			return
+		}
+	}
+
+	c.JSON(200, page)
+
 }

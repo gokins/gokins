@@ -128,34 +128,20 @@ CREATE TABLE `t_pipeline`
 CREATE TABLE `t_pipeline_version`
 (
     `id`                    varchar(64) NOT NULL,
-    `number`                bigint(20) NULL DEFAULT NULL COMMENT '构建次数',
-    `trigger`               varchar(100) NULL DEFAULT NULL COMMENT '触发方式',
-    `events`                varchar(100) NULL DEFAULT NULL COMMENT '事件push、pr、note',
-    `ref`                   varchar(255) NULL DEFAULT NULL,
-    `branch`                varchar(255) NULL DEFAULT NULL,
-    `repo_id`               varchar(64) NULL DEFAULT NULL,
-    `repo_name`             varchar(255) NULL DEFAULT NULL,
-    `commit_sha`            varchar(255) NULL DEFAULT NULL,
-    `commit_message`        text NULL COMMENT '提交信息',
-    `pipeline_name`         varchar(255) NULL DEFAULT NULL,
-    `pipeline_display_name` varchar(255) NULL DEFAULT NULL,
-    `pipeline_id`           varchar(64) NULL DEFAULT NULL,
-    `version`               varchar(255) NULL DEFAULT NULL,
-    `yml_content`           longtext NULL,
-    `created`               datetime(0) NULL DEFAULT NULL,
-    `create_user`           varchar(255) NULL DEFAULT NULL,
-    `create_user_id`        varchar(64) NULL DEFAULT NULL,
-    `deleted`               tinyint(1) NULL DEFAULT 0,
-    `target_repo_name`      varchar(255) NULL DEFAULT NULL,
-    `target_repo_sha`       varchar(255) NULL DEFAULT NULL,
-    `target_repo_ref`       varchar(255) NULL DEFAULT NULL,
-    `target_repo_clone_url` varchar(255) NULL DEFAULT NULL,
-    `status`                varchar(100) NULL DEFAULT NULL COMMENT '构建状态',
-    `error`                 varchar(500) NULL DEFAULT NULL COMMENT '错误信息',
-    `note`                  varchar(255) NULL DEFAULT NULL,
-    `title`                 varchar(255) DEFAULT NULL,
-    `pr_number`             bigint(20) DEFAULT NULL,
-    `repo_clone_url`        varchar(255) NULL DEFAULT NULL,
+    `number`                bigint(20) DEFAULT NULL COMMENT '构建次数',
+    `events`                varchar(100) DEFAULT NULL COMMENT '事件push、pr、note',
+    `branch`                varchar(255) DEFAULT NULL,
+    `repo_id`               varchar(64)  DEFAULT NULL,
+    `repo_name`             varchar(255) DEFAULT NULL,
+    `sha`                   varchar(255) DEFAULT NULL,
+    `pipeline_name`         varchar(255) DEFAULT NULL,
+    `pipeline_display_name` varchar(255) DEFAULT NULL,
+    `pipeline_id`           varchar(64)  DEFAULT NULL,
+    `version`               varchar(255) DEFAULT NULL,
+    `content`               longtext,
+    `created`               datetime     DEFAULT NULL,
+    `deleted`               tinyint(1) DEFAULT '0',
+    `repo_clone_url`        varchar(255) DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
 );
 CREATE TABLE `t_param`
@@ -198,7 +184,7 @@ CREATE TABLE `t_user_org`
     `org_id`    varchar(64) NULL DEFAULT NULL,
     `created`   datetime(0) NULL DEFAULT NULL,
     `perm_adm`  INT(1) NULL DEFAULT 0 COMMENT '管理员',
-    `perm_rw`   INT(1) NULL DEFAULT 0 COMMENT '1只读,2读写',
+    `perm_rw`   INT(1) NULL DEFAULT 0 COMMENT '编辑权限',
     `perm_exec` INT(1) NULL DEFAULT 0 COMMENT '执行权限',
     PRIMARY KEY (`aid`) USING BTREE,
     INDEX       `uid`(`uid`) USING BTREE,
@@ -238,4 +224,11 @@ CREATE TABLE `t_user_token`
     PRIMARY KEY (`aid`) USING BTREE,
     INDEX           `uid`(`uid`) USING BTREE,
     INDEX           `openid`(`openid`) USING BTREE
+);
+CREATE TABLE `t_repo`
+(
+    `id`   varchar(64) NOT NULL,
+    `name` varchar(255) DEFAULT NULL,
+    `url`  varchar(255) DEFAULT NULL,
+    PRIMARY KEY (`id`)
 );
