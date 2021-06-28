@@ -30,6 +30,7 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/save", util.GinReqParseJson(c.save))
 	g.POST("/run", util.GinReqParseJson(c.run))
 	g.POST("/pipelineVersions", util.GinReqParseJson(c.pipelineVersions))
+	g.POST("/pipelineVersion", util.GinReqParseJson(c.pipelineVersion))
 }
 func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
@@ -290,4 +291,30 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 
 	c.JSON(200, page)
 
+}
+func (PipelineController) pipelineVersion(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	if id == "" {
+		c.String(500, "param err")
+		return
+	}
+	pv := &model.TPipelineVersion{}
+	ok, _ := comm.Db.Where("id=?", id).Get(pv)
+	if !ok {
+		c.String(404, "not found pv")
+		return
+	}
+	perm := service.NewPipePerm(service.GetMidLgUser(c), pv.PipelineId)
+	if perm.Pipeline() == nil {
+		c.String(404, "not found pipe")
+		return
+	}
+	if !perm.CanRead() {
+		c.String(405, "no permission")
+		return
+	}
+	c.JSON(200, hbtp.Map{
+		"pv":   pv,
+		"pipe": perm.Pipeline(),
+	})
 }

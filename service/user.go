@@ -291,3 +291,13 @@ func (c *PipePerm) CanExec() bool {
 	}
 	return false
 }
+
+//LgUser maybe null
+func (c *PipePerm) LgUser() *model.TUser {
+	return c.lgusr
+}
+
+//Pipeline maybe null
+func (c *PipePerm) Pipeline() *model.TPipeline {
+	return c.pipe
+}
