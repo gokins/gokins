@@ -242,8 +242,9 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 	pipe := &model.TPipeline{}
 	ok, _ := comm.Db.Where("id=?", id).Get(pipe)
 	if !ok {
-		c.String(404, "not found org")
+		c.String(404, "not found org1 ")
 		return
 	}
+
 	c.JSON(200, pipe)
 }
