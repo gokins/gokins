@@ -104,7 +104,7 @@ func (c *BuildTask) run() {
 	defer func() {
 		c.endtm = time.Now()
 		c.build.Finished = time.Now()
-		c.updateBuild()
+		c.updateBuild(c.build)
 		if c.isClone {
 			os.RemoveAll(c.repoPath)
 		}
@@ -140,7 +140,7 @@ func (c *BuildTask) run() {
 			e.Status = common.BuildStatusPending
 		}
 	}
-	c.updateBuild()
+	c.updateBuild(c.build)
 	for _, v := range c.build.Stages {
 		c.runStage(v)
 		if v.Status != common.BuildStatusOk {
@@ -419,7 +419,7 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 	job.step.Status = common.BuildStatusPreparation
 	job.step.Started = time.Now()
 	job.Unlock()
-	c.updateStep(job.step)
+	go c.updateStep(job)
 	err := Mgr.jobEgn.Put(job)
 	if err != nil {
 		job.status(common.BuildStatusError, fmt.Sprintf("command run err:%v", err))
@@ -569,7 +569,7 @@ func (c *BuildTask) UpJob(job *jobSync, stat, errs string, code int) {
 	job.step.Error = errs
 	job.step.ExitCode = code
 	job.Unlock()
-	go c.updateStep(job.step)
+	go c.updateStep(job)
 }
 func (c *BuildTask) UpJobCmd(job *jobSync, cmdid string, fs int) {
 	if job == nil || cmdid == "" {
