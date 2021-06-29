@@ -239,12 +239,12 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "No Auth")
 		return
 	}
-	err := service.Run(pipelineId, repoId)
+	tvp, err := service.Run(pipelineId, repoId)
 	if err != nil {
 		c.String(500, err.Error())
 		return
 	}
-	c.JSON(200, "ok")
+	c.JSON(200, tvp)
 }
 
 func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
