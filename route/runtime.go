@@ -10,6 +10,7 @@ import (
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/model"
+	"github.com/gokins-main/gokins/models"
 	"github.com/gokins-main/gokins/service"
 	"github.com/gokins-main/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
@@ -24,9 +25,37 @@ func (RuntimeController) GetPath() string {
 }
 func (c *RuntimeController) Routes(g gin.IRoutes) {
 	g.Use(service.MidUserCheck)
+	g.POST("/stages", util.GinReqParseJson(c.stages))
 	g.POST("/build", util.GinReqParseJson(c.build))
 	g.POST("/cancel", util.GinReqParseJson(c.cancel))
 	g.POST("/logs", util.GinReqParseJson(c.logs))
+}
+func (RuntimeController) stages(c *gin.Context, m *hbtp.Map) {
+	pvId := m.GetString("pvId")
+	if pvId == "" {
+		c.String(500, "param err")
+		return
+	}
+	var ls []*models.RunStage
+	err := comm.Db.Where("pipeline_version_id=?", pvId).OrderBy("sort ASC").Find(&ls)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	for _, v := range ls {
+		var steps []*models.RunStep
+		err := comm.Db.Where("stage_id=?", v.Id).OrderBy("sort ASC").Find(&steps)
+		if err == nil {
+			v.Steps = map[string]*models.RunStep{}
+			for _, step := range steps {
+				if step.Id != "" {
+					v.Stepids = append(v.Stepids, step.Id)
+					v.Steps[step.Id] = step
+				}
+			}
+		}
+	}
+	c.JSON(200, ls)
 }
 func (RuntimeController) build(c *gin.Context, m *hbtp.Map) {
 	bdid := m.GetString("buildId")

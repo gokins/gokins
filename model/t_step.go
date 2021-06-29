@@ -21,10 +21,9 @@ type TStep struct {
 	Updated           time.Time `xorm:"comment('更新时间') DATETIME" json:"updated"`
 	Version           string    `xorm:"comment('版本') VARCHAR(255)" json:"version"`
 	Errignore         string    `xorm:"VARCHAR(5)" json:"errignore"`
-	Number            int64     `xorm:"BIGINT(20)" json:"number"`
 	Commands          string    `xorm:"TEXT" json:"commands"`
 	DependsOn         string    `xorm:"JSON" json:"dependsOn"`
 	Image             string    `xorm:"VARCHAR(255)" json:"image"`
 	Environments      string    `xorm:"JSON" json:"environments"`
-	Sort              int64     `xorm:"BIGINT(10)" json:"sort"`
+	Sort              int       `xorm:"INT(11)" json:"sort"`
 }

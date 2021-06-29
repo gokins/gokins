@@ -91,7 +91,7 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 		}
 		session.Desc("id")
 		if !service.IsAdmin(usr) {
-			session.Where("create_user_id = ?", usr.Id)
+			session.Where("uid = ?", usr.Id)
 		}
 		page, err = comm.FindPage(session, &ls, pg)
 		if err != nil {
@@ -173,11 +173,11 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 	}
 	pipeline := &model.TPipeline{
 		Id:           utils.NewXid(),
+		Uid:          usr.Id,
 		Name:         name,
 		DisplayName:  y.DisplayName,
 		PipelineType: "",
 		JsonContent:  string(js),
-		CreateUserId: usr.Id,
 	}
 	_, err = comm.Db.InsertOne(pipeline)
 	if err != nil {
@@ -275,7 +275,7 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 			}
 		} else {
 			tpipeIds := []*string{}
-			err = comm.Db.Table(&model.TPipeline{}).Cols("id").Where("create_user_id = ?", usr.Id).Find(&tpipeIds)
+			err = comm.Db.Table(&model.TPipeline{}).Cols("id").Where("uid = ?", usr.Id).Find(&tpipeIds)
 			if err != nil {
 				c.String(500, "db err:"+err.Error())
 				return

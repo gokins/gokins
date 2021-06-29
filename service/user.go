@@ -241,7 +241,7 @@ func (c *PipePerm) IsAdmin() bool {
 	return false
 }
 func (c *PipePerm) IsPipeOwner() bool {
-	if c.pipe != nil && c.lgusr != nil && c.pipe.CreateUserId == c.lgusr.Id {
+	if c.pipe != nil && c.lgusr != nil && c.pipe.Uid == c.lgusr.Id {
 		return true
 	}
 	return false

@@ -10,6 +10,6 @@ type TUserOrg struct {
 	OrgId    string    `xorm:"index index(uoid) VARCHAR(64)" json:"orgId"`
 	Created  time.Time `xorm:"DATETIME" json:"created"`
 	PermAdm  int       `xorm:"default 0 comment('管理员') INT(1)" json:"permAdm"`
-	PermRw   int       `xorm:"default 0 comment('1只读,2读写') INT(1)" json:"permRw"`
+	PermRw   int       `xorm:"default 0 comment('编辑权限') INT(1)" json:"permRw"`
 	PermExec int       `xorm:"default 0 comment('执行权限') INT(1)" json:"permExec"`
 }

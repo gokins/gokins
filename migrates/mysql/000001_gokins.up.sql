@@ -47,7 +47,7 @@ CREATE TABLE `t_stage`
     `version`             varchar(255) NULL DEFAULT NULL COMMENT '版本',
     `on_success`          varchar(5) NULL DEFAULT NULL,
     `on_failure`          varchar(5) NULL DEFAULT NULL,
-    `sort`                bigint(10) NULL DEFAULT NULL,
+    `sort`                int(11) NULL DEFAULT NULL,
     `stage`               varchar(255) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
 );
@@ -69,12 +69,11 @@ CREATE TABLE `t_step`
     `updated`             datetime(0) NULL DEFAULT NULL COMMENT '更新时间',
     `version`             varchar(255) NULL DEFAULT NULL COMMENT '版本',
     `errignore`           varchar(5) NULL DEFAULT NULL,
-    `number`              bigint(20) NULL DEFAULT NULL,
     `commands`            text NULL,
     `depends_on`          json NULL,
     `image`               varchar(255) NULL DEFAULT NULL,
     `environments`        json NULL,
-    `sort`                bigint(10) NULL DEFAULT NULL,
+    `sort`                int(11) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
 );
 CREATE TABLE `t_message`
@@ -118,12 +117,14 @@ CREATE TABLE `t_org_pipe`
 CREATE TABLE `t_pipeline`
 (
     `id`             varchar(64) NOT NULL,
+    `uid`            varchar(64)  DEFAULT NULL,
     `name`           varchar(255) DEFAULT NULL,
     `display_name`   varchar(255) DEFAULT NULL,
     `pipeline_type`  varchar(255) DEFAULT NULL,
     `json_content`   longtext,
-    `create_user_id` varchar(64)  DEFAULT NULL,
-    PRIMARY KEY (`id`) USING BTREE
+    `yml_content`   longtext,
+    PRIMARY KEY (`id`) USING BTREE,
+    INDEX     `uid`(`uid`) USING BTREE
 )
 CREATE TABLE `t_pipeline_version`
 (
