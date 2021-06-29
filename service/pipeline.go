@@ -13,29 +13,29 @@ import (
 	"time"
 )
 
-func Run(pipeId string, repoId string) error {
+func Run(pipeId string, repoId string) (*model.TPipelineVersion, error) {
 	tpipe := &model.TPipeline{}
 	ok, _ := comm.Db.Where("id=?", pipeId).Get(tpipe)
 	if !ok {
-		return errors.New("流水线不存在")
+		return nil, errors.New("流水线不存在")
 	}
 	if tpipe.JsonContent == "" {
-		return errors.New("流水线Yaml为空")
+		return nil, errors.New("流水线Yaml为空")
 	}
 	trepo := &model.TRepo{}
 	ok, _ = comm.Db.Where("id=?", repoId).Get(trepo)
 	if !ok {
-		return errors.New("仓库不存在")
+		return nil, errors.New("仓库不存在")
 	}
 	pipe := &bean.Pipeline{}
 	err := json.Unmarshal([]byte(tpipe.JsonContent), pipe)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = pipe.Check()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	pipe.ConvertCmd()
@@ -44,7 +44,7 @@ func Run(pipeId string, repoId string) error {
 		SQL("SELECT max(number) FROM t_pipeline_version WHERE pipeline_id = ?", pipeId).
 		Get(&number)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tpv := &model.TPipelineVersion{
@@ -66,7 +66,7 @@ func Run(pipeId string, repoId string) error {
 	}
 	_, err = comm.Db.InsertOne(tpv)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tb := &model.TBuild{
@@ -79,7 +79,7 @@ func Run(pipeId string, repoId string) error {
 	}
 	_, err = comm.Db.InsertOne(tb)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	rb := &runtime.Build{
@@ -119,20 +119,20 @@ func Run(pipeId string, repoId string) error {
 		}
 		_, err = comm.Db.InsertOne(ts)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		for j, step := range stage.Steps {
 			cmds, err := json.Marshal(step.Commands)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			djs, err := json.Marshal(step.DependsOn)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			de, err := json.Marshal(step.Environments)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			tsp := &model.TStep{
 				Id:                utils.NewXid(),
@@ -163,12 +163,12 @@ func Run(pipeId string, repoId string) error {
 			}
 			_, err = comm.Db.InsertOne(tsp)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			rt.Steps = append(rt.Steps, rtp)
 		}
 		rb.Stages = append(rb.Stages, rt)
 	}
 	engine.Mgr.BuildEgn().Put(rb)
-	return nil
+	return tpv, nil
 }
