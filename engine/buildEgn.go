@@ -2,6 +2,7 @@ package engine
 
 import (
 	"container/list"
+	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/gokins/comm"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
@@ -28,6 +29,7 @@ func StartBuildEngine() *BuildEngine {
 		tasks: make(map[string]*BuildTask),
 	}
 	go func() {
+		c.init()
 		for !hbtp.EndContext(comm.Ctx) {
 			c.run()
 			time.Sleep(time.Second)
@@ -41,6 +43,27 @@ func (c *BuildEngine) Stop() {
 	for _, v := range c.tasks {
 		v.stop()
 	}
+}
+func (c *BuildEngine) init() {
+
+	/*// TODO: 调试不执行
+	if comm.Debugs {
+		return
+	}*/
+
+	cont := "server restart"
+	comm.Db.Exec(
+		"update `t_build` set `status`=?,`error`=? where `status`!=? and `status`!=? and `status`!=?",
+		common.BuildStatusCancel, cont, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel,
+	)
+	comm.Db.Exec(
+		"update `t_stage` set `status`=?,`error`=? where `status`!=? and `status`!=? and `status`!=?",
+		common.BuildStatusCancel, cont, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel,
+	)
+	comm.Db.Exec(
+		"update `t_step` set `status`=?,`error`=? where `status`!=? and `status`!=? and `status`!=?",
+		common.BuildStatusCancel, cont, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel,
+	)
 }
 
 func (c *BuildEngine) run() {

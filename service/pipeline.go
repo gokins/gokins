@@ -50,7 +50,7 @@ func Run(pipeId string, repoId string) error {
 	tpv := &model.TPipelineVersion{
 		Id:                  utils.NewXid(),
 		Number:              number + 1,
-		Branch:              0,
+		Branch:              "0",
 		Events:              "run",
 		RepoId:              trepo.Id,
 		RepoName:            trepo.Name,

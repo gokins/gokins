@@ -37,6 +37,7 @@ func regApi() {
 	util.GinRegController(comm.WebEgn, &route.UserController{})
 	util.GinRegController(comm.WebEgn, &route.OrgController{})
 	util.GinRegController(comm.WebEgn, &route.PipelineController{})
+	util.GinRegController(comm.WebEgn, &route.RuntimeController{})
 }
 func http404(c *gin.Context) {
 

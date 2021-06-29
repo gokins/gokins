@@ -42,20 +42,28 @@ func (RuntimeController) stages(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
+	var ids []string
+	stages := map[string]*models.RunStage{}
+	steps := map[string]*models.RunStep{}
 	for _, v := range ls {
-		var steps []*models.RunStep
-		err := comm.Db.Where("stage_id=?", v.Id).OrderBy("sort ASC").Find(&steps)
+		var spls []*models.RunStep
+		err := comm.Db.Where("stage_id=?", v.Id).OrderBy("sort ASC").Find(&spls)
 		if err == nil {
-			v.Steps = map[string]*models.RunStep{}
-			for _, step := range steps {
+			ids = append(ids, v.Id)
+			stages[v.Id] = v
+			for _, step := range spls {
 				if step.Id != "" {
 					v.Stepids = append(v.Stepids, step.Id)
-					v.Steps[step.Id] = step
+					steps[step.Id] = step
 				}
 			}
 		}
 	}
-	c.JSON(200, ls)
+	c.JSON(200, hbtp.Map{
+		"ids":    ids,
+		"stages": stages,
+		"steps":  steps,
+	})
 }
 func (RuntimeController) build(c *gin.Context, m *hbtp.Map) {
 	bdid := m.GetString("buildId")

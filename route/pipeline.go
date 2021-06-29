@@ -2,6 +2,7 @@ package route
 
 import (
 	"encoding/json"
+	"github.com/gokins-main/gokins/models"
 	"net/http"
 	"time"
 
@@ -304,6 +305,12 @@ func (PipelineController) pipelineVersion(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "not found pv")
 		return
 	}
+	build := &models.RunBuild{}
+	ok, _ = comm.Db.Where("pipeline_version_id=?", pv.Id).Get(build)
+	if !ok {
+		c.String(404, "not found build")
+		return
+	}
 	perm := service.NewPipePerm(service.GetMidLgUser(c), pv.PipelineId)
 	if perm.Pipeline() == nil {
 		c.String(404, "not found pipe")
@@ -314,7 +321,8 @@ func (PipelineController) pipelineVersion(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	c.JSON(200, hbtp.Map{
-		"pv":   pv,
-		"pipe": perm.Pipeline(),
+		"build": build,
+		"pv":    pv,
+		"pipe":  perm.Pipeline(),
 	})
 }
