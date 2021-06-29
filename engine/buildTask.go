@@ -258,6 +258,13 @@ func (c *BuildTask) genCmds(job *jobSync) error {
 		c.appendcmds(runjb, utils.NewXid(), job.step.Commands.(string))
 	case []interface{}:
 		err = c.gencmds(runjb, job.step.Commands.([]interface{}))
+	case []string:
+		var ls []interface{}
+		ts := job.step.Commands.([]string)
+		for _, v := range ts {
+			ls = append(ls, v)
+		}
+		err = c.gencmds(runjb, ls)
 	default:
 		err = errors.New("commands format err")
 	}

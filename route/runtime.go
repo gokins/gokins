@@ -26,6 +26,7 @@ func (RuntimeController) GetPath() string {
 func (c *RuntimeController) Routes(g gin.IRoutes) {
 	g.Use(service.MidUserCheck)
 	g.POST("/stages", util.GinReqParseJson(c.stages))
+	g.POST("/cmds", util.GinReqParseJson(c.cmds))
 	g.POST("/build", util.GinReqParseJson(c.build))
 	g.POST("/cancel", util.GinReqParseJson(c.cancel))
 	g.POST("/logs", util.GinReqParseJson(c.logs))
@@ -42,10 +43,11 @@ func (RuntimeController) stages(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
-	var ids []string
+	ids := make([]string, 0)
 	stages := map[string]*models.RunStage{}
 	steps := map[string]*models.RunStep{}
 	for _, v := range ls {
+		v.Stepids = make([]string, 0)
 		var spls []*models.RunStep
 		err := comm.Db.Where("stage_id=?", v.Id).OrderBy("sort ASC").Find(&spls)
 		if err == nil {
@@ -65,6 +67,30 @@ func (RuntimeController) stages(c *gin.Context, m *hbtp.Map) {
 		"steps":  steps,
 	})
 }
+func (RuntimeController) cmds(c *gin.Context, m *hbtp.Map) {
+	stepId := m.GetString("stepId")
+	if stepId == "" {
+		c.String(500, "param err")
+		return
+	}
+	var ls []*model.TCmdLine
+	err := comm.Db.Where("step_id=?", stepId).OrderBy("num ASC").Find(&ls)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.JSON(200, ls)
+	/*ids:=make([]string,0)
+	cmds := map[string]*model.TCmdLine{}
+	for _, v := range ls {
+		ids = append(ids, v.Id)
+		cmds[v.Id] = v
+	}
+	c.JSON(200, hbtp.Map{
+		//"ids":    ids,
+		"cmds": ls,
+	})*/
+}
 func (RuntimeController) build(c *gin.Context, m *hbtp.Map) {
 	bdid := m.GetString("buildId")
 	if bdid == "" {
@@ -81,7 +107,9 @@ func (RuntimeController) build(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "Not Found")
 		return
 	}
-	c.JSON(200, show)
+	c.JSON(200, hbtp.Map{
+		"build": show,
+	})
 }
 func (RuntimeController) cancel(c *gin.Context, m *hbtp.Map) {
 	bdid := m.GetString("buildId")
@@ -98,15 +126,15 @@ func (RuntimeController) cancel(c *gin.Context, m *hbtp.Map) {
 	c.String(200, "ok")
 }
 func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
-	jobId := m.GetString("jobId")
+	stepId := m.GetString("stepId")
 	offset, _ := m.GetInt("offset")
 	limit, _ := m.GetInt("limit")
-	if jobId == "" {
+	if stepId == "" {
 		c.String(500, "param err")
 		return
 	}
 	tstp := &model.TStep{}
-	ok, _ := comm.Db.Where("id=?", jobId).Get(tstp)
+	ok, _ := comm.Db.Where("id=?", stepId).Get(tstp)
 	if !ok {
 		c.String(404, "Not Found")
 		return
@@ -164,4 +192,5 @@ func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
 			break
 		}
 	}
+	c.JSON(200, ls)
 }
