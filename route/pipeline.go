@@ -118,7 +118,7 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	y := &bean.Pipeline{}
-	err := json.Unmarshal([]byte(content), y)
+	err := yaml.Unmarshal([]byte(content), y)
 	err = y.Check()
 	if err != nil {
 		c.String(500, "yaml Check err:"+err.Error())
@@ -133,8 +133,9 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 		Name:        name,
 		DisplayName: y.DisplayName,
 		JsonContent: string(js),
+		YmlContent:  content,
 	}
-	_, err = comm.Db.Cols("name , display_name,json_content").Where("id = ?", pipelineId).Update(pipeline)
+	_, err = comm.Db.Cols("name , display_name,json_content,yml_content").Where("id = ?", pipelineId).Update(pipeline)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
@@ -179,6 +180,7 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		DisplayName:  y.DisplayName,
 		PipelineType: "",
 		JsonContent:  string(js),
+		YmlContent:   content,
 	}
 	_, err = comm.Db.InsertOne(pipeline)
 	if err != nil {

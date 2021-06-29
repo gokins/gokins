@@ -50,7 +50,7 @@ func Run(pipeId string, repoId string) error {
 	tpv := &model.TPipelineVersion{
 		Id:                  utils.NewXid(),
 		Number:              number + 1,
-		Branch:              "0",
+		Branch:              "",
 		Events:              "run",
 		RepoId:              trepo.Id,
 		RepoName:            trepo.Name,
@@ -98,7 +98,7 @@ func Run(pipeId string, repoId string) error {
 	}
 
 	rstages := make([]*runtime.Stage, 0)
-	for _, stage := range pipe.Stages {
+	for i, stage := range pipe.Stages {
 		ts := &model.TStage{
 			Id:                utils.NewXid(),
 			PipelineVersionId: tpv.Id,
@@ -108,6 +108,7 @@ func Run(pipeId string, repoId string) error {
 			DisplayName:       stage.DisplayName,
 			Created:           time.Now(),
 			Stage:             stage.Stage,
+			Sort:              i,
 		}
 		rt := &runtime.Stage{
 			Id:          utils.NewXid(),
@@ -123,7 +124,7 @@ func Run(pipeId string, repoId string) error {
 			return err
 		}
 		rsteps := make([]*runtime.Step, 0)
-		for _, step := range stage.Steps {
+		for j, step := range stage.Steps {
 			cmds, err := json.Marshal(step.Commands)
 			if err != nil {
 				return err
@@ -149,6 +150,7 @@ func Run(pipeId string, repoId string) error {
 				Commands:          string(cmds),
 				DependsOn:         string(djs),
 				Environments:      string(de),
+				Sort:              j,
 			}
 			rtp := &runtime.Step{
 				Id:           utils.NewXid(),
