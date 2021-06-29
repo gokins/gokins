@@ -94,10 +94,8 @@ func Run(pipeId string, repoId string) error {
 			CloneURL: trepo.Url,
 		},
 		Variables: pipe.Variables,
-		Stages:    nil,
 	}
 
-	rstages := make([]*runtime.Stage, 0)
 	for i, stage := range pipe.Stages {
 		ts := &model.TStage{
 			Id:                utils.NewXid(),
@@ -123,7 +121,6 @@ func Run(pipeId string, repoId string) error {
 		if err != nil {
 			return err
 		}
-		rsteps := make([]*runtime.Step, 0)
 		for j, step := range stage.Steps {
 			cmds, err := json.Marshal(step.Commands)
 			if err != nil {
@@ -168,11 +165,10 @@ func Run(pipeId string, repoId string) error {
 			if err != nil {
 				return err
 			}
-			rsteps = append(rsteps, rtp)
+			rt.Steps = append(rt.Steps, rtp)
 		}
-		rstages = append(rstages, rt)
+		rb.Stages = append(rb.Stages, rt)
 	}
-	rb.Stages = rstages
 	engine.Mgr.BuildEgn().Put(rb)
 	return nil
 }
