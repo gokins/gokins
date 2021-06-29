@@ -109,7 +109,7 @@ func Run(pipeId string, repoId string) error {
 			Sort:              i,
 		}
 		rt := &runtime.Stage{
-			Id:          utils.NewXid(),
+			Id:          ts.Id,
 			BuildId:     tb.Id,
 			Status:      common.BuildStatusPending,
 			Name:        stage.Name,
@@ -150,7 +150,7 @@ func Run(pipeId string, repoId string) error {
 				Sort:              j,
 			}
 			rtp := &runtime.Step{
-				Id:           utils.NewXid(),
+				Id:           tsp.Id,
 				BuildId:      tb.Id,
 				StageId:      ts.Id,
 				DisplayName:  step.DisplayName,
