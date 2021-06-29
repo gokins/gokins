@@ -139,7 +139,7 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, "ok")
+	c.String(http.StatusOK, "ok")
 }
 
 func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
@@ -201,7 +201,7 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		}
 
 	}
-	c.JSON(http.StatusOK, "ok")
+	c.String(http.StatusOK, "ok")
 }
 
 func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
