@@ -107,9 +107,7 @@ func (RuntimeController) build(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "Not Found")
 		return
 	}
-	c.JSON(200, hbtp.Map{
-		"build": show,
-	})
+	c.JSON(200, show)
 }
 func (RuntimeController) cancel(c *gin.Context, m *hbtp.Map) {
 	bdid := m.GetString("buildId")

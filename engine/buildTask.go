@@ -352,6 +352,7 @@ func (c *BuildTask) runStage(stage *runtime.Stage) {
 func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 	defer stage.wg.Done()
 	defer func() {
+		go c.updateStep(job)
 		if err := recover(); err != nil {
 			logrus.Warnf("BuildTask runStep recover:%v", err)
 			logrus.Warnf("BuildTask stack:%s", string(debug.Stack()))
@@ -442,9 +443,9 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 		}*/
 		time.Sleep(time.Millisecond * 10)
 	}
-	job.Lock()
+	/*job.Lock()
 	defer job.Unlock()
-	/*if c.ctrlend && job.step.Status == common.BuildStatusError {
+	if c.ctrlend && job.step.Status == common.BuildStatusError {
 		job.step.Status = common.BuildStatusCancel
 	}*/
 }
@@ -640,7 +641,7 @@ func (c *BuildTask) Show() (*runtime.BuildShow, bool) {
 				continue
 			}
 			job.RLock()
-			rtstg.Steps = append(rtstg.Steps, &runtime.StepShow{
+			rtstp := &runtime.StepShow{
 				Id:       job.step.Id,
 				StageId:  job.step.StageId,
 				BuildId:  job.step.BuildId,
@@ -651,7 +652,15 @@ func (c *BuildTask) Show() (*runtime.BuildShow, bool) {
 				Started:  job.step.Started,
 				Stopped:  job.step.Stopped,
 				Finished: job.step.Finished,
-			})
+			}
+			rtstg.Steps = append(rtstg.Steps, rtstp)
+			for _, cmd := range job.cmdmp {
+				rtstp.Cmds = append(rtstp.Cmds, &runtime.CmdShow{
+					Status:   cmd.status,
+					Started:  cmd.started,
+					Finished: cmd.finished,
+				})
+			}
 			job.RUnlock()
 		}
 	}
