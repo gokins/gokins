@@ -32,20 +32,22 @@ func (c *BuildTask) updateBuild(build *runtime.Build) {
 		logrus.Errorf("BuildTask.updateBuild db err:%v", err)
 	}
 	stge := &model.TStage{
-		Status:  common.BuildStatusCancel,
-		Updated: time.Now(),
+		Status:   common.BuildStatusCancel,
+		Finished: time.Now(),
+		Updated:  time.Now(),
 	}
-	_, err = comm.Db.Cols("status", "updated").
+	_, err = comm.Db.Cols("status", "finished", "updated").
 		Where("build_id=? and `status`!=? and `status`!=? and `status`!=?",
 			build.Id, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel).Update(stge)
 	if err != nil {
 		logrus.Errorf("BuildTask.updateBuild stage err:%v", err)
 	}
 	stpe := &model.TStep{
-		Status:  common.BuildStatusCancel,
-		Updated: time.Now(),
+		Status:   common.BuildStatusCancel,
+		Finished: time.Now(),
+		Updated:  time.Now(),
 	}
-	_, err = comm.Db.Cols("status", "updated").
+	_, err = comm.Db.Cols("status", "finished", "updated").
 		Where("build_id=? and `status`!=? and `status`!=? and `status`!=?",
 			build.Id, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel).Update(stpe)
 	if err != nil {
@@ -73,10 +75,11 @@ func (c *BuildTask) updateStage(stage *runtime.Stage) {
 		logrus.Errorf("BuildTask.updateStage db err:%v", err)
 	}
 	stpe := &model.TStep{
-		Status:  common.BuildStatusCancel,
-		Updated: time.Now(),
+		Status:   common.BuildStatusCancel,
+		Finished: time.Now(),
+		Updated:  time.Now(),
 	}
-	_, err = comm.Db.Cols("status", "updated").
+	_, err = comm.Db.Cols("status", "finished", "updated").
 		Where("stage_id=? and `status`!=? and `status`!=? and `status`!=?",
 			stage.Id, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel).Update(stpe)
 	if err != nil {
@@ -106,6 +109,17 @@ func (c *BuildTask) updateStep(job *jobSync) {
 		Where("id=?", job.step.Id).Update(step)
 	if err != nil {
 		logrus.Errorf("BuildTask.updateStep db err:%v", err)
+	}
+
+	stpe := &model.TCmdLine{
+		Status:   common.BuildStatusCancel,
+		Finished: time.Now(),
+	}
+	_, err = comm.Db.Cols("status", "finished").
+		Where("step_id=? and `status`!=? and `status`!=? and `status`!=?",
+			job.step.Id, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel).Update(stpe)
+	if err != nil {
+		logrus.Errorf("BuildTask.updateStage step err:%v", err)
 	}
 }
 func (c *BuildTask) updateStepCmd(cmd *cmdSync) {
