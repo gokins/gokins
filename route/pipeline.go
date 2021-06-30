@@ -334,9 +334,15 @@ func (PipelineController) pipelineVersion(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "no permission")
 		return
 	}
+	pipeShow := &bean.PipelineShow{}
+	err := utils.Struct2Struct(pipeShow, perm.Pipeline())
+	if err != nil {
+		c.String(405, "conv err:%v", err)
+		return
+	}
 	c.JSON(200, hbtp.Map{
 		"build": build,
 		"pv":    pv,
-		"pipe":  perm.Pipeline(),
+		"pipe":  pipeShow,
 	})
 }
