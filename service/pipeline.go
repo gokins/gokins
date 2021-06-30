@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func Run(pipeId string, repoId string) (*model.TPipelineVersion, error) {
+func Run(pipeId string) (*model.TPipelineVersion, error) {
 	tpipe := &model.TPipeline{}
 	ok, _ := comm.Db.Where("id=?", pipeId).Get(tpipe)
 	if !ok {
@@ -21,11 +21,6 @@ func Run(pipeId string, repoId string) (*model.TPipelineVersion, error) {
 	}
 	if tpipe.JsonContent == "" {
 		return nil, errors.New("流水线Yaml为空")
-	}
-	trepo := &model.TRepo{}
-	ok, _ = comm.Db.Where("id=?", repoId).Get(trepo)
-	if !ok {
-		return nil, errors.New("仓库不存在")
 	}
 	pipe := &bean.Pipeline{}
 	err := json.Unmarshal([]byte(tpipe.JsonContent), pipe)
@@ -52,8 +47,6 @@ func Run(pipeId string, repoId string) (*model.TPipelineVersion, error) {
 		Number:              number + 1,
 		Branch:              "",
 		Events:              "run",
-		RepoId:              trepo.Id,
-		RepoName:            trepo.Name,
 		Sha:                 "",
 		PipelineName:        tpipe.Name,
 		PipelineDisplayName: tpipe.DisplayName,
@@ -62,7 +55,7 @@ func Run(pipeId string, repoId string) (*model.TPipelineVersion, error) {
 		Content:             tpipe.JsonContent,
 		Created:             time.Now(),
 		Deleted:             0,
-		RepoCloneUrl:        trepo.Url,
+		RepoCloneUrl:        tpipe.Url,
 	}
 	_, err = comm.Db.InsertOne(tpv)
 	if err != nil {
@@ -88,10 +81,10 @@ func Run(pipeId string, repoId string) (*model.TPipelineVersion, error) {
 		Status:     common.BuildStatusPending,
 		Created:    time.Now(),
 		Repo: &runtime.Repository{
-			Name:     "",
-			Token:    "",
+			Name:     tpipe.Username,
+			Token:    tpipe.AccessToken,
 			Sha:      "",
-			CloneURL: trepo.Url,
+			CloneURL: tpipe.Url,
 		},
 		Variables: pipe.Variables,
 	}

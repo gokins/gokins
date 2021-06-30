@@ -8,6 +8,7 @@ require (
 	github.com/boltdb/bolt v1.3.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.7.2
+	github.com/go-bindata/go-bindata v3.1.2+incompatible // indirect
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gokins-main/core v0.0.0-20210622095351-4e4f8ce44617

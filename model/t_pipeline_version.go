@@ -9,8 +9,6 @@ type TPipelineVersion struct {
 	Number              int64     `xorm:"comment('构建次数') BIGINT(20)" json:"number"`
 	Events              string    `xorm:"comment('事件push、pr、note') VARCHAR(100)" json:"events"`
 	Branch              string    `xorm:"VARCHAR(255)" json:"branch"`
-	RepoId              string    `xorm:"VARCHAR(64)" json:"repoId"`
-	RepoName            string    `xorm:"VARCHAR(255)" json:"repoName"`
 	Sha                 string    `xorm:"VARCHAR(255)" json:"sha"`
 	PipelineName        string    `xorm:"VARCHAR(255)" json:"pipelineName"`
 	PipelineDisplayName string    `xorm:"VARCHAR(255)" json:"pipelineDisplayName"`

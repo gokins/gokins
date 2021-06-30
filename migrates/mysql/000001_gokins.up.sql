@@ -60,7 +60,7 @@ CREATE TABLE `t_step`
     `pipeline_version_id` varchar(64) NULL DEFAULT NULL COMMENT '流水线id',
     `step`                varchar(255) NULL DEFAULT NULL,
     `status`              varchar(100) NULL DEFAULT NULL COMMENT '构建状态',
-    `event`              varchar(100) NULL DEFAULT NULL COMMENT '事件',
+    `event`               varchar(100) NULL DEFAULT NULL COMMENT '事件',
     `exit_code`           int(11) NULL DEFAULT NULL COMMENT '退出码',
     `error`               varchar(500) NULL DEFAULT NULL COMMENT '错误信息',
     `name`                varchar(100) NULL DEFAULT NULL COMMENT '名字',
@@ -117,15 +117,17 @@ CREATE TABLE `t_org_pipe`
 );
 CREATE TABLE `t_pipeline`
 (
-    `id`             varchar(64) NOT NULL,
-    `uid`            varchar(64)  DEFAULT NULL,
-    `name`           varchar(255) DEFAULT NULL,
-    `display_name`   varchar(255) DEFAULT NULL,
-    `pipeline_type`  varchar(255) DEFAULT NULL,
-    `json_content`   longtext,
+    `id`            varchar(64) NOT NULL,
+    `uid`           varchar(64)  DEFAULT NULL,
+    `name`          varchar(255) DEFAULT NULL,
+    `display_name`  varchar(255) DEFAULT NULL,
+    `pipeline_type` varchar(255) DEFAULT NULL,
+    `json_content`  longtext,
     `yml_content`   longtext,
-    PRIMARY KEY (`id`) USING BTREE,
-    INDEX     `uid`(`uid`) USING BTREE
+    `access_token`  varchar(255) DEFAULT NULL,
+    `url`           varchar(255) DEFAULT NULL,
+    `username`      varchar(255) DEFAULT NULL,
+    PRIMARY KEY (`id`) USING BTREE
 )
 CREATE TABLE `t_pipeline_version`
 (
@@ -133,8 +135,6 @@ CREATE TABLE `t_pipeline_version`
     `number`                bigint(20) DEFAULT NULL COMMENT '构建次数',
     `events`                varchar(100) DEFAULT NULL COMMENT '事件push、pr、note',
     `branch`                varchar(255) DEFAULT NULL,
-    `repo_id`               varchar(64)  DEFAULT NULL,
-    `repo_name`             varchar(255) DEFAULT NULL,
     `sha`                   varchar(255) DEFAULT NULL,
     `pipeline_name`         varchar(255) DEFAULT NULL,
     `pipeline_display_name` varchar(255) DEFAULT NULL,
@@ -143,6 +143,7 @@ CREATE TABLE `t_pipeline_version`
     `content`               longtext,
     `created`               datetime     DEFAULT NULL,
     `deleted`               tinyint(1) DEFAULT '0',
+    `pr_number`             bigint(20) DEFAULT NULL,
     `repo_clone_url`        varchar(255) DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
 );

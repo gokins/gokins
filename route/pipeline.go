@@ -106,6 +106,9 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 	name := m.GetString("name")
 	content := m.GetString("content")
 	pipelineId := m.GetString("pipelineId")
+	accessToken := m.GetString("accessToken")
+	ul := m.GetString("url")
+	username := m.GetString("username")
 	if pipelineId == "" {
 		c.String(500, "param err")
 		return
@@ -133,8 +136,11 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 		DisplayName: y.DisplayName,
 		JsonContent: string(js),
 		YmlContent:  content,
+		Url:         ul,
+		Username:    username,
+		AccessToken: accessToken,
 	}
-	_, err = comm.Db.Cols("name , display_name,json_content,yml_content").Where("id = ?", pipelineId).Update(pipeline)
+	_, err = comm.Db.Cols("name , display_name,json_content,yml_content,url,username,access_token").Where("id = ?", pipelineId).Update(pipeline)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
@@ -146,6 +152,9 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 	name := m.GetString("name")
 	content := m.GetString("content")
 	orgId := m.GetString("orgId")
+	accessToken := m.GetString("accessToken")
+	ul := m.GetString("url")
+	username := m.GetString("username")
 	if name == "" || content == "" {
 		c.String(500, "param err")
 		return
@@ -180,6 +189,9 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		PipelineType: "",
 		JsonContent:  string(js),
 		YmlContent:   content,
+		Url:          ul,
+		Username:     username,
+		AccessToken:  accessToken,
 	}
 	_, err = comm.Db.InsertOne(pipeline)
 	if err != nil {
@@ -228,7 +240,6 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 
 func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
-	repoId := m.GetString("repoId")
 	if pipelineId == "" {
 		c.String(500, "param err")
 		return
@@ -239,7 +250,7 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "No Auth")
 		return
 	}
-	tvp, err := service.Run(pipelineId, repoId)
+	tvp, err := service.Run(pipelineId)
 	if err != nil {
 		c.String(500, err.Error())
 		return

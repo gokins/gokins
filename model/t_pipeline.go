@@ -8,4 +8,7 @@ type TPipeline struct {
 	PipelineType string `xorm:"VARCHAR(255)" json:"pipelineType"`
 	JsonContent  string `xorm:"LONGTEXT" json:"jsonContent"`
 	YmlContent   string `xorm:"LONGTEXT" json:"ymlContent"`
+	AccessToken  string `xorm:"VARCHAR(255)" json:"accessToken"`
+	Url          string `xorm:"VARCHAR(255)" json:"url"`
+	Username     string `xorm:"VARCHAR(255)" json:"username"`
 }
