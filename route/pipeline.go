@@ -302,17 +302,17 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
 	pg, _ := m.GetInt("page")
-	pipe := &model.TPipeline{}
-	ok, _ := comm.Db.Where("id=? and deleted != 1", pipelineId).Get(pipe)
-	if !ok {
-		c.String(404, "未找到流水线信息")
-		return
-	}
 	usr := service.GetMidLgUser(c)
 	ls := make([]*model.TPipelineVersion, 0)
 	var page *bean.Page
 	var err error
 	if pipelineId != "" {
+		pipe := &model.TPipeline{}
+		ok, _ := comm.Db.Where("id=? and deleted != 1", pipelineId).Get(pipe)
+		if !ok {
+			c.String(404, "未找到流水线信息")
+			return
+		}
 		where := comm.Db.Where("pipeline_id = ? and deleted != 1", pipelineId).Desc("id")
 		page, err = comm.FindPage(where, &ls, pg)
 		if err != nil {
