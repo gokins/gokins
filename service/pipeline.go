@@ -15,7 +15,7 @@ import (
 
 func Run(pipeId string) (*model.TPipelineVersion, error) {
 	tpipe := &model.TPipeline{}
-	ok, _ := comm.Db.Where("id=?", pipeId).Get(tpipe)
+	ok, _ := comm.Db.Where("id=? and deleted != 1", pipeId).Get(tpipe)
 	if !ok {
 		return nil, errors.New("流水线不存在")
 	}

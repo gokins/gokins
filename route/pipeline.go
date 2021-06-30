@@ -26,6 +26,7 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/org/pipelines", util.GinReqParseJson(c.orgPipelines))
 	g.POST("/pipelines", util.GinReqParseJson(c.getPipelines))
 	g.POST("/new", util.GinReqParseJson(c.new))
+	g.POST("/deleted", util.GinReqParseJson(c.deleted))
 	g.POST("/info", util.GinReqParseJson(c.info))
 	g.POST("/save", util.GinReqParseJson(c.save))
 	g.POST("/run", util.GinReqParseJson(c.run))
@@ -61,7 +62,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		gen.SQL = `
 			select {{select}} from t_pipeline pipe 
 			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id 
-			where top.org_id = ? 
+			where top.org_id = ? and pipe.deleted != 1
 		    `
 		gen.Args = append(gen.Args, perm.Org().Id)
 		if q != "" {
@@ -86,13 +87,16 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	if comm.IsMySQL {
 		session := comm.Db.NewSession()
-		if q != "" {
-			session.Where("name = ?", q)
-		}
+		session.Where("deleted != 1")
 		session.Desc("id")
+
 		if !service.IsAdmin(usr) {
-			session.Where("uid = ?", usr.Id)
+			session.And("uid = ?", usr.Id)
 		}
+		if q != "" {
+			session.And("name = ?", q)
+		}
+
 		page, err = comm.FindPage(session, &ls, pg)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
@@ -148,7 +152,31 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 	}
 	c.String(http.StatusOK, "ok")
 }
-
+func (PipelineController) deleted(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	if id == "" {
+		c.String(500, "param err")
+		return
+	}
+	tp := &model.TPipeline{
+		Deleted:     1,
+		DeletedTime: time.Now(),
+	}
+	_, err := comm.Db.Cols("deleted").Where("id = ?", id).Update(tp)
+	if err != nil {
+		c.String(500, "TPipeline Update db err:"+err.Error())
+		return
+	}
+	version := &model.TPipelineVersion{
+		Deleted: 1,
+	}
+	_, err = comm.Db.Cols("deleted").Where("pipeline_id = ?", id).Update(version)
+	if err != nil {
+		c.String(500, "TPipeline Update db err:"+err.Error())
+		return
+	}
+	c.String(http.StatusOK, "ok")
+}
 func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 	name := m.GetString("name")
 	content := m.GetString("content")
@@ -224,19 +252,18 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
+	pipe := &model.TPipeline{}
+	ok, _ := comm.Db.Where("id=? and deleted != 1", id).Get(pipe)
+	if !ok {
+		c.String(404, "未找到流水线信息")
+		return
+	}
 	usr := service.GetMidLgUser(c)
 	perm := service.NewPipePerm(usr, id)
 	if !perm.CanRead() {
 		c.String(405, "No Auth")
 		return
 	}
-	pipe := &model.TPipeline{}
-	ok, _ := comm.Db.Where("id=?", id).Get(pipe)
-	if !ok {
-		c.String(404, "not found org1 ")
-		return
-	}
-
 	c.JSON(200, pipe)
 }
 
@@ -263,21 +290,26 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
 	pg, _ := m.GetInt("page")
-
+	pipe := &model.TPipeline{}
+	ok, _ := comm.Db.Where("id=? and deleted != 1", pipelineId).Get(pipe)
+	if !ok {
+		c.String(404, "未找到流水线信息")
+		return
+	}
 	usr := service.GetMidLgUser(c)
 	ls := make([]*model.TPipelineVersion, 0)
 	var page *bean.Page
 	var err error
 	if pipelineId != "" {
-		perm := service.NewPipePerm(usr, pipelineId)
-		if !perm.CanRead() {
-			c.String(405, "No Auth")
-			return
-		}
 		where := comm.Db.Where("pipeline_id = ? and deleted != 1", pipelineId).Desc("id")
 		page, err = comm.FindPage(where, &ls, pg)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
+			return
+		}
+		perm := service.NewPipePerm(usr, pipelineId)
+		if !perm.CanRead() {
+			c.String(405, "No Auth")
 			return
 		}
 	} else {
@@ -289,13 +321,13 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 				return
 			}
 		} else {
-			tpipeIds := []*string{}
-			err = comm.Db.Table(&model.TPipeline{}).Cols("id").Where("uid = ?", usr.Id).Find(&tpipeIds)
+			tpipeIds := []string{}
+			err = comm.Db.Table(&model.TPipeline{}).Cols("id").Where("uid = ? and deleted != 1", usr.Id).Find(&tpipeIds)
 			if err != nil {
 				c.String(500, "db err:"+err.Error())
 				return
 			}
-			where := comm.Db.In("id", tpipeIds).Desc("id")
+			where := comm.Db.In("pipeline_id", tpipeIds).Desc("id")
 			page, err = comm.FindPage(where, &ls, pg)
 			if err != nil {
 				c.String(500, "db err:"+err.Error())

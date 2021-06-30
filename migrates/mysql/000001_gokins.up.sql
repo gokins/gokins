@@ -127,6 +127,8 @@ CREATE TABLE `t_pipeline`
     `access_token`  varchar(255) DEFAULT NULL,
     `url`           varchar(255) DEFAULT NULL,
     `username`      varchar(255) DEFAULT NULL,
+    `deleted` int(1) DEFAULT '0',
+    `deleted_time` datetime DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
 )
 CREATE TABLE `t_pipeline_version`
@@ -227,11 +229,4 @@ CREATE TABLE `t_user_token`
     PRIMARY KEY (`aid`) USING BTREE,
     INDEX           `uid`(`uid`) USING BTREE,
     INDEX           `openid`(`openid`) USING BTREE
-);
-CREATE TABLE `t_repo`
-(
-    `id`   varchar(64) NOT NULL,
-    `name` varchar(255) DEFAULT NULL,
-    `url`  varchar(255) DEFAULT NULL,
-    PRIMARY KEY (`id`)
 );
