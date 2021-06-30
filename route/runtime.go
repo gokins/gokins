@@ -79,7 +79,10 @@ func (RuntimeController) cmds(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
-	c.JSON(200, ls)
+	c.JSON(200, hbtp.Map{
+		"stepId": stepId,
+		"cmds":   ls,
+	})
 	/*ids:=make([]string,0)
 	cmds := map[string]*model.TCmdLine{}
 	for _, v := range ls {
