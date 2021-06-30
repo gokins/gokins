@@ -109,6 +109,7 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 	accessToken := m.GetString("accessToken")
 	ul := m.GetString("url")
 	username := m.GetString("username")
+	displayName := m.GetString("displayName")
 	if pipelineId == "" {
 		c.String(500, "param err")
 		return
@@ -133,7 +134,7 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 	}
 	pipeline := &model.TPipeline{
 		Name:        name,
-		DisplayName: y.DisplayName,
+		DisplayName: displayName,
 		JsonContent: string(js),
 		YmlContent:  content,
 		Url:         ul,
@@ -155,6 +156,7 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 	accessToken := m.GetString("accessToken")
 	ul := m.GetString("url")
 	username := m.GetString("username")
+	displayName := m.GetString("displayName")
 	if name == "" || content == "" {
 		c.String(500, "param err")
 		return
@@ -185,7 +187,7 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		Id:           utils.NewXid(),
 		Uid:          usr.Id,
 		Name:         name,
-		DisplayName:  y.DisplayName,
+		DisplayName:  displayName,
 		PipelineType: "",
 		JsonContent:  string(js),
 		YmlContent:   content,
@@ -213,7 +215,7 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		}
 
 	}
-	c.String(http.StatusOK, "ok")
+	c.JSON(http.StatusOK, pipeline)
 }
 
 func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
