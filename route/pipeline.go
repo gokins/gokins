@@ -166,7 +166,7 @@ func (PipelineController) deleted(c *gin.Context, m *hbtp.Map) {
 	}
 	usr := service.GetMidLgUser(c)
 	perm := service.NewPipePerm(usr, id)
-	if !perm.CanRead() {
+	if !perm.CanWrite() {
 		c.String(405, "No Auth")
 		return
 	}
