@@ -339,6 +339,10 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 				c.String(500, "db err:"+err.Error())
 				return
 			}
+			if len(tpipeIds) <= 0 {
+				c.JSON(200, page)
+				return
+			}
 			where := comm.Db.In("pipeline_id", tpipeIds).Desc("id")
 			page, err = comm.FindPage(where, &ls, pg)
 			if err != nil {
