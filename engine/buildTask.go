@@ -372,6 +372,7 @@ func (c *BuildTask) runStage(stage *runtime.Stage) {
 func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 	defer stage.wg.Done()
 	defer func() {
+		job.step.Finished = time.Now()
 		go c.updateStep(job)
 		if err := recover(); err != nil {
 			logrus.Warnf("BuildTask runStep recover:%v", err)
