@@ -158,6 +158,18 @@ func (PipelineController) deleted(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
+	pipe := &model.TPipeline{}
+	ok, _ := comm.Db.Where("id=? and deleted != 1", id).Get(pipe)
+	if !ok {
+		c.String(404, "未找到流水线信息")
+		return
+	}
+	usr := service.GetMidLgUser(c)
+	perm := service.NewPipePerm(usr, id)
+	if !perm.CanRead() {
+		c.String(405, "No Auth")
+		return
+	}
 	tp := &model.TPipeline{
 		Deleted:     1,
 		DeletedTime: time.Now(),
