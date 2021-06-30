@@ -153,6 +153,8 @@ func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
 			return
 		}
 	}
+
+	var lastoff int64
 	ls := make([]*bean.LogOutJsonRes, 0)
 	bts := make([]byte, 1024*5)
 	linebuf := &bytes.Buffer{}
@@ -176,6 +178,7 @@ func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
 							}*/
 							e.Offset = off - 1
 							ls = append(ls, e)
+							lastoff = e.Offset
 						}
 						if limit > 0 && limit >= int64(len(ls)) {
 							break
@@ -190,5 +193,9 @@ func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
 			break
 		}
 	}
-	c.JSON(200, ls)
+	c.JSON(200, hbtp.Map{
+		"stepId":  tstp.Id,
+		"lastoff": lastoff,
+		"logs":    ls,
+	})
 }

@@ -656,6 +656,7 @@ func (c *BuildTask) Show() (*runtime.BuildShow, bool) {
 			rtstg.Steps = append(rtstg.Steps, rtstp)
 			for _, cmd := range job.cmdmp {
 				rtstp.Cmds = append(rtstp.Cmds, &runtime.CmdShow{
+					Id:       cmd.cmd.Id,
 					Status:   cmd.status,
 					Started:  cmd.started,
 					Finished: cmd.finished,
