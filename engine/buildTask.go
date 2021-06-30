@@ -151,6 +151,25 @@ func (c *BuildTask) run() {
 	c.build.Status = common.BuildStatusOk
 }
 func (c *BuildTask) check() bool {
+	if c.build.Repo == nil {
+		c.status(common.BuildEventCheckParam, "repo param err")
+		return false
+	}
+	if c.build.Repo.CloneURL == "" {
+		c.status(common.BuildEventCheckParam, "repo param err:clone url")
+		return false
+	}
+	s, err := os.Stat(c.build.Repo.CloneURL)
+	if err == nil && s.IsDir() {
+		c.isClone = false
+		c.repoPath = c.build.Repo.CloneURL
+	} else {
+		if !common.RegUrl.MatchString(c.build.Repo.CloneURL) {
+			c.status(common.BuildEventCheckParam, "repo param err:clone url")
+			return false
+		}
+		c.isClone = true
+	}
 	if c.build.Stages == nil || len(c.build.Stages) <= 0 {
 		c.build.Event = common.BuildEventCheckParam
 		c.build.Error = "build Stages is empty"
@@ -451,27 +470,14 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 }
 
 func (c *BuildTask) getRepo() error {
-	repo := c.build.Repo
-	if repo == nil {
-		return errors.New("getRepo err:  repo is empty ")
-	}
-	if repo.CloneURL == "" {
-		return errors.New("getRepo err:  cloneUrl is empty ")
-	}
-	s, err := os.Stat(repo.CloneURL)
-	if err == nil && s.IsDir() {
-		c.isClone = false
-		c.repoPath = repo.CloneURL
+	if !c.isClone {
 		return nil
 	}
-
 	clonePath := filepath.Join(c.buildPath, common.PathRepo)
-	err = gitClone(c.ctx, clonePath, c.build.Repo)
+	err := gitClone(c.ctx, clonePath, c.build.Repo)
 	if err != nil {
 		return err
 	}
-	c.isClone = true
-	c.repoPath = clonePath
 	return nil
 }
 
