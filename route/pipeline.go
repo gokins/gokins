@@ -32,6 +32,7 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/save", util.GinReqParseJson(c.save))
 	g.POST("/run", util.GinReqParseJson(c.run))
 	g.POST("/copy", util.GinReqParseJson(c.copy))
+	g.POST("/rebuild", util.GinReqParseJson(c.rebuild))
 	g.POST("/pipelineVersions", util.GinReqParseJson(c.pipelineVersions))
 	g.POST("/pipelineVersion", util.GinReqParseJson(c.pipelineVersion))
 }
@@ -343,6 +344,35 @@ func (PipelineController) copy(c *gin.Context, m *hbtp.Map) {
 
 	c.JSON(200, pipe)
 }
+func (PipelineController) rebuild(c *gin.Context, m *hbtp.Map) {
+	pipelineVersionId := m.GetString("pipelineVersionId")
+	if pipelineVersionId == "" {
+		c.String(500, "param err")
+		return
+	}
+	tvp := &model.TPipelineVersion{}
+	ok, _ := comm.Db.Where("id=? and deleted != 1", pipelineVersionId).Get(tvp)
+	if !ok {
+		c.String(404, "构建记录不存在")
+		return
+	}
+	usr := service.GetMidLgUser(c)
+	perm := service.NewPipePerm(usr, tvp.PipelineId)
+	if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
+		c.String(404, "未找到流水线信息")
+		return
+	}
+	if !perm.CanExec() {
+		c.String(405, "No Auth")
+		return
+	}
+	tvp, err := service.ReBuild(tvp)
+	if err != nil {
+		c.String(500, err.Error())
+		return
+	}
+	c.JSON(200, tvp)
+}
 
 func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
@@ -386,7 +416,7 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 				c.JSON(200, page)
 				return
 			}
-			where := comm.Db.In("pipeline_id", tpipeIds).Desc("id")
+			where := comm.Db.In("pipeline_id", tpipeIds).Where("deleted != 1").Desc("id")
 			page, err = comm.FindPage(where, &ls, pg)
 			if err != nil {
 				c.String(500, "db err:"+err.Error())
