@@ -165,3 +165,7 @@ func Run(pipeId string) (*model.TPipelineVersion, error) {
 	engine.Mgr.BuildEgn().Put(rb)
 	return tpv, nil
 }
+
+func InsertPipeline() {
+
+}
