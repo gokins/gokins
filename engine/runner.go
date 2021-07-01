@@ -45,7 +45,7 @@ func (c *baseRunner) Update(m *runners.UpdateJobInfo) error {
 	return nil
 }
 
-func (c *baseRunner) UpdateCmd(jobid, cmdid string, fs int) error {
+func (c *baseRunner) UpdateCmd(jobid, cmdid string, fs, code int) error {
 	job, ok := Mgr.jobEgn.GetJob(jobid)
 	if !ok {
 		return errors.New("not found job")
@@ -54,7 +54,13 @@ func (c *baseRunner) UpdateCmd(jobid, cmdid string, fs int) error {
 	if !ok {
 		return errors.New("not found task")
 	}
-	tsk.UpJobCmd(job, cmdid, fs)
+	job.RLock()
+	cmd, ok := job.cmdmp[cmdid]
+	job.RUnlock()
+	if !ok {
+		return errors.New("not found cmd")
+	}
+	tsk.UpJobCmd(cmd, fs, code)
 	return nil
 }
 func (c *baseRunner) PushOutLine(jobid, cmdid, bs string, iserr bool) error {

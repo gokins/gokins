@@ -155,6 +155,7 @@ func (c *BuildTask) updateStepCmd(cmd *cmdSync) {
 	defer cmd.RUnlock()
 	cmde := &model.TCmdLine{
 		Status: cmd.status,
+		Code:   cmd.code,
 	}
 	cols := []string{"status"}
 	switch cmd.status {

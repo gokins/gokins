@@ -24,6 +24,7 @@ CREATE TABLE `t_cmd_line`
     `step_id`  varchar(64) NULL DEFAULT NULL,
     `status`   varchar(50) NULL DEFAULT NULL,
     `num`      int(11) NULL DEFAULT NULL,
+    `code`      int(11) NULL DEFAULT NULL,
     `content`  text NULL,
     `created`  datetime(0) NULL DEFAULT NULL,
     `started`  datetime(0) NULL DEFAULT NULL,

@@ -11,6 +11,7 @@ type TCmdLine struct {
 	StepId   string    `xorm:"VARCHAR(64)" json:"stepId"`
 	Status   string    `xorm:"VARCHAR(50)" json:"status"`
 	Num      int       `xorm:"INT(11)" json:"num"`
+	Code     int       `xorm:"INT(11)" json:"code"`
 	Content  string    `xorm:"TEXT" json:"content"`
 	Created  time.Time `xorm:"DATETIME" json:"created"`
 	Started  time.Time `xorm:"DATETIME" json:"started"`

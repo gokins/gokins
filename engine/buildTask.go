@@ -607,14 +607,8 @@ func (c *BuildTask) UpJob(job *jobSync, stat, errs string, code int) {
 	job.Unlock()
 	go c.updateStep(job)
 }
-func (c *BuildTask) UpJobCmd(job *jobSync, cmdid string, fs int) {
-	if job == nil || cmdid == "" {
-		return
-	}
-	job.RLock()
-	cmd, ok := job.cmdmp[cmdid]
-	job.RUnlock()
-	if !ok {
+func (c *BuildTask) UpJobCmd(cmd *cmdSync, fs, code int) {
+	if cmd == nil {
 		return
 	}
 	cmd.Lock()
@@ -625,6 +619,10 @@ func (c *BuildTask) UpJobCmd(job *jobSync, cmdid string, fs int) {
 		cmd.started = time.Now()
 	case 2:
 		cmd.status = common.BuildStatusOk
+		if code != 0 {
+			cmd.code = code
+			cmd.status = common.BuildStatusError
+		}
 		cmd.finished = time.Now()
 	default:
 		return

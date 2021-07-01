@@ -31,6 +31,7 @@ type executer struct {
 type cmdSync struct {
 	sync.RWMutex
 	cmd      *runners.CmdContent
+	code     int
 	status   string
 	started  time.Time
 	finished time.Time
