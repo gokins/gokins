@@ -57,6 +57,16 @@ func (c *BuildTask) updateBuild(build *runtime.Build) {
 	if err != nil {
 		logrus.Errorf("BuildTask.updateBuild step err:%v", err)
 	}
+	cmde := &model.TCmdLine{
+		Status:   common.BuildStatusCancel,
+		Finished: time.Now(),
+	}
+	_, err = comm.Db.Cols("status", "finished").
+		Where("build_id=? and `status`!=? and `status`!=? and `status`!=?",
+			build.Id, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel).Update(cmde)
+	if err != nil {
+		logrus.Errorf("BuildTask.updateStage step err:%v", err)
+	}
 }
 func (c *BuildTask) updateStage(stage *runtime.Stage) {
 	defer func() {
@@ -122,13 +132,13 @@ func (c *BuildTask) updateStep(job *jobSync) {
 	if !common.BuildStatusEnded(e.Status) {
 		return
 	}
-	stpe := &model.TCmdLine{
+	cmde := &model.TCmdLine{
 		Status:   common.BuildStatusCancel,
 		Finished: time.Now(),
 	}
 	_, err = comm.Db.Cols("status", "finished").
 		Where("step_id=? and `status`!=? and `status`!=? and `status`!=?",
-			job.step.Id, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel).Update(stpe)
+			job.step.Id, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel).Update(cmde)
 	if err != nil {
 		logrus.Errorf("BuildTask.updateStage step err:%v", err)
 	}

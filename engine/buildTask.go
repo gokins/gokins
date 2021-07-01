@@ -10,7 +10,9 @@ import (
 	"github.com/gokins-main/runner/runners"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -58,6 +60,7 @@ type BuildTask struct {
 	buildPath string
 	isClone   bool
 	repoPath  string
+	workpgss  int
 }
 
 func (c *BuildTask) status(stat, errs string, event ...string) {
@@ -129,6 +132,7 @@ func (c *BuildTask) run() {
 	c.ctx, c.cncl = context.WithTimeout(comm.Ctx, time.Hour*2+time.Minute*5)
 	c.build.Status = common.BuildStatusPreparation
 	err = c.getRepo()
+	c.workpgss = 100
 	if err != nil {
 		logrus.Errorf("clone repo err:%v", err)
 		c.status(common.BuildStatusError, "repo err", common.BuildEventGetRepo)
@@ -476,22 +480,45 @@ func (c *BuildTask) getRepo() error {
 		return nil
 	}
 	clonePath := filepath.Join(c.buildPath, common.PathRepo)
-	err := gitClone(c.ctx, clonePath, c.build.Repo)
+	err := c.gitClone(c.ctx, clonePath, c.build.Repo)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func gitClone(ctx context.Context, dir string, repo *runtime.Repository) error {
+var regBfb = regexp.MustCompile(`:\s+(\d+)% \(\d+\/\d+\)`)
+
+func (c *BuildTask) Write(bts []byte) (n int, err error) {
+	defer func() {
+		if err := recover(); err != nil {
+			logrus.Warnf("BuildTask gitWrite recover:%v", err)
+			logrus.Warnf("BuildTask stack:%s", string(debug.Stack()))
+		}
+	}()
+	ln := len(bts)
+	line := string(bts)
+	if ln > 0 && regBfb.MatchString(line) {
+		subs := regBfb.FindAllStringSubmatch(line, -1)[0]
+		if len(subs) > 1 {
+			p, err := strconv.Atoi(subs[1])
+			if err == nil {
+				c.workpgss = p
+			}
+		}
+	}
+	return ln, nil
+}
+func (c *BuildTask) gitClone(ctx context.Context, dir string, repo *runtime.Repository) error {
 	clonePath := filepath.Join(dir)
 	bauth := &ghttp.BasicAuth{
 		Username: repo.Name,
 		Password: repo.Token,
 	}
 	gc := &git.CloneOptions{
-		URL:  repo.CloneURL,
-		Auth: bauth,
+		URL:      repo.CloneURL,
+		Auth:     bauth,
+		Progress: c,
 	}
 	logrus.Debugf("gitClone : clone url: %s sha: %s", repo.CloneURL, repo.Sha)
 	repository, err := util.CloneRepo(clonePath, gc, ctx)
@@ -604,10 +631,14 @@ func (c *BuildTask) UpJobCmd(job *jobSync, cmdid string, fs int) {
 	}
 	go c.updateStepCmd(cmd)
 }
+func (c *BuildTask) WorkProgress() int {
+	return c.workpgss
+}
 func (c *BuildTask) Show() (*runtime.BuildShow, bool) {
 	if c.stopd() {
 		return nil, false
 	}
+	c.bdlk.RLock()
 	rtbd := &runtime.BuildShow{
 		Id:         c.build.Id,
 		PipelineId: c.build.PipelineId,
@@ -619,6 +650,7 @@ func (c *BuildTask) Show() (*runtime.BuildShow, bool) {
 		Created:    c.build.Created,
 		Updated:    c.build.Updated,
 	}
+	c.bdlk.RUnlock()
 	for _, v := range c.build.Stages {
 		c.staglk.RLock()
 		stg, ok := c.stages[v.Name]
