@@ -41,7 +41,8 @@ type RunStep struct {
 	Created           time.Time `xorm:"comment('创建时间') DATETIME" json:"created"`
 	Updated           time.Time `xorm:"comment('更新时间') DATETIME" json:"updated"`
 	Errignore         string    `xorm:"VARCHAR(5)" json:"errignore"`
-	DependsOn         string    `xorm:"JSON" json:"dependsOn"`
+	DependsOn         string    `xorm:"JSON" json:"-"`
+	DependOns         []string  `xorm:"-" json:"dependsOn"`
 	Sort              int64     `xorm:"BIGINT(10)" json:"sort"`
 }
 

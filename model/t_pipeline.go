@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type TPipeline struct {
 	Id           string    `xorm:"not null pk VARCHAR(64)" json:"id"`
