@@ -510,6 +510,7 @@ func (c *BuildTask) Write(bts []byte) (n int, err error) {
 			}
 		}
 	}
+	println("BuildTask git log:", line)
 	return ln, nil
 }
 func (c *BuildTask) gitClone(ctx context.Context, dir string, repo *runtime.Repository) error {

@@ -130,6 +130,7 @@ func (RuntimeController) cancel(c *gin.Context, m *hbtp.Map) {
 	c.String(200, "ok")
 }
 func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
+	buildId := m.GetString("buildId")
 	stepId := m.GetString("stepId")
 	offset, _ := m.GetInt("offset")
 	limit, _ := m.GetInt("limit")
@@ -137,14 +138,14 @@ func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	tstp := &model.TStep{}
+	/*tstp := &model.TStep{}
 	ok, _ := comm.Db.Where("id=?", stepId).Get(tstp)
 	if !ok {
 		c.String(404, "Not Found")
 		return
-	}
-	dir := filepath.Join(comm.WorkPath, common.PathBuild, tstp.BuildId, common.PathJobs)
-	logpth := filepath.Join(dir, fmt.Sprintf("%v.log", tstp.Id))
+	}*/
+	dir := filepath.Join(comm.WorkPath, common.PathBuild, buildId, common.PathJobs)
+	logpth := filepath.Join(dir, fmt.Sprintf("%v.log", stepId))
 	fl, err := os.Open(logpth)
 	if err != nil {
 		c.String(404, "Not Found File")
@@ -200,7 +201,7 @@ func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
 		}
 	}
 	c.JSON(200, hbtp.Map{
-		"stepId":  tstp.Id,
+		"stepId":  stepId,
 		"lastoff": lastoff,
 		"logs":    ls,
 	})
