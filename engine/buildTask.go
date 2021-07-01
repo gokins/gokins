@@ -4,10 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gokins-main/core/utils"
-	"github.com/gokins-main/gokins/model"
-	"github.com/gokins-main/gokins/util"
-	"github.com/gokins-main/runner/runners"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -16,6 +12,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gokins-main/core/utils"
+	"github.com/gokins-main/gokins/model"
+	"github.com/gokins-main/gokins/util"
+	"github.com/gokins-main/runner/runners"
 
 	"github.com/go-git/go-git/v5"
 	ghttp "github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -132,7 +133,6 @@ func (c *BuildTask) run() {
 	c.ctx, c.cncl = context.WithTimeout(comm.Ctx, time.Hour*2+time.Minute*5)
 	c.build.Status = common.BuildStatusPreparation
 	err = c.getRepo()
-	c.workpgss = 100
 	if err != nil {
 		logrus.Errorf("clone repo err:%v", err)
 		c.status(common.BuildStatusError, "repo err", common.BuildEventGetRepo)
@@ -146,6 +146,8 @@ func (c *BuildTask) run() {
 		}
 	}
 	c.updateBuild(c.build)
+	logrus.Debugf("BuildTask run build:%s,pgss:%d", c.build.Id, c.workpgss)
+	c.workpgss = 100
 	for _, v := range c.build.Stages {
 		c.runStage(v)
 		if v.Status != common.BuildStatusOk {
@@ -451,6 +453,7 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 		job.status(common.BuildStatusError, fmt.Sprintf("command run err:%v", err))
 		return
 	}
+	logrus.Debugf("BuildTask put step:%s", job.step.Name)
 	for !hbtp.EndContext(comm.Ctx) {
 		job.Lock()
 		stats := job.step.Status
@@ -503,7 +506,7 @@ func (c *BuildTask) Write(bts []byte) (n int, err error) {
 		if len(subs) > 1 {
 			p, err := strconv.Atoi(subs[1])
 			if err == nil {
-				c.workpgss = p
+				c.workpgss = int(float64(p) * 0.8)
 			}
 		}
 	}
