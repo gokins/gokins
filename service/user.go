@@ -195,9 +195,9 @@ func (c *OrgPerm) UserOrg() *model.TUserOrg {
 
 type UserPipeOrgPerm struct {
 	OrgId     string `xorm:"org_id"`
-	orgName   string `xorm:"org_name"`
-	orgUid    string `xorm:"org_uid"`
-	orgPublic int    `xorm:"org_public"`
+	OrgName   string `xorm:"org_name"`
+	OrgUid    string `xorm:"org_uid"`
+	OrgPublic int    `xorm:"org_public"`
 	OpPublic  int    `xorm:"op_public"`
 	CurUid    string `xorm:"cur_uid"`
 	PermAdm   int    `xorm:"perm_adm"`
@@ -251,10 +251,10 @@ func (c *PipePerm) CanRead() bool {
 		return true
 	}
 	for _, v := range c.perms {
-		if c.lgusr != nil && v.orgUid == c.lgusr.Id {
+		if c.lgusr != nil && v.OrgUid == c.lgusr.Id {
 			return true
 		}
-		if v.orgPublic == 1 {
+		if v.OrgPublic == 1 {
 			return true
 		}
 		if v.CurUid != "" {
@@ -268,7 +268,7 @@ func (c *PipePerm) CanWrite() bool {
 		return true
 	}
 	for _, v := range c.perms {
-		if c.lgusr != nil && v.orgUid == c.lgusr.Id {
+		if c.lgusr != nil && v.OrgUid == c.lgusr.Id {
 			return true
 		}
 		if v.CurUid != "" && (v.PermAdm == 1 || v.PermRw == 1) {
@@ -282,7 +282,7 @@ func (c *PipePerm) CanExec() bool {
 		return true
 	}
 	for _, v := range c.perms {
-		if c.lgusr != nil && v.orgUid == c.lgusr.Id {
+		if c.lgusr != nil && v.OrgUid == c.lgusr.Id {
 			return true
 		}
 		if v.CurUid != "" && (v.PermAdm == 1 || v.PermExec == 1) {
