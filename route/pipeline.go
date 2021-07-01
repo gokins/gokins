@@ -352,12 +352,6 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	var err error
 	if pipelineId != "" {
-		where := comm.Db.Where("pipeline_id = ? and deleted != 1", pipelineId).Desc("id")
-		page, err = comm.FindPage(where, &ls, pg)
-		if err != nil {
-			c.String(500, "db err:"+err.Error())
-			return
-		}
 		perm := service.NewPipePerm(usr, pipelineId)
 		if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
 			c.String(404, "未找到流水线信息")
@@ -365,6 +359,12 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 		}
 		if !perm.CanRead() {
 			c.String(405, "No Auth")
+			return
+		}
+		where := comm.Db.Where("pipeline_id = ? and deleted != 1", pipelineId).Desc("id")
+		page, err = comm.FindPage(where, &ls, pg)
+		if err != nil {
+			c.String(500, "db err:"+err.Error())
 			return
 		}
 	} else {
