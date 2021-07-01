@@ -31,6 +31,10 @@ func (c *BuildTask) updateBuild(build *runtime.Build) {
 	if err != nil {
 		logrus.Errorf("BuildTask.updateBuild db err:%v", err)
 	}
+
+	if !common.BuildStatusEnded(e.Status) {
+		return
+	}
 	stge := &model.TStage{
 		Status:   common.BuildStatusCancel,
 		Finished: time.Now(),
@@ -74,6 +78,10 @@ func (c *BuildTask) updateStage(stage *runtime.Stage) {
 	if err != nil {
 		logrus.Errorf("BuildTask.updateStage db err:%v", err)
 	}
+
+	if !common.BuildStatusEnded(e.Status) {
+		return
+	}
 	stpe := &model.TStep{
 		Status:   common.BuildStatusCancel,
 		Finished: time.Now(),
@@ -96,7 +104,7 @@ func (c *BuildTask) updateStep(job *jobSync) {
 
 	job.RLock()
 	defer job.RUnlock()
-	step := &model.TStep{
+	e := &model.TStep{
 		Status:   job.step.Status,
 		Event:    job.step.Event,
 		Error:    job.step.Error,
@@ -106,11 +114,14 @@ func (c *BuildTask) updateStep(job *jobSync) {
 		Updated:  time.Now(),
 	}
 	_, err := comm.Db.Cols("status", "event", "error", "exit_code", "started", "finished", "updated").
-		Where("id=?", job.step.Id).Update(step)
+		Where("id=?", job.step.Id).Update(e)
 	if err != nil {
 		logrus.Errorf("BuildTask.updateStep db err:%v", err)
 	}
 
+	if !common.BuildStatusEnded(e.Status) {
+		return
+	}
 	stpe := &model.TCmdLine{
 		Status:   common.BuildStatusCancel,
 		Finished: time.Now(),
