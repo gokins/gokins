@@ -1,6 +1,7 @@
 package route
 
 import (
+	"fmt"
 	"github.com/gokins-main/gokins/models"
 	"net/http"
 	"time"
@@ -30,6 +31,7 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/info", util.GinReqParseJson(c.info))
 	g.POST("/save", util.GinReqParseJson(c.save))
 	g.POST("/run", util.GinReqParseJson(c.run))
+	g.POST("/copy", util.GinReqParseJson(c.copy))
 	g.POST("/pipelineVersions", util.GinReqParseJson(c.pipelineVersions))
 	g.POST("/pipelineVersion", util.GinReqParseJson(c.pipelineVersion))
 }
@@ -158,14 +160,12 @@ func (PipelineController) deleted(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	pipe := &model.TPipeline{}
-	ok, _ := comm.Db.Where("id=? and deleted != 1", id).Get(pipe)
-	if !ok {
+	usr := service.GetMidLgUser(c)
+	perm := service.NewPipePerm(usr, id)
+	if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
 		c.String(404, "未找到流水线信息")
 		return
 	}
-	usr := service.GetMidLgUser(c)
-	perm := service.NewPipePerm(usr, id)
 	if !perm.CanWrite() {
 		c.String(405, "No Auth")
 		return
@@ -264,16 +264,20 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
+	usr := service.GetMidLgUser(c)
+	perm := service.NewPipePerm(usr, id)
+	if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
+		c.String(404, "未找到流水线信息")
+		return
+	}
+	if !perm.CanRead() {
+		c.String(405, "No Auth")
+		return
+	}
 	pipe := &model.TPipeline{}
 	ok, _ := comm.Db.Where("id=? and deleted != 1", id).Get(pipe)
 	if !ok {
 		c.String(404, "未找到流水线信息")
-		return
-	}
-	usr := service.GetMidLgUser(c)
-	perm := service.NewPipePerm(usr, id)
-	if !perm.CanRead() {
-		c.String(405, "No Auth")
 		return
 	}
 	c.JSON(200, pipe)
@@ -287,6 +291,10 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 	}
 	usr := service.GetMidLgUser(c)
 	perm := service.NewPipePerm(usr, pipelineId)
+	if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
+		c.String(404, "未找到流水线信息")
+		return
+	}
 	if !perm.CanExec() {
 		c.String(405, "No Auth")
 		return
@@ -299,6 +307,43 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 	c.JSON(200, tvp)
 }
 
+func (PipelineController) copy(c *gin.Context, m *hbtp.Map) {
+	pipelineId := m.GetString("pipelineId")
+	if pipelineId == "" {
+		c.String(500, "param err")
+		return
+	}
+	usr := service.GetMidLgUser(c)
+	pipePerm := service.NewPipePerm(usr, pipelineId)
+	if pipePerm.Pipeline() == nil || pipePerm.Pipeline().Deleted == 1 {
+		c.String(404, "未找到流水线信息")
+		return
+	}
+	if !pipePerm.CanRead() {
+		c.String(405, "No Auth")
+		return
+	}
+	pipe := &model.TPipeline{
+		Id:           utils.NewXid(),
+		Uid:          usr.Id,
+		Name:         fmt.Sprintf("%s_copy", pipePerm.Pipeline().Name),
+		DisplayName:  pipePerm.Pipeline().DisplayName,
+		PipelineType: pipePerm.Pipeline().PipelineType,
+		JsonContent:  pipePerm.Pipeline().JsonContent,
+		YmlContent:   pipePerm.Pipeline().YmlContent,
+		AccessToken:  pipePerm.Pipeline().AccessToken,
+		Url:          pipePerm.Pipeline().Url,
+		Username:     pipePerm.Pipeline().Username,
+	}
+	_, err := comm.Db.InsertOne(pipe)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+
+	c.JSON(200, pipe)
+}
+
 func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
 	pg, _ := m.GetInt("page")
@@ -307,12 +352,6 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	var err error
 	if pipelineId != "" {
-		pipe := &model.TPipeline{}
-		ok, _ := comm.Db.Where("id=? and deleted != 1", pipelineId).Get(pipe)
-		if !ok {
-			c.String(404, "未找到流水线信息")
-			return
-		}
 		where := comm.Db.Where("pipeline_id = ? and deleted != 1", pipelineId).Desc("id")
 		page, err = comm.FindPage(where, &ls, pg)
 		if err != nil {
@@ -320,6 +359,10 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 			return
 		}
 		perm := service.NewPipePerm(usr, pipelineId)
+		if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
+			c.String(404, "未找到流水线信息")
+			return
+		}
 		if !perm.CanRead() {
 			c.String(405, "No Auth")
 			return
