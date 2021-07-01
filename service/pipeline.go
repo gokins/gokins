@@ -27,8 +27,28 @@ func Run(pipeId string) (*model.TPipelineVersion, error) {
 	if err != nil {
 		return nil, err
 	}
+	return preBuild(pipe, tpipe)
+}
 
-	err = pipe.Check()
+func ReBuild(tvp *model.TPipelineVersion) (*model.TPipelineVersion, error) {
+	tpipe := &model.TPipeline{}
+	ok, _ := comm.Db.Where("id=? and deleted != 1", tvp.PipelineId).Get(tpipe)
+	if !ok {
+		return nil, errors.New("流水线不存在")
+	}
+	if tvp.Content == "" {
+		return nil, errors.New("流水线Yaml为空")
+	}
+	pipe := &bean.Pipeline{}
+	err := json.Unmarshal([]byte(tvp.Content), pipe)
+	if err != nil {
+		return nil, err
+	}
+	return preBuild(pipe, tpipe)
+}
+
+func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline) (*model.TPipelineVersion, error) {
+	err := pipe.Check()
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +56,7 @@ func Run(pipeId string) (*model.TPipelineVersion, error) {
 	pipe.ConvertCmd()
 	number := int64(0)
 	_, err = comm.Db.
-		SQL("SELECT max(number) FROM t_pipeline_version WHERE pipeline_id = ?", pipeId).
+		SQL("SELECT max(number) FROM t_pipeline_version WHERE pipeline_id = ?", tpipe.Id).
 		Get(&number)
 	if err != nil {
 		return nil, err
@@ -64,7 +84,7 @@ func Run(pipeId string) (*model.TPipelineVersion, error) {
 
 	tb := &model.TBuild{
 		Id:                utils.NewXid(),
-		PipelineId:        pipeId,
+		PipelineId:        tpipe.Id,
 		PipelineVersionId: tpv.Id,
 		Status:            common.BuildStatusPending,
 		Created:           time.Now(),
@@ -164,8 +184,4 @@ func Run(pipeId string) (*model.TPipelineVersion, error) {
 	}
 	engine.Mgr.BuildEgn().Put(rb)
 	return tpv, nil
-}
-
-func InsertPipeline() {
-
 }
