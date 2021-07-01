@@ -17,7 +17,7 @@ var (
 	Cfg       = Config{}
 	Db        *xorm.Engine
 	BCache    *bolt.DB
-	WebEgn    = gin.Default()
+	WebEgn    *gin.Engine
 	HbtpEgn   *hbtp.Engine
 	IsMySQL   = false
 	Installed = false
