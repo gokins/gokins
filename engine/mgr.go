@@ -1,10 +1,12 @@
 package engine
 
 import (
+	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
+	"path/filepath"
 	"runtime/debug"
 	"time"
 )
@@ -22,7 +24,7 @@ func Start() error {
 	Mgr.jobEgn = StartJobEngine()
 	if len(comm.Cfg.Server.Shells) > 0 {
 		runr := runners.NewEngine(runners.Config{
-			Workspace: comm.WorkPath,
+			Workspace: filepath.Join(comm.WorkPath, common.PathBuild),
 			Plugin:    comm.Cfg.Server.Shells,
 		}, &baseRunner{})
 		err := runr.Start(comm.Ctx)
