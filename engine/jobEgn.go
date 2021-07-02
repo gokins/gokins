@@ -38,12 +38,10 @@ type cmdSync struct {
 }
 type jobSync struct {
 	sync.RWMutex
-	step   *runtime.Step
-	runjb  *runners.RunJob
-	cmdmp  map[string]*cmdSync
-	runed  bool
-	ended  bool
-	cncled bool
+	step  *runtime.Step
+	runjb *runners.RunJob
+	cmdmp map[string]*cmdSync
+	ended bool
 }
 
 func (c *jobSync) status(stat, errs string, event ...string) {
