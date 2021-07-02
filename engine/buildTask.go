@@ -628,6 +628,14 @@ func (c *BuildTask) UpJobCmd(cmd *cmdSync, fs, code int) {
 			cmd.status = common.BuildStatusError
 		}
 		cmd.finished = time.Now()
+	case 3:
+		cmd.code = code
+		cmd.status = common.BuildStatusCancel
+		cmd.finished = time.Now()
+	case -1:
+		cmd.code = code
+		cmd.status = common.BuildStatusError
+		cmd.finished = time.Now()
 	default:
 		return
 	}

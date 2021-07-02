@@ -64,6 +64,10 @@ func (c *BuildEngine) init() {
 		"update `t_step` set `status`=?,`error`=? where `status`!=? and `status`!=? and `status`!=?",
 		common.BuildStatusCancel, cont, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel,
 	)
+	comm.Db.Exec(
+		"update `t_cmd_line` set `status`=? where `status`!=? and `status`!=? and `status`!=?",
+		common.BuildStatusCancel, common.BuildStatusOk, common.BuildStatusError, common.BuildStatusCancel,
+	)
 }
 
 func (c *BuildEngine) run() {
