@@ -319,7 +319,7 @@ func (c *BuildTask) genCmds(job *jobSync) error {
 		}
 		_, err = comm.Db.InsertOne(cmd)
 		if err != nil {
-			comm.Db.Where("build_id=? and job_id=?", cmd.BuildId, cmd.StepId).Delete(cmd)
+			comm.Db.Where("build_id=? and step_id=?", cmd.BuildId, cmd.StepId).Delete(cmd)
 			return err
 		}
 	}
