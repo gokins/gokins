@@ -72,6 +72,15 @@ func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
+	for _, v := range ls {
+		usr, ok := service.GetUser(v.Uid)
+		if ok {
+			v.Nick = usr.Nick
+			v.Avat = usr.Avatar
+		}
+		v.Pipeln, _ = comm.Db.Where("org_id=?", v.Id).Count(model.TOrgPipe{})
+		v.Userln, _ = comm.Db.Where("org_id=?", v.Id).Count(model.TUserOrg{})
+	}
 	c.JSON(200, page)
 }
 func (OrgController) new(c *gin.Context, m *hbtp.Map) {
