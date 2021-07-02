@@ -272,7 +272,8 @@ func (c *BuildTask) genCmds(job *jobSync) error {
 		BuildId:         job.step.BuildId,
 		Step:            job.step.Step,
 		Name:            job.step.Name,
-		Environments:    job.step.Environments,
+		Vars:            c.build.Vars,
+		Env:             job.step.Env,
 		Artifacts:       job.step.Artifacts,
 		DependArtifacts: job.step.DependArtifacts,
 		IsClone:         c.isClone,
@@ -392,7 +393,7 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 	}
 
 	job.RLock()
-	dendons := job.step.DependsOn
+	dendons := job.step.Waits
 	job.RUnlock()
 	if len(dendons) > 0 {
 		ls := make([]*jobSync, 0)
