@@ -12,7 +12,7 @@ type Pipeline struct {
 	Version     string              `yaml:"version,omitempty" json:"version"`
 	DisplayName string              `yaml:"displayName,omitempty" json:"displayName"`
 	Triggers    map[string]*Trigger `yaml:"triggers,omitempty" json:"triggers"`
-	Variables   map[string]string   `yaml:"variables,omitempty" json:"variables"`
+	Vars        map[string]string   `yaml:"vars,omitempty" json:"vars"`
 	Stages      []*Stage            `yaml:"stages,omitempty" json:"stages"`
 }
 
@@ -42,9 +42,9 @@ type Step struct {
 	Step            string            `yaml:"step" json:"step"`
 	DisplayName     string            `yaml:"displayName,omitempty" json:"displayName"`
 	Name            string            `yaml:"name,omitempty" json:"name"`
-	Environments    map[string]string `yaml:"environments,omitempty" json:"environments"`
+	Env             map[string]string `yaml:"env,omitempty" json:"env"`
 	Commands        interface{}       `yaml:"commands,omitempty" json:"commands"`
-	DependsOn       []string          `yaml:"dependsOn,omitempty" json:"dependsOn"`
+	Waits           []string          `yaml:"waits,omitempty" json:"waits"`
 	Image           string            `yaml:"image,omitempty" json:"image"`
 	Artifacts       []*Artifact       `yaml:"artifacts,omitempty" json:"artifacts"`
 	DependArtifacts []*DependArtifact `yaml:"dependArtifacts,omitempty" json:"dependArtifacts"`
