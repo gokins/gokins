@@ -55,7 +55,7 @@ func (RuntimeController) stages(c *gin.Context, m *hbtp.Map) {
 			stages[v.Id] = v
 			for _, step := range spls {
 				if step.Id != "" {
-					json.Unmarshal([]byte(step.DependsOn), &step.DependOns)
+					json.Unmarshal([]byte(step.Waits), &step.Waitings)
 					v.Stepids = append(v.Stepids, step.Id)
 					steps[step.Id] = step
 				}
