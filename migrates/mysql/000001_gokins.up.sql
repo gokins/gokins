@@ -6,9 +6,6 @@ CREATE TABLE `t_build`
     `status`              varchar(100) NULL DEFAULT NULL COMMENT '构建状态',
     `error`               varchar(500) NULL DEFAULT NULL COMMENT '错误信息',
     `event`               varchar(100) NULL DEFAULT NULL COMMENT '事件',
-    `time_stamp`          datetime(0) NULL DEFAULT NULL COMMENT '执行时长',
-    `title`               varchar(255) NULL DEFAULT NULL COMMENT '标题',
-    `message`             varchar(255) NULL DEFAULT NULL COMMENT '构建信息',
     `started`             datetime(0) NULL DEFAULT NULL COMMENT '开始时间',
     `finished`            datetime(0) NULL DEFAULT NULL COMMENT '结束时间',
     `created`             datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
@@ -24,7 +21,7 @@ CREATE TABLE `t_cmd_line`
     `step_id`  varchar(64) NULL DEFAULT NULL,
     `status`   varchar(50) NULL DEFAULT NULL,
     `num`      int(11) NULL DEFAULT NULL,
-    `code`      int(11) NULL DEFAULT NULL,
+    `code`     int(11) NULL DEFAULT NULL,
     `content`  text NULL,
     `created`  datetime(0) NULL DEFAULT NULL,
     `started`  datetime(0) NULL DEFAULT NULL,
@@ -37,7 +34,6 @@ CREATE TABLE `t_stage`
     `pipeline_version_id` varchar(64) NULL DEFAULT NULL COMMENT '流水线id',
     `build_id`            varchar(64) NULL DEFAULT NULL,
     `status`              varchar(100) NULL DEFAULT NULL COMMENT '构建状态',
-    `exit_code`           bigint(20) NULL DEFAULT NULL COMMENT '退出码',
     `error`               varchar(500) NULL DEFAULT NULL COMMENT '错误信息',
     `name`                varchar(255) NULL DEFAULT NULL COMMENT '名字',
     `display_name`        varchar(255) NULL DEFAULT NULL,
@@ -45,9 +41,6 @@ CREATE TABLE `t_stage`
     `finished`            datetime(0) NULL DEFAULT NULL COMMENT '结束时间',
     `created`             datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
     `updated`             datetime(0) NULL DEFAULT NULL COMMENT '更新时间',
-    `version`             varchar(255) NULL DEFAULT NULL COMMENT '版本',
-    `on_success`          varchar(5) NULL DEFAULT NULL,
-    `on_failure`          varchar(5) NULL DEFAULT NULL,
     `sort`                int(11) NULL DEFAULT NULL,
     `stage`               varchar(255) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
@@ -70,11 +63,9 @@ CREATE TABLE `t_step`
     `created`             datetime(0) NULL DEFAULT NULL COMMENT '创建时间',
     `updated`             datetime(0) NULL DEFAULT NULL COMMENT '更新时间',
     `version`             varchar(255) NULL DEFAULT NULL COMMENT '版本',
-    `errignore`           varchar(5) NULL DEFAULT NULL,
+    `errignore`           int(11) NULL DEFAULT NULL,
     `commands`            text NULL,
-    `depends_on`          json NULL,
-    `image`               varchar(255) NULL DEFAULT NULL,
-    `environments`        json NULL,
+    `waits`               json NULL,
     `sort`                int(11) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
 );
@@ -128,8 +119,8 @@ CREATE TABLE `t_pipeline`
     `access_token`  varchar(255) DEFAULT NULL,
     `url`           varchar(255) DEFAULT NULL,
     `username`      varchar(255) DEFAULT NULL,
-    `deleted` int(1) DEFAULT '0',
-    `deleted_time` datetime DEFAULT NULL,
+    `deleted`       int(1) DEFAULT '0',
+    `deleted_time`  datetime     DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
 )
 CREATE TABLE `t_pipeline_version`

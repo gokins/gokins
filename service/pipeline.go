@@ -106,7 +106,8 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline) (*model.TPipelineVers
 			Sha:      "",
 			CloneURL: tpipe.Url,
 		},
-		Variables: pipe.Variables,
+		//TODO var处理
+		//Vars: pipe.Vars,
 	}
 
 	for i, stage := range pipe.Stages {
@@ -139,14 +140,15 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline) (*model.TPipelineVers
 			if err != nil {
 				return nil, err
 			}
-			djs, err := json.Marshal(step.DependsOn)
+			djs, err := json.Marshal(step.Waits)
 			if err != nil {
 				return nil, err
 			}
-			de, err := json.Marshal(step.Environments)
-			if err != nil {
-				return nil, err
-			}
+			//TODO env处理
+			//de, err := json.Marshal(step.Env)
+			//if err != nil {
+			//	return nil, err
+			//}
 			tsp := &model.TStep{
 				Id:                utils.NewXid(),
 				BuildId:           tb.Id,
@@ -158,21 +160,21 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline) (*model.TPipelineVers
 				Name:              step.Name,
 				Created:           time.Now(),
 				Commands:          string(cmds),
-				DependsOn:         string(djs),
-				Environments:      string(de),
-				Sort:              j,
+				Waits:             string(djs),
+				//Env:      string(de),
+				Sort: j,
 			}
 			rtp := &runtime.Step{
-				Id:           tsp.Id,
-				BuildId:      tb.Id,
-				StageId:      ts.Id,
-				DisplayName:  step.DisplayName,
-				Step:         step.Step,
-				Status:       common.BuildStatusPending,
-				Name:         step.Name,
-				Commands:     step.Commands,
-				DependsOn:    step.DependsOn,
-				Environments: step.Environments,
+				Id:          tsp.Id,
+				BuildId:     tb.Id,
+				StageId:     ts.Id,
+				DisplayName: step.DisplayName,
+				Step:        step.Step,
+				Status:      common.BuildStatusPending,
+				Name:        step.Name,
+				Commands:    step.Commands,
+				Waits:       step.Waits,
+				Env:         step.Env,
 			}
 			_, err = comm.Db.InsertOne(tsp)
 			if err != nil {
