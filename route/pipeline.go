@@ -85,17 +85,12 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 			v.Nick = usr.Nick
 			v.Avat = usr.Avatar
 		}
-		last := &model.TBuild{}
+		last := &models.RunBuild{}
 		v.Buildln, _ = comm.Db.Where("pipeline_id=?", v.Id).Count(last)
 		if v.Buildln > 0 {
 			ok, _ = comm.Db.Where("pipeline_id=?", v.Id).OrderBy("created DESC").Get(last)
 			if ok {
-				v.LastId = last.Id
-				v.LastStatus = last.Status
-				v.LastError = last.Error
-				v.LastCreated = last.Created
-				v.LastStarted = last.Started
-				v.LastFinished = last.Finished
+				v.Build = last
 			}
 		}
 	}
@@ -398,7 +393,7 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
 	pg, _ := m.GetInt("page")
 	usr := service.GetMidLgUser(c)
-	ls := make([]*model.TPipelineVersion, 0)
+	ls := make([]*models.TPipelineVersion, 0)
 	var page *bean.Page
 	var err error
 	if pipelineId != "" {
@@ -442,6 +437,14 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 				c.String(500, "db err:"+err.Error())
 				return
 			}
+		}
+	}
+
+	for _, v := range ls {
+		last := &models.RunBuild{}
+		ok, _ := comm.Db.Where("pipeline_version_id=?", v.Id).OrderBy("created DESC").Get(last)
+		if ok {
+			v.Build = last
 		}
 	}
 

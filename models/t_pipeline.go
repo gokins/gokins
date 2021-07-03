@@ -16,14 +16,8 @@ type TPipeline struct {
 	Deleted      int       `xorm:"default 0 INT(1)" json:"-"`
 	DeletedTime  time.Time `xorm:"DATETIME" json:"-"`
 
-	Nick    string `xorm:"-" json:"nick"`
-	Avat    string `xorm:"-" json:"avat"`
-	Buildln int64  `xorm:"-" json:"buildln"`
-
-	LastId       string    `xorm:"-" json:"lastId"`
-	LastStatus   string    `xorm:"-" json:"lastStatus"`
-	LastError    string    `xorm:"-" json:"lastError"`
-	LastCreated  time.Time `xorm:"-" json:"lastCreated"`
-	LastStarted  time.Time `xorm:"-" json:"lastStarted"`
-	LastFinished time.Time `xorm:"-" json:"lastFinished"`
+	Nick    string    `xorm:"-" json:"nick"`
+	Avat    string    `xorm:"-" json:"avat"`
+	Buildln int64     `xorm:"-" json:"buildln"`
+	Build   *RunBuild `xorm:"-" json:"build"`
 }
