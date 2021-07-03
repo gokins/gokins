@@ -7,7 +7,7 @@ type PipelineShow struct {
 	DisplayName  string `json:"displayName"`
 	PipelineType string `json:"pipelineType"`
 	YmlContent   string `json:"ymlContent"`
-	AccessToken  string `json:"accessToken"`
 	Url          string `json:"url"`
 	Username     string `json:"username"`
+	AccessToken  string `json:"accessToken"`
 }
