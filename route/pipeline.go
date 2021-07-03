@@ -106,26 +106,52 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 	q := m.GetString("q")
 	pg, _ := m.GetInt("page")
-	usr := service.GetMidLgUser(c)
-	ls := make([]*model.TPipeline, 0)
+	lgusr := service.GetMidLgUser(c)
+	ls := make([]*models.TPipeline, 0)
 	var err error
 	var page *bean.Page
 	if comm.IsMySQL {
-		session := comm.Db.NewSession()
-		session.Where("deleted != 1")
-		session.Desc("id")
-
-		if !service.IsAdmin(usr) {
-			session.And("uid = ?", usr.Id)
+		gen := &bean.PageGen{
+			CountCols: "top.pipe_id",
+			FindCols:  "pipe.*",
+		}
+		gen.SQL = `
+			select {{select}} from t_pipeline pipe 
+			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id
+		    where pipe.deleted != 1 `
+		if !service.IsAdmin(lgusr) {
+			gen.SQL = gen.SQL + ` and pipe.uid = ? `
+			gen.Args = append(gen.Args, lgusr.Id)
 		}
 		if q != "" {
-			session.And("name = ?", q)
+			gen.SQL += "\nAND pipe.name like ? "
+			gen.Args = append(gen.Args, "%"+q+"%")
 		}
-
-		page, err = comm.FindPage(session, &ls, pg)
+		gen.SQL += "\nORDER BY pipe.id DESC"
+		page, err = comm.FindPages(gen, &ls, pg, 20)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
 			return
+		}
+	}
+	for _, v := range ls {
+		usr, ok := service.GetUser(v.Uid)
+		if ok {
+			v.Nick = usr.Nick
+			v.Avat = usr.Avatar
+		}
+		last := &model.TBuild{}
+		v.Buildln, _ = comm.Db.Where("pipeline_id=?", v.Id).Count(last)
+		if v.Buildln > 0 {
+			ok, _ = comm.Db.Where("pipeline_id=?", v.Id).OrderBy("created DESC").Get(last)
+			if ok {
+				v.LastId = last.Id
+				v.LastStatus = last.Status
+				v.LastError = last.Error
+				v.LastCreated = last.Created
+				v.LastStarted = last.Started
+				v.LastFinished = last.Finished
+			}
 		}
 	}
 	c.JSON(http.StatusOK, page)
