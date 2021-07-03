@@ -1,6 +1,7 @@
 package route
 
 import (
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -37,6 +38,7 @@ func (LoginController) info(c *gin.Context) {
 	c.JSON(200, rt)
 }
 func (LoginController) login(c *gin.Context, m *bean.LoginReq) {
+	m.Name = strings.TrimSpace(m.Name)
 	if m.Name == "" || m.Pass == "" {
 		c.String(500, "param err")
 		return
@@ -44,6 +46,10 @@ func (LoginController) login(c *gin.Context, m *bean.LoginReq) {
 	usr, ok := service.FindUserName(m.Name)
 	if !ok {
 		c.String(404, "not found user")
+		return
+	}
+	if !service.IsAdmin(usr) && usr.Active != 1 {
+		c.String(513, "user not active")
 		return
 	}
 	if usr.Pass != utils.Md5String(m.Pass) {
