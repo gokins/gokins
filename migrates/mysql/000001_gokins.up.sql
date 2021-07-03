@@ -159,10 +159,9 @@ CREATE TABLE `t_user`
     `avatar`     varchar(500) NULL DEFAULT NULL,
     `created`    datetime(0) NULL DEFAULT NULL,
     `login_time` datetime(0) NULL DEFAULT NULL,
+    `active`     int(1) DEFAULT '0',
     PRIMARY KEY (`aid`, `id`) USING BTREE
 );
--- ----------------------------
--- Records of t_user
 -- ----------------------------
 INSERT INTO `t_user`
 VALUES ("admin",
@@ -172,7 +171,20 @@ VALUES ("admin",
         '管理员',
         NULL,
         NOW(),
-        NULL);
+        NULL,
+        1);
+-- ----------------------------
+CREATE TABLE `t_user_info` (
+   `id` varchar(64) NOT NULL,
+   `phone` varchar(100) DEFAULT NULL,
+   `email` varchar(200) DEFAULT NULL,
+   `remark` text,
+   `birthday` datetime DEFAULT NULL,
+   `perm_user` int(1) DEFAULT NULL,
+   `perm_org` int(1) DEFAULT NULL,
+   `perm_pipe` int(1) DEFAULT NULL,
+   PRIMARY KEY (`id`)
+);
 CREATE TABLE `t_user_org`
 (
     `aid`       bigint(20) NOT NULL AUTO_INCREMENT,

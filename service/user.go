@@ -17,6 +17,14 @@ func GetUser(uid string) (*model.TUser, bool) {
 	}
 	return e, ok
 }
+func GetUserInfo(uid string) (*model.TUserInfo, bool) {
+	e := &model.TUserInfo{}
+	ok, err := comm.Db.Where("id=?", uid).Get(e)
+	if err != nil {
+		logrus.Errorf("GetUser(%s) err:%v", uid, err)
+	}
+	return e, ok
+}
 func FindUserName(name string) (*model.TUser, bool) {
 	e := &model.TUser{}
 	ok, err := comm.Db.Where("name=?", name).Get(e)
