@@ -35,6 +35,8 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/rebuild", util.GinReqParseJson(c.rebuild))
 	g.POST("/pipelineVersions", util.GinReqParseJson(c.pipelineVersions))
 	g.POST("/pipelineVersion", util.GinReqParseJson(c.pipelineVersion))
+	g.POST("/search/sha", util.GinReqParseJson(c.searchSha))
+
 }
 func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
@@ -306,6 +308,7 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 
 func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
+	sha := m.GetString("sha")
 	if pipelineId == "" {
 		c.String(500, "param err")
 		return
@@ -320,7 +323,7 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "No Auth")
 		return
 	}
-	tvp, err := service.Run(pipelineId)
+	tvp, err := service.Run(pipelineId, sha)
 	if err != nil {
 		c.String(500, err.Error())
 		return
@@ -486,4 +489,41 @@ func (PipelineController) pipelineVersion(c *gin.Context, m *hbtp.Map) {
 		"pv":    pv,
 		"pipe":  pipeShow,
 	})
+}
+func (PipelineController) searchSha(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	q := m.GetString("q")
+	if id == "" {
+		c.String(500, "param err")
+		return
+	}
+	perm := service.NewPipePerm(service.GetMidLgUser(c), id)
+	if perm.Pipeline() == nil {
+		c.String(404, "not found pipe")
+		return
+	}
+	if !perm.CanRead() {
+		c.String(405, "no permission")
+		return
+	}
+	shas := []string{}
+	session := comm.Db.Table("t_pipeline_version").Distinct("sha").Cols("sha").Where("pipeline_id = ?", id)
+	if q != "" {
+		session.And("sha like '%" + q + "%'")
+	}
+	err := session.Find(&shas)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	res := make([]map[string]string, 0)
+	for _, sha := range shas {
+		if sha == "" {
+			continue
+		}
+		m2 := map[string]string{}
+		m2["name"] = sha
+		res = append(res, m2)
+	}
+	c.JSON(200, res)
 }
