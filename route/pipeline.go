@@ -35,6 +35,8 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/rebuild", util.GinReqParseJson(c.rebuild))
 	g.POST("/pipelineVersions", util.GinReqParseJson(c.pipelineVersions))
 	g.POST("/pipelineVersion", util.GinReqParseJson(c.pipelineVersion))
+	g.POST("/search/sha", util.GinReqParseJson(c.searchSha))
+
 }
 func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
@@ -99,26 +101,52 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 	q := m.GetString("q")
 	pg, _ := m.GetInt("page")
-	usr := service.GetMidLgUser(c)
-	ls := make([]*model.TPipeline, 0)
+	lgusr := service.GetMidLgUser(c)
+	ls := make([]*models.TPipeline, 0)
 	var err error
 	var page *bean.Page
 	if comm.IsMySQL {
-		session := comm.Db.NewSession()
-		session.Where("deleted != 1")
-		session.Desc("id")
-
-		if !service.IsAdmin(usr) {
-			session.And("uid = ?", usr.Id)
+		gen := &bean.PageGen{
+			CountCols: "top.pipe_id",
+			FindCols:  "pipe.*",
+		}
+		gen.SQL = `
+			select {{select}} from t_pipeline pipe 
+			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id
+		    where pipe.deleted != 1 `
+		if !service.IsAdmin(lgusr) {
+			gen.SQL = gen.SQL + ` and pipe.uid = ? `
+			gen.Args = append(gen.Args, lgusr.Id)
 		}
 		if q != "" {
-			session.And("name = ?", q)
+			gen.SQL += "\nAND pipe.name like ? "
+			gen.Args = append(gen.Args, "%"+q+"%")
 		}
-
-		page, err = comm.FindPage(session, &ls, pg)
+		gen.SQL += "\nORDER BY pipe.id DESC"
+		page, err = comm.FindPages(gen, &ls, pg, 20)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
 			return
+		}
+	}
+	for _, v := range ls {
+		usr, ok := service.GetUser(v.Uid)
+		if ok {
+			v.Nick = usr.Nick
+			v.Avat = usr.Avatar
+		}
+		last := &model.TBuild{}
+		v.Buildln, _ = comm.Db.Where("pipeline_id=?", v.Id).Count(last)
+		if v.Buildln > 0 {
+			ok, _ = comm.Db.Where("pipeline_id=?", v.Id).OrderBy("created DESC").Get(last)
+			if ok {
+				v.LastId = last.Id
+				v.LastStatus = last.Status
+				v.LastError = last.Error
+				v.LastCreated = last.Created
+				v.LastStarted = last.Started
+				v.LastFinished = last.Finished
+			}
 		}
 	}
 	c.JSON(http.StatusOK, page)
@@ -301,6 +329,7 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 
 func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 	pipelineId := m.GetString("pipelineId")
+	sha := m.GetString("sha")
 	if pipelineId == "" {
 		c.String(500, "param err")
 		return
@@ -315,7 +344,7 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "No Auth")
 		return
 	}
-	tvp, err := service.Run(pipelineId)
+	tvp, err := service.Run(pipelineId, sha)
 	if err != nil {
 		c.String(500, err.Error())
 		return
@@ -489,4 +518,41 @@ func (PipelineController) pipelineVersion(c *gin.Context, m *hbtp.Map) {
 		"pv":    pv,
 		"pipe":  pipeShow,
 	})
+}
+func (PipelineController) searchSha(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	q := m.GetString("q")
+	if id == "" {
+		c.String(500, "param err")
+		return
+	}
+	perm := service.NewPipePerm(service.GetMidLgUser(c), id)
+	if perm.Pipeline() == nil {
+		c.String(404, "not found pipe")
+		return
+	}
+	if !perm.CanRead() {
+		c.String(405, "no permission")
+		return
+	}
+	shas := []string{}
+	session := comm.Db.Table("t_pipeline_version").Distinct("sha").Cols("sha").Where("pipeline_id = ?", id)
+	if q != "" {
+		session.And("sha like '%" + q + "%'")
+	}
+	err := session.Find(&shas)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	res := make([]map[string]string, 0)
+	for _, sha := range shas {
+		if sha == "" {
+			continue
+		}
+		m2 := map[string]string{}
+		m2["name"] = sha
+		res = append(res, m2)
+	}
+	c.JSON(200, res)
 }

@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func Run(pipeId string) (*model.TPipelineVersion, error) {
+func Run(pipeId string, sha string) (*model.TPipelineVersion, error) {
 	tpipe := &model.TPipeline{}
 	ok, _ := comm.Db.Where("id=? and deleted != 1", pipeId).Get(tpipe)
 	if !ok {
@@ -27,7 +27,7 @@ func Run(pipeId string) (*model.TPipelineVersion, error) {
 	if err != nil {
 		return nil, err
 	}
-	return preBuild(pipe, tpipe)
+	return preBuild(pipe, tpipe, sha)
 }
 
 func ReBuild(tvp *model.TPipelineVersion) (*model.TPipelineVersion, error) {
@@ -44,10 +44,10 @@ func ReBuild(tvp *model.TPipelineVersion) (*model.TPipelineVersion, error) {
 	if err != nil {
 		return nil, err
 	}
-	return preBuild(pipe, tpipe)
+	return preBuild(pipe, tpipe, tvp.Sha)
 }
 
-func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline) (*model.TPipelineVersion, error) {
+func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.TPipelineVersion, error) {
 	err := pipe.Check()
 	if err != nil {
 		return nil, err
@@ -61,13 +61,11 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline) (*model.TPipelineVers
 	if err != nil {
 		return nil, err
 	}
-
 	tpv := &model.TPipelineVersion{
 		Id:                  utils.NewXid(),
 		Number:              number + 1,
-		Branch:              "",
 		Events:              "run",
-		Sha:                 "",
+		Sha:                 sha,
 		PipelineName:        tpipe.Name,
 		PipelineDisplayName: tpipe.DisplayName,
 		PipelineId:          tpipe.Id,
@@ -103,7 +101,7 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline) (*model.TPipelineVers
 		Repo: &runtime.Repository{
 			Name:     tpipe.Username,
 			Token:    tpipe.AccessToken,
-			Sha:      "",
+			Sha:      sha,
 			CloneURL: tpipe.Url,
 		},
 		//TODO var处理
