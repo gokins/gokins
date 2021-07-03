@@ -22,6 +22,9 @@ func (c *UserController) Routes(g gin.IRoutes) {
 	g.Use(service.MidUserCheck)
 	g.POST("/page", util.GinReqParseJson(c.page))
 	g.POST("/new", util.GinReqParseJson(c.new))
+	g.POST("/info", util.GinReqParseJson(c.info))
+	g.POST("/upinfo", util.GinReqParseJson(c.upinfo))
+	g.POST("/upass", util.GinReqParseJson(c.upass))
 }
 func (UserController) page(c *gin.Context, m *hbtp.Map) {
 	var ls []*models.TUser
@@ -88,4 +91,102 @@ func (UserController) new(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	c.String(200, ne.Id)
+}
+
+func (UserController) info(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	if id == "" {
+		c.String(500, "param err")
+		return
+	}
+	usr := &models.TUser{}
+	ok := service.GetIdOrAid(id, usr)
+	if !ok {
+		c.String(404, "not found user")
+		return
+	}
+	uinfo, ok := service.GetUserInfo(usr.Id)
+	c.JSON(200, hbtp.Map{
+		"user": usr,
+		"info": uinfo,
+	})
+}
+func (UserController) upinfo(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	nick := strings.TrimSpace(m.GetString("nick"))
+	phone := m.GetString("phone")
+	email := m.GetString("email")
+	remark := m.GetString("remark")
+	if id == "" || nick == "" {
+		c.String(500, "param err")
+		return
+	}
+	usr := &models.TUser{}
+	ok := service.GetIdOrAid(id, usr)
+	if !ok {
+		c.String(404, "not found user")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	if !service.IsAdmin(lgusr) && usr.Id != lgusr.Id {
+		c.String(405, "is not you")
+		return
+	}
+	uinfo, isup := service.GetUserInfo(usr.Id)
+	usr.Nick = nick
+	_, err := comm.Db.Cols("nick").Where("id=?", usr.Id).Update(usr)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	uinfo.Phone = phone
+	uinfo.Email = email
+	uinfo.Remark = remark
+	if isup {
+		_, err = comm.Db.Cols("phone", "email", "remark").
+			Where("id=?", usr.Id).Update(uinfo)
+	} else {
+		uinfo.Id = usr.Id
+		_, err = comm.Db.InsertOne(uinfo)
+	}
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, usr.Id)
+}
+func (UserController) upass(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	olds := m.GetString("olds")
+	pass := m.GetString("pass")
+	if id == "" || pass == "" {
+		c.String(500, "param err")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	if !service.IsAdmin(lgusr) && olds == "" {
+		c.String(511, "param err1")
+		return
+	}
+	usr := &model.TUser{}
+	ok := service.GetIdOrAid(id, usr)
+	if !ok {
+		c.String(404, "not found user")
+		return
+	}
+	if !service.IsAdmin(lgusr) && usr.Id != lgusr.Id {
+		c.String(405, "is not you")
+		return
+	}
+	if !service.IsAdmin(lgusr) && usr.Pass != utils.Md5String(olds) {
+		c.String(511, "old pass err")
+		return
+	}
+	usr.Pass = utils.Md5String(pass)
+	_, err := comm.Db.Cols("pass").Where("id=?", usr.Id).Update(usr)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, usr.Id)
 }

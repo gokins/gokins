@@ -12,6 +12,7 @@ type TUser struct {
 	Avatar    string    `xorm:"VARCHAR(500)" json:"avatar"`
 	Created   time.Time `xorm:"DATETIME" json:"created"`
 	LoginTime time.Time `xorm:"DATETIME" json:"loginTime"`
+	Active    int       `xorm:"default 0 INT(1)" json:"active"`
 }
 
 type TUserOrgInfo struct {
