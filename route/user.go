@@ -25,6 +25,7 @@ func (c *UserController) Routes(g gin.IRoutes) {
 	g.POST("/info", util.GinReqParseJson(c.info))
 	g.POST("/upinfo", util.GinReqParseJson(c.upinfo))
 	g.POST("/upass", util.GinReqParseJson(c.upass))
+	g.POST("/active", util.GinReqParseJson(c.active))
 }
 func (UserController) page(c *gin.Context, m *hbtp.Map) {
 	var ls []*models.TUser
@@ -184,6 +185,36 @@ func (UserController) upass(c *gin.Context, m *hbtp.Map) {
 	}
 	usr.Pass = utils.Md5String(pass)
 	_, err := comm.Db.Cols("pass").Where("id=?", usr.Id).Update(usr)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, usr.Id)
+}
+func (UserController) active(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	act := m.GetString("act")
+	if id == "" || act == "" {
+		c.String(500, "param err")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	if !service.IsAdmin(lgusr) {
+		c.String(405, "is not admin")
+		return
+	}
+	usr := &model.TUser{}
+	ok := service.GetIdOrAid(id, usr)
+	if !ok {
+		c.String(404, "not found user")
+		return
+	}
+	if act == "1" {
+		usr.Active = 1
+	} else {
+		usr.Active = 0
+	}
+	_, err := comm.Db.Cols("active").Where("id=?", usr.Id).Update(usr)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
