@@ -54,7 +54,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "No Auth")
 		return
 	}
-	ls := make([]*model.TPipeline, 0)
+	ls := make([]*models.TPipeline, 0)
 	var err error
 	var page *bean.Page
 	if comm.IsMySQL {
@@ -77,6 +77,26 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
 			return
+		}
+	}
+	for _, v := range ls {
+		usr, ok := service.GetUser(v.Uid)
+		if ok {
+			v.Nick = usr.Nick
+			v.Avat = usr.Avatar
+		}
+		last := &model.TBuild{}
+		v.Buildln, _ = comm.Db.Where("pipeline_id=?", v.Id).Count(last)
+		if v.Buildln > 0 {
+			ok, _ = comm.Db.Where("pipeline_id=?", v.Id).OrderBy("created DESC").Get(last)
+			if ok {
+				v.LastId = last.Id
+				v.LastStatus = last.Status
+				v.LastError = last.Error
+				v.LastCreated = last.Created
+				v.LastStarted = last.Started
+				v.LastFinished = last.Finished
+			}
 		}
 	}
 	c.JSON(http.StatusOK, page)
