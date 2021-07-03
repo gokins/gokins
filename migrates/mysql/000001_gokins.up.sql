@@ -128,7 +128,6 @@ CREATE TABLE `t_pipeline_version`
     `id`                    varchar(64) NOT NULL,
     `number`                bigint(20) DEFAULT NULL COMMENT '构建次数',
     `events`                varchar(100) DEFAULT NULL COMMENT '事件push、pr、note',
-    `branch`                varchar(255) DEFAULT NULL,
     `sha`                   varchar(255) DEFAULT NULL,
     `pipeline_name`         varchar(255) DEFAULT NULL,
     `pipeline_display_name` varchar(255) DEFAULT NULL,
