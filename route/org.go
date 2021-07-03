@@ -27,6 +27,7 @@ func (c *OrgController) Routes(g gin.IRoutes) {
 	g.POST("/info", util.GinReqParseJson(c.info))
 	g.POST("/users", util.GinReqParseJson(c.users))
 	g.POST("/save", util.GinReqParseJson(c.save))
+	g.POST("/rm", util.GinReqParseJson(c.rm))
 	g.POST("/user/edit", util.GinReqParseJson(c.userEdit))
 	g.POST("/user/rm", util.GinReqParseJson(c.userRm))
 	g.POST("/pipe/add", util.GinReqParseJson(c.pipeAdd))
@@ -222,6 +223,30 @@ func (OrgController) save(c *gin.Context, m *hbtp.Map) {
 		Id:  ne.Id,
 		Aid: ne.Aid,
 	})
+}
+func (OrgController) rm(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), id)
+	if perm.Org() == nil || perm.Org().Deleted == 1 {
+		c.String(404, "not found org")
+		return
+	}
+	if !perm.IsOrgAdmin() {
+		c.String(405, "no permission")
+		return
+	}
+	ne := &model.TOrg{
+		Deleted:     1,
+		DeletedTime: time.Now(),
+		Updated:     time.Now(),
+	}
+	_, err := comm.Db.Cols("deleted", "deleted_time", "updated").
+		Where("id=?", perm.Org().Id).Update(ne)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, "ok")
 }
 func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 	id := m.GetString("id")
