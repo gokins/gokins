@@ -185,3 +185,12 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 	engine.Mgr.BuildEgn().Put(rb)
 	return tpv, nil
 }
+
+//func convertVar(vm map[string]string) {
+//	reg := regexp.MustCompile("\\${{([^}]+)}}")
+//	vms := make(map[string]*runtime.Variables, 0)
+//	for k, v := range vm {
+//		m := map[string]string{}
+//
+//	}
+//}

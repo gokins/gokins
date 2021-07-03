@@ -174,16 +174,17 @@ VALUES ("admin",
         NULL,
         1);
 -- ----------------------------
-CREATE TABLE `t_user_info` (
-   `id` varchar(64) NOT NULL,
-   `phone` varchar(100) DEFAULT NULL,
-   `email` varchar(200) DEFAULT NULL,
-   `birthday` datetime DEFAULT NULL,
-   `remark` text,
-   `perm_user` int(1) DEFAULT NULL,
-   `perm_org` int(1) DEFAULT NULL,
-   `perm_pipe` int(1) DEFAULT NULL,
-   PRIMARY KEY (`id`)
+CREATE TABLE `t_user_info`
+(
+    `id`        varchar(64) NOT NULL,
+    `phone`     varchar(100) DEFAULT NULL,
+    `email`     varchar(200) DEFAULT NULL,
+    `birthday`  datetime     DEFAULT NULL,
+    `remark`    text,
+    `perm_user` int(1) DEFAULT NULL,
+    `perm_org`  int(1) DEFAULT NULL,
+    `perm_pipe` int(1) DEFAULT NULL,
+    PRIMARY KEY (`id`)
 );
 CREATE TABLE `t_user_org`
 (
@@ -244,3 +245,39 @@ CREATE TABLE `t_pipeline_var`
     `public`      int(1) DEFAULT '0' COMMENT '公开',
     PRIMARY KEY (`aid`) USING BTREE
 )
+
+CREATE TABLE `t_yml_plugin`
+(
+    `aid`          bigint(20) NOT NULL AUTO_INCREMENT,
+    `name`         varchar(64) DEFAULT NULL,
+    `yml_content`  longtext,
+    `deleted`      int(1) DEFAULT '0',
+    `deleted_time` datetime    DEFAULT NULL,
+    PRIMARY KEY (`aid`) USING BTREE
+)
+INSERT INTO `t_yml_plugin`(`aid`, `name`, `yml_content`, `deleted`, `deleted_time`)
+VALUES (1, 'sh',
+        '      - step: shell@sh\n        displayName: sh\n        name: sh\n        commands:\n          - echo hello world',
+        0, NULL);
+INSERT INTO `t_yml_plugin`(`aid`, `name`, `yml_content`, `deleted`, `deleted_time`)
+VALUES (2, 'bash',
+        '      - step: shell@bash\n        displayName: bash\n        name: bash\n        commands:\n          - echo hello world',
+        0, NULL);
+INSERT INTO `t_yml_plugin`(`aid`, `name`, `yml_content`, `deleted`, `deleted_time`)
+VALUES (3, 'powershell',
+        '      - step: shell@powershell\n        displayName: powershell\n        name: powershell\n        commands:\n          - echo hello world',
+        0, NULL);
+
+CREATE TABLE `t_yml_template`
+(
+    `aid`          bigint(20) NOT NULL AUTO_INCREMENT,
+    `name`         varchar(64) DEFAULT NULL,
+    `yml_content`  longtext,
+    `deleted`      int(1) DEFAULT '0',
+    `deleted_time` datetime    DEFAULT NULL,
+    PRIMARY KEY (`aid`) USING BTREE
+)
+
+INSERT INTO .`t_yml_template`(`aid`, `name`, `yml_content`, `deleted`, `deleted_time`) VALUES (1, 'Golang', 'version: 1.0\nname: go-build\ndisplayName: golang-build\nvariables:\nstages:\n  - stage:\n    displayName: build\n    name: build\n    steps:\n      - step: shell@sh\n        displayName: go-build-1\n        name: build\n        environments:\n        commands:\n          - go build main.go\n      - step: shell@sh\n        displayName: go-build-2\n        name: test\n        environments:\n        commands:\n          - go test -v\n', 0, NULL);
+INSERT INTO .`t_yml_template`(`aid`, `name`, `yml_content`, `deleted`, `deleted_time`) VALUES (2, 'Java', 'version: 1.0\nname: java-build\ndisplayName: java-build\nvariables:\nstages:\n  - stage:\n    displayName: build\n    name: build\n    steps:\n      - step: shell@sh\n        displayName: java-build-1\n        name: build\n        environments:\n        commands:\n          - mvn clean\n          - mvn install\n      - step: shell@sh\n        displayName: java-build-2\n        name: test\n        environments:\n        commands:\n          - mvn test -v', 0, NULL);
+INSERT INTO .`t_yml_template`(`aid`, `name`, `yml_content`, `deleted`, `deleted_time`) VALUES (3, 'Npm', 'version: 1.0\nname: npm-build\ndisplayName: npm-build\nvariables:\nstages:\n  - stage:\n    displayName: build\n    name: build\n    steps:\n      - step: shell@sh\n        displayName: npm-build-1\n        name: build\n        environments:\n        commands:\n          - npm build\n          - mvn install\n      - step: shell@sh\n        displayName: npm-build-2\n        name: publish\n        environments:\n        commands:\n          - npm publish ', 0, NULL);

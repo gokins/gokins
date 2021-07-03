@@ -8,12 +8,10 @@ import (
 )
 
 type Pipeline struct {
-	Name        string              `yaml:"name,omitempty" json:"name"`
-	Version     string              `yaml:"version,omitempty" json:"version"`
-	DisplayName string              `yaml:"displayName,omitempty" json:"displayName"`
-	Triggers    map[string]*Trigger `yaml:"triggers,omitempty" json:"triggers"`
-	Vars        map[string]string   `yaml:"vars,omitempty" json:"vars"`
-	Stages      []*Stage            `yaml:"stages,omitempty" json:"stages"`
+	Version  string              `yaml:"version,omitempty" json:"version"`
+	Triggers map[string]*Trigger `yaml:"triggers,omitempty" json:"triggers"`
+	Vars     map[string]string   `yaml:"vars,omitempty" json:"vars"`
+	Stages   []*Stage            `yaml:"stages,omitempty" json:"stages"`
 }
 
 type Trigger struct {

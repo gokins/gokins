@@ -42,7 +42,6 @@ func (ApiController) test(c *gin.Context) {
 		})
 		return
 	}
-	//TODO insert db
 	b := &runtime.Build{}
 	err = yaml.Unmarshal(marshal, b)
 	if err != nil {
