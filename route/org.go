@@ -57,7 +57,7 @@ func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 			select {{select}} from t_org org
 			LEFT JOIN t_user_org urg on urg.uid=?
 			where org.deleted!=1
-			and (org.uid=? or org.id=urg.org_id)
+			and (org.public=1 or org.uid=? or org.id=urg.org_id)
 			`
 			gen.Args = append(gen.Args, lgusr.Id)
 			gen.Args = append(gen.Args, lgusr.Id)
