@@ -36,7 +36,9 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/pipelineVersions", util.GinReqParseJson(c.pipelineVersions))
 	g.POST("/pipelineVersion", util.GinReqParseJson(c.pipelineVersion))
 	g.POST("/search/sha", util.GinReqParseJson(c.searchSha))
-
+	g.POST("/vars", util.GinReqParseJson(c.vars))
+	g.POST("/var/save", util.GinReqParseJson(c.varSave))
+	g.POST("/var/del", util.GinReqParseJson(c.varDel))
 }
 func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
@@ -228,20 +230,13 @@ func (PipelineController) deleted(c *gin.Context, m *hbtp.Map) {
 	}
 	c.String(http.StatusOK, "ok")
 }
-func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
-	name := m.GetString("name")
-	content := m.GetString("content")
-	orgId := m.GetString("orgId")
-	accessToken := m.GetString("accessToken")
-	ul := m.GetString("url")
-	username := m.GetString("username")
-	displayName := m.GetString("displayName")
-	if name == "" || content == "" {
+func (PipelineController) new(c *gin.Context, npipe *bean.NewPipeline) {
+	if !npipe.Check() {
 		c.String(500, "param err")
 		return
 	}
 	y := &bean.Pipeline{}
-	err := yaml.Unmarshal([]byte(content), y)
+	err := yaml.Unmarshal([]byte(npipe.Content), y)
 	if err != nil {
 		c.String(500, "yaml Unmarshal err:"+err.Error())
 		return
@@ -257,7 +252,7 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	usr := service.GetMidLgUser(c)
-	perm := service.NewOrgPerm(usr, orgId)
+	perm := service.NewOrgPerm(usr, npipe.OrgId)
 	if perm.Org() != nil && !perm.CanWrite() {
 		c.String(405, "No Auth")
 		return
@@ -265,21 +260,40 @@ func (PipelineController) new(c *gin.Context, m *hbtp.Map) {
 	pipeline := &model.TPipeline{
 		Id:           utils.NewXid(),
 		Uid:          usr.Id,
-		Name:         name,
-		DisplayName:  displayName,
+		Name:         npipe.Name,
+		DisplayName:  npipe.DisplayName,
 		PipelineType: "",
 		JsonContent:  string(js),
-		YmlContent:   content,
-		Url:          ul,
-		Username:     username,
-		AccessToken:  accessToken,
+		YmlContent:   npipe.Content,
+		Url:          npipe.Url,
+		Username:     npipe.Username,
+		AccessToken:  npipe.AccessToken,
 	}
 	_, err = comm.Db.InsertOne(pipeline)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
-
+	if npipe.Vars != nil && len(npipe.Vars) > 0 {
+		for _, v := range npipe.Vars {
+			pipelineVar := &model.TPipelineVar{}
+			err = utils.Struct2Struct(pipelineVar, v)
+			if err != nil {
+				c.String(500, "model err:"+err.Error())
+				return
+			}
+			pipelineVar.Uid = usr.Id
+			pipelineVar.PipelineId = pipeline.Id
+			if !v.Public {
+				pipelineVar.Public = 1
+			}
+			_, err = comm.Db.InsertOne(pipelineVar)
+			if err != nil {
+				c.String(500, "db err:"+err.Error())
+				return
+			}
+		}
+	}
 	if perm.Org() != nil {
 		top := &model.TOrgPipe{
 			OrgId:   perm.Org().Id,
@@ -531,7 +545,9 @@ func (PipelineController) searchSha(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	shas := []string{}
-	session := comm.Db.Table("t_pipeline_version").Distinct("sha").Cols("sha").Where("pipeline_id = ?", id)
+	session := comm.Db.Table("t_pipeline_version").
+		Distinct("sha").Cols("sha").
+		Where("pipeline_id = ?", id).Desc("sha")
 	if q != "" {
 		session.And("sha like '%" + q + "%'")
 	}
@@ -550,4 +566,116 @@ func (PipelineController) searchSha(c *gin.Context, m *hbtp.Map) {
 		res = append(res, m2)
 	}
 	c.JSON(200, res)
+}
+func (PipelineController) vars(c *gin.Context, m *hbtp.Map) {
+	pipelineId := m.GetString("pipelineId")
+	q := m.GetString("q")
+	pg, _ := m.GetInt("page")
+	if pipelineId == "" {
+		c.String(500, "param err")
+		return
+	}
+	perm := service.NewPipePerm(service.GetMidLgUser(c), pipelineId)
+	if perm.Pipeline() == nil {
+		c.String(404, "not found pipe")
+		return
+	}
+	if !perm.CanRead() {
+		c.String(405, "no permission")
+		return
+	}
+	ls := make([]*models.TPipelineVar, 0)
+	var page *bean.Page
+	var err error
+	session := comm.Db.Where("pipeline_id = ?", pipelineId)
+	if q != "" {
+		session.And("(name like '%" + q + "%' or value like '%" + q + "'%)")
+	}
+	page, err = comm.FindPage(session, &ls, pg)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.JSON(200, page)
+}
+func (PipelineController) varSave(c *gin.Context, pv *bean.PipelineVar) {
+	if pv.Value == "" || pv.Name == "" || pv.PipelineId == "" {
+		c.String(500, "param err")
+		return
+	}
+	perm := service.NewPipePerm(service.GetMidLgUser(c), pv.PipelineId)
+	if perm.Pipeline() == nil {
+		c.String(404, "not found pipe")
+		return
+	}
+	if !perm.CanWrite() {
+		c.String(405, "no permission")
+		return
+	}
+	pipelineVar := &model.TPipelineVar{}
+	err := utils.Struct2Struct(pipelineVar, pv)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	if !pv.Public {
+		pipelineVar.Public = 1
+	}
+	tpv := &model.TPipelineVar{}
+	ok, err := comm.Db.Where("pipeline_id = ? and name = ?", pv.PipelineId, pv.Name).Get(tpv)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	if pv.Aid > 0 {
+		if ok && tpv.Aid != pv.Aid {
+			c.String(500, "变量名重复")
+			return
+		}
+		_, err = comm.Db.Cols("name,value,remarks,public").Where("aid = ?", pv.Aid).Update(pipelineVar)
+		if err != nil {
+			c.String(500, "db err:"+err.Error())
+			return
+		}
+		c.String(200, "ok")
+		return
+	}
+	if ok {
+		c.String(500, "变量名重复")
+		return
+	}
+	_, err = comm.Db.InsertOne(pipelineVar)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, "ok")
+}
+func (PipelineController) varDel(c *gin.Context, m *hbtp.Map) {
+	aId, err := m.GetInt("aid")
+	if err != nil || aId <= 0 {
+		c.String(500, "param err")
+		return
+	}
+	pipelineVar := &model.TPipelineVar{}
+	ok, _ := comm.Db.Where("aid = ? ", aId).Get(pipelineVar)
+	if !ok {
+		c.String(404, "not found pipe_var")
+		return
+	}
+	perm := service.NewPipePerm(service.GetMidLgUser(c), pipelineVar.PipelineId)
+	if perm.Pipeline() == nil {
+		c.String(404, "not found pipe")
+		return
+	}
+	if !perm.CanWrite() {
+		c.String(405, "no permission")
+		return
+	}
+	_, err = comm.Db.Where("aid = ?", aId).Delete(pipelineVar)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, "ok")
 }
