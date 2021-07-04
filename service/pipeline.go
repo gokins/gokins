@@ -10,6 +10,9 @@ import (
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/model"
+	"github.com/sirupsen/logrus"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -52,8 +55,23 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 	if err != nil {
 		return nil, err
 	}
-
 	pipe.ConvertCmd()
+
+	m := convertVar(tpipe.Id, pipe.Vars)
+	var tVars = []*model.TPipelineVar{}
+	err = comm.Db.Where("pipeline_id = ? ", tpipe.Id).Find(&tVars)
+	if err != nil {
+		return nil, err
+	}
+	for _, v := range tVars {
+		m[v.Name] = &runtime.Variables{
+			Name:   v.Name,
+			Value:  v.Value,
+			Secret: v.Public == 1,
+		}
+	}
+	replaceStages(pipe.Stages, m)
+
 	number := int64(0)
 	_, err = comm.Db.
 		SQL("SELECT max(number) FROM t_pipeline_version WHERE pipeline_id = ?", tpipe.Id).
@@ -104,8 +122,7 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 			Sha:      sha,
 			CloneURL: tpipe.Url,
 		},
-		//TODO var处理
-		//Vars: pipe.Vars,
+		Vars: m,
 	}
 
 	for i, stage := range pipe.Stages {
@@ -142,11 +159,6 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 			if err != nil {
 				return nil, err
 			}
-			//TODO env处理
-			//de, err := json.Marshal(step.Env)
-			//if err != nil {
-			//	return nil, err
-			//}
 			tsp := &model.TStep{
 				Id:                utils.NewXid(),
 				BuildId:           tb.Id,
@@ -159,8 +171,7 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 				Created:           time.Now(),
 				Commands:          string(cmds),
 				Waits:             string(djs),
-				//Env:      string(de),
-				Sort: j,
+				Sort:              j,
 			}
 			rtp := &runtime.Step{
 				Id:          tsp.Id,
@@ -186,11 +197,91 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 	return tpv, nil
 }
 
-//func convertVar(vm map[string]string) {
-//	reg := regexp.MustCompile("\\${{([^}]+)}}")
-//	vms := make(map[string]*runtime.Variables, 0)
-//	for k, v := range vm {
-//		m := map[string]string{}
-//
-//	}
-//}
+func convertVar(pipelineId string, vm map[string]string) map[string]*runtime.Variables {
+	vms := make(map[string]*runtime.Variables, 0)
+	for k, v := range vm {
+		k1, kok := replaceVariable(pipelineId, common.RegVar, k)
+		v1, vok := replaceVariable(pipelineId, common.RegVar, v)
+		vms[k1] = &runtime.Variables{
+			Name:   k1,
+			Value:  v1,
+			Secret: kok && vok,
+		}
+	}
+	return vms
+}
+
+func replaceVariable(pipelineId string, reg *regexp.Regexp, s string) (string, bool) {
+	is := true
+	if reg.MatchString(s) {
+		all := reg.FindAllStringSubmatch(s, -1)
+		for _, v := range all {
+			tVars := &model.TPipelineVar{}
+			ok, err := comm.Db.Where("pipeline_id = ? and name = ?", pipelineId, v[1]).Get(tVars)
+			if err != nil {
+				logrus.Debugf("replaceVariable db err %v", err)
+			}
+			if !ok {
+				continue
+			}
+			if tVars.Public != 0 {
+
+			}
+			strings.ReplaceAll(s, v[0], tVars.Value)
+		}
+	}
+	return s, is
+}
+
+func replaceStages(stages []*bean.Stage, mVars map[string]*runtime.Variables) {
+	for _, stage := range stages {
+		replaceStage(stage, mVars)
+	}
+}
+func replaceStage(stage *bean.Stage, mVars map[string]*runtime.Variables) {
+	stage.Stage = replace(stage.Stage, mVars)
+	stage.Name = replace(stage.Name, mVars)
+	stage.DisplayName = replace(stage.DisplayName, mVars)
+	if stage.Steps != nil && len(stage.Steps) > 0 {
+		replaceSteps(stage.Steps, mVars)
+	}
+}
+func replaceSteps(steps []*bean.Step, mVars map[string]*runtime.Variables) {
+	for _, step := range steps {
+		replaceStep(step, mVars)
+	}
+}
+func replaceStep(step *bean.Step, mVars map[string]*runtime.Variables) {
+	step.Step = replace(step.Step, mVars)
+	step.Name = replace(step.Name, mVars)
+	step.DisplayName = replace(step.DisplayName, mVars)
+	step.Image = replace(step.Image, mVars)
+	if step.Env != nil && len(step.Env) > 0 {
+		step.Env = replaceEnvs(step.Env, mVars)
+	}
+}
+
+func replaceEnvs(envs map[string]string, mVars map[string]*runtime.Variables) map[string]string {
+	m := map[string]string{}
+	for k, v := range envs {
+		m[replace(k, mVars)] = replace(v, mVars)
+	}
+	return m
+}
+
+func replace(s string, mVars map[string]*runtime.Variables) string {
+	if common.RegVar.MatchString(s) {
+		all := common.RegVar.FindAllStringSubmatch(s, -1)
+		for _, v2 := range all {
+			rVar, ok := mVars[v2[1]]
+			if !ok {
+				return s
+			}
+			if rVar.Secret {
+				return strings.ReplaceAll(s, v2[0], "***")
+			}
+			return strings.ReplaceAll(s, v2[0], rVar.Value)
+		}
+	}
+	return s
+}
