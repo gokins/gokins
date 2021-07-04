@@ -114,7 +114,8 @@ CREATE TABLE `t_pipeline` (
   `deleted` int(1) DEFAULT '0',
   `deleted_time` datetime DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) CREATE TABLE `t_pipeline_version` (
+);
+CREATE TABLE `t_pipeline_version` (
   `id` varchar(64) NOT NULL,
   `number` bigint(20) DEFAULT NULL COMMENT '构建次数',
   `events` varchar(100) DEFAULT NULL COMMENT '事件push、pr、note',
@@ -231,14 +232,15 @@ CREATE TABLE `t_pipeline_var` (
     `remarks` varchar(255) DEFAULT NULL,
     `public` int(1) DEFAULT '0' COMMENT '公开',
     PRIMARY KEY (`aid`) USING BTREE
-  ) CREATE TABLE `t_yml_plugin` (
+  );
+CREATE TABLE `t_yml_plugin` (
     `aid` bigint(20) NOT NULL AUTO_INCREMENT,
     `name` varchar(64) DEFAULT NULL,
     `yml_content` longtext,
     `deleted` int(1) DEFAULT '0',
     `deleted_time` datetime DEFAULT NULL,
     PRIMARY KEY (`aid`) USING BTREE
-  )
+  );
 INSERT INTO
   `t_yml_plugin`(
     `aid`,
@@ -294,8 +296,9 @@ CREATE TABLE `t_yml_template` (
     `deleted` int(1) DEFAULT '0',
     `deleted_time` datetime DEFAULT NULL,
     PRIMARY KEY (`aid`) USING BTREE
-  )
-INSERT INTO `t_yml_template`(
+  );
+INSERT INTO
+  `t_yml_template`(
     `aid`,
     `name`,
     `yml_content`,
@@ -310,7 +313,8 @@ VALUES
     0,
     NULL
   );
-INSERT INTO `t_yml_template`(
+INSERT INTO
+  `t_yml_template`(
     `aid`,
     `name`,
     `yml_content`,
@@ -325,7 +329,8 @@ VALUES
     0,
     NULL
   );
-INSERT INTO `t_yml_template`(
+INSERT INTO
+  `t_yml_template`(
     `aid`,
     `name`,
     `yml_content`,

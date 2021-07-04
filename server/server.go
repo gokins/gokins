@@ -2,6 +2,11 @@ package server
 
 import (
 	"errors"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"time"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gokins-main/core"
 	utils2 "github.com/gokins-main/core/utils"
@@ -12,10 +17,6 @@ import (
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 func Run() error {
@@ -27,7 +28,7 @@ func Run() error {
 	os.MkdirAll(comm.WorkPath, 0750)
 	core.InitLog(comm.WorkPath)
 	go runWeb()
-
+	time.Sleep(time.Millisecond * 10)
 	err := parseConfig()
 	if err != nil {
 		logrus.Debugf("parseConfig err:%v", err)
