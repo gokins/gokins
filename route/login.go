@@ -34,6 +34,11 @@ func (LoginController) info(c *gin.Context) {
 		rt["user"] = usrs
 		info, _ := service.GetUserInfo(usrs.Id)
 		rt["info"] = info
+		if service.IsAdmin(usr) {
+			info.PermUser = 1
+			info.PermOrg = 1
+			info.PermPipe = 1
+		}
 	}
 	rt["login"] = ok
 	c.JSON(200, rt)
