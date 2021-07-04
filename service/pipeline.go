@@ -205,7 +205,7 @@ func convertVar(pipelineId string, vm map[string]string) map[string]*runtime.Var
 		vms[k1] = &runtime.Variables{
 			Name:   k1,
 			Value:  v1,
-			Secret: kok && vok,
+			Secret: kok || vok,
 		}
 	}
 	return vms
