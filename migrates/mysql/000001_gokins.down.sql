@@ -14,3 +14,5 @@ DROP TABLE IF EXISTS `t_user_info`;
 DROP TABLE IF EXISTS `t_user_org`;
 DROP TABLE IF EXISTS `t_user_msg`;
 DROP TABLE IF EXISTS `t_user_token`;
+DROP TABLE IF EXISTS `t_yml_plugin`;
+DROP TABLE IF EXISTS `t_yml_template`;
