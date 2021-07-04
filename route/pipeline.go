@@ -291,7 +291,7 @@ func (PipelineController) new(c *gin.Context, npipe *bean.NewPipeline) {
 			}
 			pipelineVar.Uid = lgusr.Id
 			pipelineVar.PipelineId = pipeline.Id
-			if !v.Public {
+			if v.Public {
 				pipelineVar.Public = 1
 			}
 			_, err = comm.Db.InsertOne(pipelineVar)
@@ -625,7 +625,7 @@ func (PipelineController) varSave(c *gin.Context, pv *bean.PipelineVar) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
-	if !pv.Public {
+	if pv.Public {
 		pipelineVar.Public = 1
 	}
 	tpv := &model.TPipelineVar{}

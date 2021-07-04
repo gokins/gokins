@@ -6,7 +6,7 @@ type TPipelineVar struct {
 	Name       string `xorm:"VARCHAR(255)" json:"name"`
 	Value      string `xorm:"VARCHAR(255)" json:"value"`
 	Remarks    string `xorm:"VARCHAR(255)" json:"remarks"`
-	Public     bool   `xorm:"default 0 comment('公开') INT(1)" json:"public"`
+	Public     int    `xorm:"default 0 comment('公开') INT(1)" json:"public"`
 }
 
 func (TPipelineVar) TableName() string {
