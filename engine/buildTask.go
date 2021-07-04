@@ -324,7 +324,23 @@ func (c *BuildTask) genRunjob(job *jobSync) (rterr error) {
 			Content: v.Conts,
 			Created: time.Now(),
 		}
-		//TODO: 隐藏cmd secret
+		vls := common.RegVar.FindAllStringSubmatch(v.Conts, -1)
+		for _, zs := range vls {
+			k := zs[1]
+			if k == "" {
+				continue
+			}
+			va, ok := c.build.Vars[k]
+			if !ok {
+				continue
+			}
+			v.Conts = strings.ReplaceAll(v.Conts, zs[0], va.Value)
+			if va.Secret {
+				cmd.Content = strings.ReplaceAll(cmd.Content, zs[0], "***")
+			} else {
+				cmd.Content = strings.ReplaceAll(cmd.Content, zs[0], va.Value)
+			}
+		}
 		_, err = comm.Db.InsertOne(cmd)
 		if err != nil {
 			comm.Db.Where("build_id=? and step_id=?", cmd.BuildId, cmd.StepId).Delete(cmd)

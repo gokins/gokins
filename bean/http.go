@@ -16,13 +16,3 @@ type LoginRes struct {
 	Avatar        string `json:"avatar"`
 	LastLoginTime string `json:"lastLoginTime"`
 }
-
-type LgInfoRes struct {
-	Login     bool   `json:"login"`
-	Id        string `json:"id"`
-	Name      string `json:"name"`
-	Nick      string `json:"nick"`
-	Avatar    string `json:"avatar"`
-	LoginTime string `json:"login_time"`
-	RegTime   string `json:"reg_time"`
-}

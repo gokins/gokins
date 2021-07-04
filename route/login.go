@@ -1,6 +1,8 @@
 package route
 
 import (
+	"github.com/gokins-main/gokins/models"
+	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"strings"
 	"time"
 
@@ -24,17 +26,16 @@ func (c *LoginController) Routes(g gin.IRoutes) {
 	g.POST("/login", util.GinReqParseJson(c.login))
 }
 func (LoginController) info(c *gin.Context) {
-	rt := &bean.LgInfoRes{}
+	rt := hbtp.Map{}
 	usr, ok := service.CurrUserCache(c)
 	if ok {
-		rt.Login = true
-		rt.Id = usr.Id
-		rt.Name = usr.Name
-		rt.Nick = usr.Nick
-		rt.Avatar = usr.Avatar
-		rt.LoginTime = usr.LoginTime.Format(common.TimeFmt)
-		rt.RegTime = usr.Created.Format(common.TimeFmt)
+		usrs := &models.TUser{}
+		utils.Struct2Struct(usrs, usr)
+		rt["user"] = usrs
+		info, _ := service.GetUserInfo(usrs.Id)
+		rt["info"] = info
 	}
+	rt["login"] = ok
 	c.JSON(200, rt)
 }
 func (LoginController) login(c *gin.Context, m *bean.LoginReq) {

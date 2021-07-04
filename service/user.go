@@ -10,6 +10,9 @@ import (
 )
 
 func GetUser(uid string) (*model.TUser, bool) {
+	if uid == "" {
+		return nil, false
+	}
 	e := &model.TUser{}
 	ok, err := comm.Db.Where("id=?", uid).Get(e)
 	if err != nil {
@@ -18,6 +21,9 @@ func GetUser(uid string) (*model.TUser, bool) {
 	return e, ok
 }
 func GetUserInfo(uid string) (*model.TUserInfo, bool) {
+	if uid == "" {
+		return nil, false
+	}
 	e := &model.TUserInfo{}
 	ok, err := comm.Db.Where("id=?", uid).Get(e)
 	if err != nil {
