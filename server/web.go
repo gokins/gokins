@@ -53,7 +53,7 @@ func midUiHandle(c *gin.Context) {
 	if c.Writer.Status() != http.StatusNotFound || c.Writer.Size() > 0 {
 		return
 	}
-	pth := c.Request.RequestURI
+	pth := c.Request.URL.Path
 	if !comm.Installed && pth != "/install" {
 		httpex.ResMsgUrl(c, "未安装,跳转中...", "/install")
 		return
@@ -88,6 +88,10 @@ func midUiHandle(c *gin.Context) {
 		c.Writer.Header().Set("Content-Type", "application/javascript")
 	} else if ext == ".svg" {
 		c.Writer.Header().Set("Content-Type", "image/svg+xml")
+	} else if ext == ".woff2" {
+		//c.Writer.Header().Set("Content-Type", "image/svg+xml")
+	} else if ext == ".ttf" || ext == ".ttc" {
+		c.Writer.Header().Set("Content-Type", "application/x-font-ttf")
 	}
 	c.Status(200)
 	bts := make([]byte, 1024)
