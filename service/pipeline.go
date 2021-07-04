@@ -214,6 +214,9 @@ func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Va
 }
 
 func replaceVariable(reg *regexp.Regexp, s string, vms map[string]*runtime.Variables) (string, bool) {
+	if s == "" {
+		return s, false
+	}
 	isSecret := false
 	if reg.MatchString(s) {
 		all := reg.FindAllStringSubmatch(s, -1)
@@ -268,6 +271,9 @@ func replaceEnvs(envs map[string]string, mVars map[string]*runtime.Variables) ma
 }
 
 func replace(s string, mVars map[string]*runtime.Variables) string {
+	if s == "" {
+		return s
+	}
 	if common.RegVar.MatchString(s) {
 		all := common.RegVar.FindAllStringSubmatch(s, -1)
 		for _, v2 := range all {
