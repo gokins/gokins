@@ -240,7 +240,8 @@ func (c *BuildTask) check() bool {
 				step:  e,
 				cmdmp: make(map[string]*cmdSync),
 			}
-			if err := c.genCmds(job); err != nil {
+			err = c.genRunjob(job)
+			if err != nil {
 				c.build.Event = common.BuildEventCheckParam
 				c.build.Error = fmt.Sprintf("build Job.%s Commands err", e.Name)
 				return false
@@ -265,14 +266,20 @@ func (c *BuildTask) check() bool {
 	return true
 }
 
-func (c *BuildTask) genCmds(job *jobSync) error {
+func (c *BuildTask) genRunjob(job *jobSync) (rterr error) {
+	defer func() {
+		if err := recover(); err != nil {
+			rterr = fmt.Errorf("recover:%v", err)
+			logrus.Warnf("BuildTask genRunjob recover:%v", err)
+			logrus.Warnf("BuildTask stack:%s", string(debug.Stack()))
+		}
+	}()
 	runjb := &runners.RunJob{
 		Id:              job.step.Id,
 		StageId:         job.step.StageId,
 		BuildId:         job.step.BuildId,
 		Step:            job.step.Step,
 		Name:            job.step.Name,
-		Vars:            c.build.Vars,
 		Env:             job.step.Env,
 		Artifacts:       job.step.Artifacts,
 		DependArtifacts: job.step.DependArtifacts,
@@ -317,6 +324,7 @@ func (c *BuildTask) genCmds(job *jobSync) error {
 			Content: v.Conts,
 			Created: time.Now(),
 		}
+		//TODO: 隐藏cmd secret
 		_, err = comm.Db.InsertOne(cmd)
 		if err != nil {
 			comm.Db.Where("build_id=? and step_id=?", cmd.BuildId, cmd.StepId).Delete(cmd)
