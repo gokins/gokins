@@ -306,7 +306,7 @@ VALUES
   (
     1,
     'Golang',
-    'version: 1.0\vars:\nstages:\n  - stage:\n    displayName: build\n    name: build\n    steps:\n      - step: shell@sh\n        displayName: go-build-1\n        name: build\n        env:\n        commands:\n          - go build main.go\n      - step: shell@sh\n        displayName: go-build-2\n        name: test\n        env:\n        commands:\n          - go test -v\n',
+    'version: 1.0\nvars:\nstages:\n  - stage:\n    displayName: build\n    name: build\n    steps:\n      - step: shell@sh\n        displayName: go-build-1\n        name: build\n        env:\n        commands:\n          - go build main.go\n      - step: shell@sh\n        displayName: go-build-2\n        name: test\n        env:\n        commands:\n          - go test -v\n',
     0,
     NULL
   );
