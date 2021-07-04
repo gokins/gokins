@@ -10,7 +10,6 @@ import (
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/model"
-	"github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
 	"time"
@@ -57,18 +56,9 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 	}
 	pipe.ConvertCmd()
 
-	m := convertVar(tpipe.Id, pipe.Vars)
-	var tVars = []*model.TPipelineVar{}
-	err = comm.Db.Where("pipeline_id = ? ", tpipe.Id).Find(&tVars)
+	m, err := convertVar(tpipe.Id, pipe.Vars)
 	if err != nil {
 		return nil, err
-	}
-	for _, v := range tVars {
-		m[v.Name] = &runtime.Variables{
-			Name:   v.Name,
-			Value:  v.Value,
-			Secret: v.Public == 1,
-		}
 	}
 	replaceStages(pipe.Stages, m)
 
@@ -197,34 +187,42 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 	return tpv, nil
 }
 
-func convertVar(pipelineId string, vm map[string]string) map[string]*runtime.Variables {
+func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Variables, error) {
+	var tVars []*model.TPipelineVar
+	err := comm.Db.Where("pipeline_id = ? ", pipelineId).Find(&tVars)
+	if err != nil {
+		return nil, err
+	}
 	vms := make(map[string]*runtime.Variables, 0)
+	for _, v := range tVars {
+		vms[v.Name] = &runtime.Variables{
+			Name:   v.Name,
+			Value:  v.Value,
+			Secret: v.Public == 1,
+		}
+	}
 	for k, v := range vm {
-		k1, kok := replaceVariable(pipelineId, common.RegVar, k)
-		v1, vok := replaceVariable(pipelineId, common.RegVar, v)
+		k1, kok := replaceVariable(common.RegVar, k, vms)
+		v1, vok := replaceVariable(common.RegVar, v, vms)
 		vms[k1] = &runtime.Variables{
 			Name:   k1,
 			Value:  v1,
 			Secret: kok || vok,
 		}
 	}
-	return vms
+	return vms, nil
 }
 
-func replaceVariable(pipelineId string, reg *regexp.Regexp, s string) (string, bool) {
+func replaceVariable(reg *regexp.Regexp, s string, vms map[string]*runtime.Variables) (string, bool) {
 	isSecret := false
 	if reg.MatchString(s) {
 		all := reg.FindAllStringSubmatch(s, -1)
 		for _, v := range all {
-			tVars := &model.TPipelineVar{}
-			ok, err := comm.Db.Where("pipeline_id = ? and name = ?", pipelineId, v[1]).Get(tVars)
-			if err != nil {
-				logrus.Debugf("replaceVariable db err %v", err)
-			}
+			tVars, ok := vms[v[1]]
 			if !ok {
 				continue
 			}
-			if tVars.Public != 1 {
+			if tVars.Secret {
 				isSecret = true
 			}
 			s = strings.ReplaceAll(s, v[0], tVars.Value)
@@ -279,8 +277,9 @@ func replace(s string, mVars map[string]*runtime.Variables) string {
 			}
 			if rVar.Secret {
 				s = strings.ReplaceAll(s, v2[0], "***")
+			} else {
+				s = strings.ReplaceAll(s, v2[0], rVar.Value)
 			}
-			s = strings.ReplaceAll(s, v2[0], rVar.Value)
 		}
 	}
 	return s
