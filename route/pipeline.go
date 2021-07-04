@@ -251,15 +251,22 @@ func (PipelineController) new(c *gin.Context, npipe *bean.NewPipeline) {
 		c.String(500, "yaml ToJson err:"+err.Error())
 		return
 	}
-	usr := service.GetMidLgUser(c)
-	perm := service.NewOrgPerm(usr, npipe.OrgId)
-	if perm.Org() != nil && !perm.CanWrite() {
-		c.String(405, "No Auth")
-		return
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewOrgPerm(lgusr, npipe.OrgId)
+	if !service.IsAdmin(lgusr) {
+		uf, ok := service.GetUserInfo(lgusr.Id)
+		if !ok || uf.PermPipe != 1 {
+			c.String(405, "no permission")
+			return
+		}
+		if perm.Org() != nil && !perm.CanWrite() {
+			c.String(405, "No Auth")
+			return
+		}
 	}
 	pipeline := &model.TPipeline{
 		Id:           utils.NewXid(),
-		Uid:          usr.Id,
+		Uid:          lgusr.Id,
 		Name:         npipe.Name,
 		DisplayName:  npipe.DisplayName,
 		PipelineType: "",
@@ -282,7 +289,7 @@ func (PipelineController) new(c *gin.Context, npipe *bean.NewPipeline) {
 				c.String(500, "model err:"+err.Error())
 				return
 			}
-			pipelineVar.Uid = usr.Id
+			pipelineVar.Uid = lgusr.Id
 			pipelineVar.PipelineId = pipeline.Id
 			if !v.Public {
 				pipelineVar.Public = 1

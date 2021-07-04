@@ -34,6 +34,13 @@ func FindUserName(name string) (*model.TUser, bool) {
 	return e, ok
 }
 
+func ClearUserCache(uid string) {
+	if uid == "" {
+		return
+	}
+	uids := fmt.Sprintf("user:%s", uid)
+	comm.CacheSet(uids, nil)
+}
 func GetUserCache(uid string) (*model.TUser, bool) {
 	var ok bool
 	e := &model.TUser{}

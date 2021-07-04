@@ -92,6 +92,14 @@ func (OrgController) new(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
+	lgusr := service.GetMidLgUser(c)
+	if !service.IsAdmin(lgusr) {
+		uf, ok := service.GetUserInfo(lgusr.Id)
+		if !ok || uf.PermOrg != 1 {
+			c.String(405, "no permission")
+			return
+		}
+	}
 	usr := service.GetMidLgUser(c)
 	ne := &model.TOrg{
 		Id:      utils.NewXid(),

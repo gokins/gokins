@@ -26,6 +26,7 @@ func (c *UserController) Routes(g gin.IRoutes) {
 	g.POST("/upinfo", util.GinReqParseJson(c.upinfo))
 	g.POST("/upass", util.GinReqParseJson(c.upass))
 	g.POST("/active", util.GinReqParseJson(c.active))
+	g.POST("/perm", util.GinReqParseJson(c.perm))
 }
 func (UserController) page(c *gin.Context, m *hbtp.Map) {
 	var ls []*models.TUser
@@ -154,6 +155,7 @@ func (UserController) upinfo(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
+	service.ClearUserCache(usr.Id)
 	c.String(200, usr.Id)
 }
 func (UserController) upass(c *gin.Context, m *hbtp.Map) {
@@ -189,6 +191,7 @@ func (UserController) upass(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
+	service.ClearUserCache(usr.Id)
 	c.String(200, usr.Id)
 }
 func (UserController) active(c *gin.Context, m *hbtp.Map) {
@@ -215,6 +218,57 @@ func (UserController) active(c *gin.Context, m *hbtp.Map) {
 		usr.Active = 0
 	}
 	_, err := comm.Db.Cols("active").Where("id=?", usr.Id).Update(usr)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	service.ClearUserCache(usr.Id)
+	c.String(200, usr.Id)
+}
+func (UserController) perm(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	permUser := m.GetBool("permUser")
+	permOrg := m.GetBool("permOrg")
+	permPipe := m.GetBool("permPipe")
+	if id == "" {
+		c.String(500, "param err")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	if !service.IsAdmin(lgusr) {
+		c.String(405, "is not admmin")
+		return
+	}
+	usr := &models.TUser{}
+	ok := service.GetIdOrAid(id, usr)
+	if !ok {
+		c.String(404, "not found user")
+		return
+	}
+	uinfo, isup := service.GetUserInfo(usr.Id)
+	if permUser {
+		uinfo.PermUser = 1
+	} else {
+		uinfo.PermUser = 0
+	}
+	if permOrg {
+		uinfo.PermOrg = 1
+	} else {
+		uinfo.PermOrg = 0
+	}
+	if permPipe {
+		uinfo.PermPipe = 1
+	} else {
+		uinfo.PermPipe = 0
+	}
+	var err error
+	if isup {
+		_, err = comm.Db.Cols("perm_user", "perm_org", "perm_pipe").
+			Where("id=?", usr.Id).Update(uinfo)
+	} else {
+		uinfo.Id = usr.Id
+		_, err = comm.Db.InsertOne(uinfo)
+	}
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
