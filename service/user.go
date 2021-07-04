@@ -245,9 +245,9 @@ func NewPipePerm(lgusr *model.TUser, pipeId string) *PipePerm {
 select org.id as org_id,org.name as org_name,org.uid as org_uid,org.public as org_public,op.public as op_public,
 uo.uid as cur_uid,uo.perm_adm,uo.perm_rw,uo.perm_exec 
 from t_org org
-JOIN t_org_pipe op ON op.pipe_id=? and op.org_id=org.id
+JOIN t_org_pipe op ON op.pipe_id=? and org.id=op.org_id
 LEFT JOIN t_user_org uo ON uo.uid=? and org.id=uo.org_id
-where org.deleted!=1 
+where org.deleted!=1 or org.public=1
 			`, pipe.Id, lgusr.Id)
 			ses.Find(&c.perms)
 		}
