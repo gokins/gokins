@@ -236,8 +236,11 @@ func (UserController) perm(c *gin.Context, m *hbtp.Map) {
 	}
 	lgusr := service.GetMidLgUser(c)
 	if !service.IsAdmin(lgusr) {
-		c.String(405, "is not admmin")
-		return
+		uf, ok := service.GetUserInfo(lgusr.Id)
+		if !ok || uf.PermUser != 1 {
+			c.String(405, "no permission")
+			return
+		}
 	}
 	usr := &models.TUser{}
 	ok := service.GetIdOrAid(id, usr)
