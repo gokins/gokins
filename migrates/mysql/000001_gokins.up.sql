@@ -295,7 +295,7 @@ CREATE TABLE `t_yml_template` (
     `deleted_time` datetime DEFAULT NULL,
     PRIMARY KEY (`aid`) USING BTREE
   )
-INSERT INTO.`t_yml_template`(
+INSERT INTO `t_yml_template`(
     `aid`,
     `name`,
     `yml_content`,
@@ -310,7 +310,7 @@ VALUES
     0,
     NULL
   );
-INSERT INTO.`t_yml_template`(
+INSERT INTO `t_yml_template`(
     `aid`,
     `name`,
     `yml_content`,
@@ -325,7 +325,7 @@ VALUES
     0,
     NULL
   );
-INSERT INTO.`t_yml_template`(
+INSERT INTO `t_yml_template`(
     `aid`,
     `name`,
     `yml_content`,
