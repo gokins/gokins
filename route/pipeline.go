@@ -253,6 +253,10 @@ func (PipelineController) new(c *gin.Context, npipe *bean.NewPipeline) {
 	}
 	lgusr := service.GetMidLgUser(c)
 	perm := service.NewOrgPerm(lgusr, npipe.OrgId)
+	if npipe.OrgId != "" && perm.Org() == nil {
+		c.String(404, "组织不存在")
+		return
+	}
 	if !perm.IsAdmin() {
 		uf, ok := service.GetUserInfo(lgusr.Id)
 		if !ok || uf.PermPipe != 1 {
