@@ -212,7 +212,7 @@ func convertVar(pipelineId string, vm map[string]string) map[string]*runtime.Var
 }
 
 func replaceVariable(pipelineId string, reg *regexp.Regexp, s string) (string, bool) {
-	isPublic := true
+	isSecret := false
 	if reg.MatchString(s) {
 		all := reg.FindAllStringSubmatch(s, -1)
 		for _, v := range all {
@@ -224,13 +224,13 @@ func replaceVariable(pipelineId string, reg *regexp.Regexp, s string) (string, b
 			if !ok {
 				continue
 			}
-			if tVars.Public != 0 {
-				isPublic = false
+			if tVars.Public != 1 {
+				isSecret = true
 			}
 			s = strings.ReplaceAll(s, v[0], tVars.Value)
 		}
 	}
-	return s, isPublic
+	return s, isSecret
 }
 
 func replaceStages(stages []*bean.Stage, mVars map[string]*runtime.Variables) {
