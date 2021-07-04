@@ -253,7 +253,7 @@ func (PipelineController) new(c *gin.Context, npipe *bean.NewPipeline) {
 	}
 	lgusr := service.GetMidLgUser(c)
 	perm := service.NewOrgPerm(lgusr, npipe.OrgId)
-	if !service.IsAdmin(lgusr) {
+	if !perm.IsAdmin() {
 		uf, ok := service.GetUserInfo(lgusr.Id)
 		if !ok || uf.PermPipe != 1 {
 			c.String(405, "no permission")
