@@ -63,8 +63,8 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	if comm.IsMySQL {
 		gen := &bean.PageGen{
-			CountCols: "top.pipe_id",
-			FindCols:  "pipe.*",
+			CountCols: "DISTINCT(pipe.id),pipe.id",
+			FindCols:  "DISTINCT(pipe.id),pipe.*",
 		}
 		gen.SQL = `
 			select {{select}} from t_pipeline pipe 
@@ -109,8 +109,8 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	if comm.IsMySQL {
 		gen := &bean.PageGen{
-			CountCols: "pipe.id",
-			FindCols:  "pipe.*",
+			CountCols: "DISTINCT(pipe.id)",
+			FindCols:  "DISTINCT(pipe.id),pipe.*",
 		}
 		gen.SQL = `
 			select {{select}} from t_pipeline pipe 
