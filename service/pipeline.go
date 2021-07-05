@@ -265,14 +265,18 @@ func replaceStep(step *bean.Step, mVars map[string]*runtime.Variables) {
 func replaceEnvs(envs map[string]string, mVars map[string]*runtime.Variables) map[string]string {
 	m := map[string]string{}
 	for k, v := range envs {
-		m[replace(k, mVars)] = replace(v, mVars)
+		m[replace(k, mVars)] = replace(v, mVars, true)
 	}
 	return m
 }
 
-func replace(s string, mVars map[string]*runtime.Variables) string {
+func replace(s string, mVars map[string]*runtime.Variables, mustShow ...bool) string {
 	if s == "" {
 		return s
+	}
+	ms := false
+	if len(mustShow) == 1 && mustShow[0] {
+		ms = true
 	}
 	if common.RegVar.MatchString(s) {
 		all := common.RegVar.FindAllStringSubmatch(s, -1)
@@ -281,7 +285,7 @@ func replace(s string, mVars map[string]*runtime.Variables) string {
 			if !ok {
 				continue
 			}
-			if rVar.Secret {
+			if !ms && rVar.Secret {
 				s = strings.ReplaceAll(s, v2[0], "***")
 			} else {
 				s = strings.ReplaceAll(s, v2[0], rVar.Value)
