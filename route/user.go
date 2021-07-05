@@ -167,24 +167,31 @@ func (UserController) upass(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	lgusr := service.GetMidLgUser(c)
-	if !service.IsAdmin(lgusr) && olds == "" {
-		c.String(511, "param err1")
-		return
-	}
 	usr := &model.TUser{}
-	ok := service.GetIdOrAid(id, usr)
-	if !ok {
-		c.String(404, "not found user")
+	if id == lgusr.Id {
+		usr = lgusr
+	} else {
+		ok := service.GetIdOrAid(id, usr)
+		if !ok {
+			c.String(404, "not found user")
+			return
+		}
+	}
+
+	if usr.Id == lgusr.Id {
+		if olds == "" {
+			c.String(511, "param err1")
+			return
+		}
+		if usr.Pass != utils.Md5String(olds) {
+			c.String(512, "old pass err")
+			return
+		}
+	} else if !service.IsAdmin(lgusr) {
+		c.String(405, "is not admin")
 		return
 	}
-	if !service.IsAdmin(lgusr) && usr.Id != lgusr.Id {
-		c.String(405, "is not you")
-		return
-	}
-	if !service.IsAdmin(lgusr) && usr.Pass != utils.Md5String(olds) {
-		c.String(511, "old pass err")
-		return
-	}
+
 	usr.Pass = utils.Md5String(pass)
 	_, err := comm.Db.Cols("pass").Where("id=?", usr.Id).Update(usr)
 	if err != nil {
