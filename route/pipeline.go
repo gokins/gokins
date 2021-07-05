@@ -109,7 +109,7 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	if comm.IsMySQL {
 		gen := &bean.PageGen{
-			CountCols: "top.pipe_id",
+			CountCols: "pipe.id",
 			FindCols:  "pipe.*",
 		}
 		gen.SQL = `
@@ -481,7 +481,7 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 				return
 			}
 			where := comm.Db.In("pipeline_id", tpipeIds).Where("deleted != 1").Desc("id")
-			page, err = comm.FindPage(where, &ls, pg)
+			page, err = comm.FindPage(where, &ls, pg, 20)
 			if err != nil {
 				c.String(500, "db err:"+err.Error())
 				return
