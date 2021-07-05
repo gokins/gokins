@@ -109,13 +109,11 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	if comm.IsMySQL {
 		gen := &bean.PageGen{
-			CountCols: "DISTINCT(pipe.id)",
-			FindCols:  "DISTINCT(pipe.id),pipe.*",
+			CountCols: "pipe.id",
+			FindCols:  "pipe.*",
 		}
 		gen.SQL = `
-			select {{select}} from t_pipeline pipe 
-			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id
-		    where pipe.deleted != 1 `
+			select {{select}} from t_pipeline pipe where pipe.deleted != 1 `
 		if !service.IsAdmin(lgusr) {
 			gen.SQL = gen.SQL + ` and pipe.uid = ? `
 			gen.Args = append(gen.Args, lgusr.Id)
