@@ -9,7 +9,7 @@ const LgUserKey = "lguser"
 
 func MidUserCheck(c *gin.Context) {
 	usr, ok := CurrUserCache(c)
-	if !ok {
+	if !ok || (!IsAdmin(usr) && usr.Active != 1) {
 		c.String(403, "Not Auth")
 		c.Abort()
 	}

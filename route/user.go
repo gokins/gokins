@@ -33,7 +33,7 @@ func (UserController) page(c *gin.Context, m *hbtp.Map) {
 	q := m.GetString("q")
 	pg, _ := m.GetInt("page")
 
-	ses := comm.Db.OrderBy("aid DESC")
+	ses := comm.Db.OrderBy("aid ASC")
 	if q != "" {
 		ses.And("name like ? or nick like ?", "%"+q+"%", "%"+q+"%")
 	}
@@ -276,5 +276,6 @@ func (UserController) perm(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
+	service.ClearUserCache(usr.Id)
 	c.String(200, usr.Id)
 }
