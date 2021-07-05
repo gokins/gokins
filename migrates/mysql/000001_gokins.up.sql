@@ -225,7 +225,7 @@ CREATE TABLE `t_user_token` (
   );
 CREATE TABLE `t_pipeline_var` (
     `aid` bigint(20) NOT NULL AUTO_INCREMENT,
-    `uid` bigint(20) DEFAULT NULL,
+    `uid` varchar(64) DEFAULT NULL,
     `pipeline_id` varchar(64) DEFAULT NULL,
     `name` varchar(255) DEFAULT NULL,
     `value` varchar(255) DEFAULT NULL,
