@@ -230,11 +230,11 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 			e, ok := stage.jobs[v]
 			//core.Log.Debugf("job(%s) depend %s(ok:%t)",job.step.Name,v,ok)
 			if !ok {
-				job.status(common.BuildStatusError, fmt.Sprintf("depend on %s not found", v))
+				job.status(common.BuildStatusError, fmt.Sprintf("wait on %s not found", v))
 				return
 			}
 			if e.step.Name == job.step.Name {
-				job.status(common.BuildStatusError, fmt.Sprintf("depend on %s is your self", job.step.Name))
+				job.status(common.BuildStatusError, fmt.Sprintf("wait on %s is your self", job.step.Name))
 				return
 			}
 			ls = append(ls, e)
@@ -259,7 +259,7 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 					if v.step.ErrIgnore {
 						waitln--
 					} else {
-						job.status(common.BuildStatusError, fmt.Sprintf("depend on %s is err", v.step.Name))
+						job.status(common.BuildStatusError, fmt.Sprintf("wait on %s is err", v.step.Name))
 						return
 					}
 				}
