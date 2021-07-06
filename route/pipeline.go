@@ -63,8 +63,8 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	if comm.IsMySQL {
 		gen := &bean.PageGen{
-			CountCols: "top.pipe_id",
-			FindCols:  "pipe.*",
+			CountCols: "DISTINCT(pipe.id),pipe.id",
+			FindCols:  "DISTINCT(pipe.id),pipe.*",
 		}
 		gen.SQL = `
 			select {{select}} from t_pipeline pipe 
@@ -109,13 +109,11 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 	var page *bean.Page
 	if comm.IsMySQL {
 		gen := &bean.PageGen{
-			CountCols: "top.pipe_id",
+			CountCols: "pipe.id",
 			FindCols:  "pipe.*",
 		}
 		gen.SQL = `
-			select {{select}} from t_pipeline pipe 
-			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id
-		    where pipe.deleted != 1 `
+			select {{select}} from t_pipeline pipe where pipe.deleted != 1 `
 		if !service.IsAdmin(lgusr) {
 			gen.SQL = gen.SQL + ` and pipe.uid = ? `
 			gen.Args = append(gen.Args, lgusr.Id)
@@ -495,7 +493,7 @@ func (PipelineController) pipelineVersions(c *gin.Context, m *hbtp.Map) {
 				return
 			}
 			where := comm.Db.In("pipeline_id", tpipeIds).Where("deleted != 1").Desc("id")
-			page, err = comm.FindPage(where, &ls, pg)
+			page, err = comm.FindPage(where, &ls, pg, 20)
 			if err != nil {
 				c.String(500, "db err:"+err.Error())
 				return
