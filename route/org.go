@@ -150,6 +150,13 @@ func (OrgController) info(c *gin.Context, m *hbtp.Map) {
 	c.JSON(200, hbtp.Map{
 		"org":  org,
 		"user": usr,
+		"perm": hbtp.Map{
+			"adm":   perm.IsOrgAdmin(),
+			"own":   perm.IsOrgOwner(),
+			"read":  perm.CanRead(),
+			"write": perm.CanWrite(),
+			"exec":  perm.CanExec(),
+		},
 	})
 }
 func (OrgController) users(c *gin.Context, m *hbtp.Map) {

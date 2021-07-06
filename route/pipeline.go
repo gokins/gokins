@@ -328,8 +328,8 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	usr := service.GetMidLgUser(c)
-	perm := service.NewPipePerm(usr, id)
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewPipePerm(lgusr, id)
 	if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
 		c.String(404, "未找到流水线信息")
 		return
@@ -344,7 +344,14 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "未找到流水线信息")
 		return
 	}
-	c.JSON(200, pipe)
+	c.JSON(200, hbtp.Map{
+		"pipe": pipe,
+		"perm": hbtp.Map{
+			"read":  perm.CanRead(),
+			"write": perm.CanWrite(),
+			"exec":  perm.CanExec(),
+		},
+	})
 }
 
 func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
@@ -378,27 +385,34 @@ func (PipelineController) copy(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	usr := service.GetMidLgUser(c)
-	pipePerm := service.NewPipePerm(usr, pipelineId)
-	if pipePerm.Pipeline() == nil || pipePerm.Pipeline().Deleted == 1 {
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewPipePerm(lgusr, pipelineId)
+	if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
 		c.String(404, "未找到流水线信息")
 		return
 	}
-	if !pipePerm.CanRead() {
+	if !perm.CanRead() {
 		c.String(405, "No Auth")
 		return
 	}
+	if !perm.IsAdmin() {
+		uf, ok := service.GetUserInfo(lgusr.Id)
+		if !ok || uf.PermPipe != 1 {
+			c.String(405, "no permission")
+			return
+		}
+	}
 	pipe := &model.TPipeline{
 		Id:           utils.NewXid(),
-		Uid:          usr.Id,
-		Name:         fmt.Sprintf("%s_copy", pipePerm.Pipeline().Name),
-		DisplayName:  pipePerm.Pipeline().DisplayName,
-		PipelineType: pipePerm.Pipeline().PipelineType,
-		JsonContent:  pipePerm.Pipeline().JsonContent,
-		YmlContent:   pipePerm.Pipeline().YmlContent,
-		AccessToken:  pipePerm.Pipeline().AccessToken,
-		Url:          pipePerm.Pipeline().Url,
-		Username:     pipePerm.Pipeline().Username,
+		Uid:          lgusr.Id,
+		Name:         fmt.Sprintf("%s_copy", perm.Pipeline().Name),
+		DisplayName:  perm.Pipeline().DisplayName,
+		PipelineType: perm.Pipeline().PipelineType,
+		JsonContent:  perm.Pipeline().JsonContent,
+		YmlContent:   perm.Pipeline().YmlContent,
+		AccessToken:  perm.Pipeline().AccessToken,
+		Url:          perm.Pipeline().Url,
+		Username:     perm.Pipeline().Username,
 	}
 	_, err := comm.Db.InsertOne(pipe)
 	if err != nil {
@@ -427,7 +441,7 @@ func (PipelineController) rebuild(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	if !perm.CanExec() {
-		c.String(405, "No Auth")
+		c.String(405, "No Permission")
 		return
 	}
 	tvp, err := service.ReBuild(tvp)
@@ -537,6 +551,11 @@ func (PipelineController) pipelineVersion(c *gin.Context, m *hbtp.Map) {
 		"build": build,
 		"pv":    pv,
 		"pipe":  pipeShow,
+		"perm": hbtp.Map{
+			"read":  perm.CanRead(),
+			"write": perm.CanWrite(),
+			"exec":  perm.CanExec(),
+		},
 	})
 }
 func (PipelineController) searchSha(c *gin.Context, m *hbtp.Map) {

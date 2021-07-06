@@ -122,7 +122,18 @@ func (RuntimeController) cancel(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	v, ok := engine.Mgr.BuildEgn().Get(bdid)
+	build := &model.TBuild{}
+	ok, _ := comm.Db.Where("id=?", bdid).Get(build)
+	if !ok {
+		c.String(404, "Not Found")
+		return
+	}
+	perm := service.NewPipePerm(service.GetMidLgUser(c), build.PipelineId)
+	if !perm.CanExec() {
+		c.String(405, "No Permission")
+		return
+	}
+	v, ok := engine.Mgr.BuildEgn().Get(build.Id)
 	if !ok {
 		c.String(404, "Not Found")
 		return
