@@ -8,6 +8,7 @@ import (
 	"github.com/gokins-main/gokins/bean"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/runner/runners"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -90,4 +91,39 @@ func (c *baseRunner) PushOutLine(jobid, cmdid, bs string, iserr bool) error {
 	logfl.Write(bts)
 	logfl.WriteString("\n")
 	return nil
+}
+
+func (c *baseRunner) ReadDir(buildId, dir string, pth string) ([]*runners.DirEntry, error) {
+	if buildId == "" || dir == "" || pth == "" {
+		return nil, errors.New("param err")
+	}
+	pths := filepath.Join(comm.WorkPath, common.PathBuild, buildId, dir, pth)
+	fls, err := os.ReadDir(pths)
+	if err != nil {
+		return nil, err
+	}
+	var ls []*runners.DirEntry
+	for _, v := range fls {
+		e := &runners.DirEntry{
+			Name:  v.Name(),
+			IsDir: v.IsDir(),
+		}
+		ifo, err := v.Info()
+		if err == nil {
+			e.Size = ifo.Size()
+		}
+		ls = append(ls, e)
+	}
+	return ls, nil
+}
+func (c *baseRunner) ReadFile(buildId, dir string, pth string) (io.ReadCloser, error) {
+	if buildId == "" || dir == "" || pth == "" {
+		return nil, errors.New("param err")
+	}
+	pths := filepath.Join(comm.WorkPath, common.PathBuild, buildId, dir, pth)
+	fl, err := os.Open(pths)
+	if err != nil {
+		return nil, err
+	}
+	return fl, nil
 }

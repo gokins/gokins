@@ -53,9 +53,11 @@ type BuildTask struct {
 	stages map[string]*taskStage
 
 	buildPath string
-	isClone   bool
-	repoPath  string
+	repoPaths string
 	workpgss  int
+
+	isClone  bool
+	repoPath string
 }
 
 func (c *BuildTask) status(stat, errs string, event ...string) {
@@ -104,7 +106,7 @@ func (c *BuildTask) run() {
 		c.build.Finished = time.Now()
 		c.updateBuild(c.build)
 		if c.isClone {
-			os.RemoveAll(c.repoPath)
+			os.RemoveAll(c.repoPaths)
 		}
 	}()
 
@@ -309,8 +311,8 @@ func (c *BuildTask) getRepo() error {
 	if !c.isClone {
 		return nil
 	}
-	clonePath := filepath.Join(c.buildPath, common.PathRepo)
-	err := c.gitClone(c.ctx, clonePath, c.build.Repo)
+	c.repoPaths = filepath.Join(c.buildPath, common.PathRepo)
+	err := c.gitClone(c.ctx, c.repoPaths, c.build.Repo)
 	if err != nil {
 		return err
 	}

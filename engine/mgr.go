@@ -24,7 +24,7 @@ func Start() error {
 	Mgr.jobEgn = StartJobEngine()
 	if len(comm.Cfg.Server.Shells) > 0 {
 		runr := runners.NewEngine(runners.Config{
-			Workspace: filepath.Join(comm.WorkPath, common.PathBuild),
+			Workspace: filepath.Join(comm.WorkPath, common.PathRunner),
 			Plugin:    comm.Cfg.Server.Shells,
 		}, &baseRunner{})
 		err := runr.Start(comm.Ctx)
