@@ -11,7 +11,6 @@ import (
 	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/model"
 	"gopkg.in/yaml.v3"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -202,40 +201,20 @@ func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Va
 			Secret: v.Public == 1,
 		}
 	}
-
-	replaceEnvs(vm, vms)
 	for k, v := range vm {
-		k1, kok := replaceVariable(common.RegVar, k, vms)
-		v1, vok := replaceVariable(common.RegVar, v, vms)
-		vms[k1] = &runtime.Variables{
-			Name:   k1,
-			Value:  v1,
-			Secret: kok || vok,
+		s, b := replace(v, vms, true)
+		vms[k] = &runtime.Variables{
+			Name:   k,
+			Value:  s,
+			Secret: b,
 		}
 	}
 
+	for k, v := range vms {
+		s, _ := replace(v.Value, vms, true)
+		vms[k].Value = s
+	}
 	return vms, nil
-}
-
-func replaceVariable(reg *regexp.Regexp, s string, vms map[string]*runtime.Variables) (string, bool) {
-	if s == "" {
-		return s, false
-	}
-	isSecret := false
-	if reg.MatchString(s) {
-		all := reg.FindAllStringSubmatch(s, -1)
-		for _, v := range all {
-			tVars, ok := vms[v[1]]
-			if !ok {
-				continue
-			}
-			if tVars.Secret {
-				isSecret = true
-			}
-			s = strings.ReplaceAll(s, v[0], tVars.Value)
-		}
-	}
-	return s, isSecret
 }
 
 func replaceStages(stages []*bean.Stage, mVars map[string]*runtime.Variables) {
@@ -244,9 +223,12 @@ func replaceStages(stages []*bean.Stage, mVars map[string]*runtime.Variables) {
 	}
 }
 func replaceStage(stage *bean.Stage, mVars map[string]*runtime.Variables) {
-	stage.Stage = replace(stage.Stage, mVars)
-	stage.Name = replace(stage.Name, mVars)
-	stage.DisplayName = replace(stage.DisplayName, mVars)
+	s, _ := replace(stage.Stage, mVars)
+	stage.Stage = s
+	s, _ = replace(stage.Name, mVars)
+	stage.Name = s
+	s, _ = replace(stage.DisplayName, mVars)
+	stage.DisplayName = s
 	if stage.Steps != nil && len(stage.Steps) > 0 {
 		replaceSteps(stage.Steps, mVars)
 	}
@@ -257,10 +239,14 @@ func replaceSteps(steps []*bean.Step, mVars map[string]*runtime.Variables) {
 	}
 }
 func replaceStep(step *bean.Step, mVars map[string]*runtime.Variables) {
-	step.Step = replace(step.Step, mVars)
-	step.Name = replace(step.Name, mVars)
-	step.DisplayName = replace(step.DisplayName, mVars)
-	step.Image = replace(step.Image, mVars)
+	s, _ := replace(step.Step, mVars)
+	step.Step = s
+	s, _ = replace(step.Name, mVars)
+	step.Name = s
+	s, _ = replace(step.DisplayName, mVars)
+	step.DisplayName = s
+	s, _ = replace(step.Image, mVars)
+	step.Image = s
 	if step.Env != nil && len(step.Env) > 0 {
 		step.Env = replaceEnvs(step.Env, mVars)
 	}
@@ -269,33 +255,41 @@ func replaceStep(step *bean.Step, mVars map[string]*runtime.Variables) {
 func replaceEnvs(envs map[string]string, mVars map[string]*runtime.Variables) map[string]string {
 	m := map[string]string{}
 	for k, v := range envs {
-		m[k] = replace(v, mVars, true)
+		s, _ := replace(v, mVars, true)
+		m[k] = s
 	}
 	return m
 }
 
-func replace(s string, mVars map[string]*runtime.Variables, mustShow ...bool) string {
+func replace(s string, mVars map[string]*runtime.Variables, mustShow ...bool) (string, bool) {
 	if s == "" {
-		return s
+		return "", false
 	}
+	conts := s
 	ms := false
 	if len(mustShow) == 1 && mustShow[0] {
 		ms = true
 	}
+	secret := false
 	if common.RegVar.MatchString(s) {
 		all := common.RegVar.FindAllStringSubmatch(s, -1)
 		for _, v2 := range all {
 			rVar, ok := mVars[v2[1]]
 			va := ""
+			st := false
 			if ok {
+				st = rVar.Secret
 				va = rVar.Value
+				if !secret && rVar.Secret {
+					secret = true
+				}
 			}
-			if !ms && rVar.Secret {
-				s = strings.ReplaceAll(s, v2[0], "***")
+			if !ms && st {
+				conts = strings.ReplaceAll(conts, v2[0], "***")
 			} else {
-				s = strings.ReplaceAll(s, v2[0], va)
+				conts = strings.ReplaceAll(conts, v2[0], va)
 			}
 		}
 	}
-	return s
+	return conts, secret
 }
