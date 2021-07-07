@@ -29,10 +29,6 @@ type TOrgInfo struct {
 	Deleted     int       `xorm:"default 0 INT(1)" json:"-"`
 	DeletedTime time.Time `xorm:"DATETIME" json:"-"`
 
-	PermAdm  int `xorm:"default 0 comment('管理员') INT(1)" json:"permAdm"`
-	PermRw   int `xorm:"default 0 comment('1只读,2读写') INT(1)" json:"permRw"`
-	PermExec int `xorm:"default 0 comment('执行权限') INT(1)" json:"permExec"`
-
 	Nick   string `xorm:"-" json:"nick"`
 	Avat   string `xorm:"-" json:"avat"`
 	Pipeln int64  `xorm:"-" json:"pipeln"`
