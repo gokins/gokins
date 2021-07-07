@@ -7,6 +7,7 @@
 
 # Test binary, built with `go test -c`
 /dbm.bat
+/dbm.sh
 /model.yml
 /install.html
 *.test
