@@ -106,7 +106,6 @@ CREATE TABLE `t_pipeline` (
   `name` varchar(255) DEFAULT NULL,
   `display_name` varchar(255) DEFAULT NULL,
   `pipeline_type` varchar(255) DEFAULT NULL,
-  `json_content` longtext,
   `yml_content` longtext,
   `access_token` varchar(255) DEFAULT NULL,
   `url` varchar(255) DEFAULT NULL,
