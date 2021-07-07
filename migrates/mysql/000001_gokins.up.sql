@@ -118,7 +118,7 @@ CREATE TABLE `t_pipeline`
     `access_token`  varchar(255) DEFAULT NULL,
     `url`           varchar(255) DEFAULT NULL,
     `username`      varchar(255) DEFAULT NULL,
-    `create_time` datetime DEFAULT NULL,
+    `created` datetime DEFAULT NULL,
     `deleted`       int(1) DEFAULT '0',
     `deleted_time`  datetime     DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE

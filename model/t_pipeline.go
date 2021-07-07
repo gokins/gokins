@@ -12,5 +12,5 @@ type TPipeline struct {
 	PipelineType string    `xorm:"VARCHAR(255)" json:"pipelineType"`
 	Deleted      int       `xorm:"default 0 INT(1)" json:"deleted"`
 	DeletedTime  time.Time `xorm:"DATETIME" json:"deletedTime"`
-	CreateTime   time.Time `xorm:"DATETIME" json:"createTime"`
+	Created      time.Time `xorm:"DATETIME" json:"created"`
 }
