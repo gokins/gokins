@@ -12,7 +12,7 @@ CREATE TABLE `t_build`
     `updated`             datetime(0) NULL DEFAULT NULL COMMENT '更新时间',
     `version`             varchar(255) NULL DEFAULT NULL COMMENT '版本',
     PRIMARY KEY (`id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_cmd_line`
 (
     `id`       varchar(64) NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE `t_cmd_line`
     `started`  datetime(0) NULL DEFAULT NULL,
     `finished` datetime(0) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_stage`
 (
     `id`                  varchar(64) NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE `t_stage`
     `sort`                int(11) NULL DEFAULT NULL,
     `stage`               varchar(255) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_step`
 (
     `id`                  varchar(64) NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE `t_step`
     `waits`               json NULL,
     `sort`                int(11) NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_message`
 (
     `id`      varchar(64) NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE `t_message`
     `infos`   text NULL,
     `url`     varchar(500) NULL DEFAULT NULL,
     PRIMARY KEY (`aid`, `id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_org`
 (
     `id`           varchar(64) NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE `t_org`
     `deleted_time` datetime(0) NULL DEFAULT NULL,
     PRIMARY KEY (`aid`, `id`) USING BTREE,
     INDEX          `uid`(`uid`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_org_pipe`
 (
     `aid`     bigint(20) NOT NULL AUTO_INCREMENT,
@@ -106,7 +106,7 @@ CREATE TABLE `t_org_pipe`
     `public`  INT(1) NULL DEFAULT 0 COMMENT '公开',
     PRIMARY KEY (`aid`) USING BTREE,
     INDEX     `org_id`(`org_id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_pipeline`
 (
     `id`            varchar(64) NOT NULL,
@@ -122,7 +122,7 @@ CREATE TABLE `t_pipeline`
     `deleted`       int(1) DEFAULT '0',
     `deleted_time`  datetime     DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_pipeline_conf`
 (
     `aid`          int(20) NOT NULL AUTO_INCREMENT,
@@ -132,7 +132,7 @@ CREATE TABLE `t_pipeline_conf`
     `yml_content`  longtext,
     `username`     varchar(255) DEFAULT NULL,
     PRIMARY KEY (`aid`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_pipeline_version`
 (
     `id`                    varchar(64) NOT NULL,
@@ -149,7 +149,7 @@ CREATE TABLE `t_pipeline_version`
     `pr_number`             bigint(20) DEFAULT NULL,
     `repo_clone_url`        varchar(255) DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_param`
 (
     `aid`   bigint(20) NOT NULL AUTO_INCREMENT,
@@ -158,7 +158,7 @@ CREATE TABLE `t_param`
     `data`  text NULL,
     `times` datetime(0) NULL DEFAULT NULL,
     PRIMARY KEY (`aid`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_user`
 (
     `id`         varchar(64) NOT NULL,
@@ -171,7 +171,7 @@ CREATE TABLE `t_user`
     `login_time` datetime(0) NULL DEFAULT NULL,
     `active`     int(1) DEFAULT '0',
     PRIMARY KEY (`aid`, `id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- ----------------------------
 INSERT INTO `t_user`
 VALUES ("admin",
@@ -195,7 +195,7 @@ CREATE TABLE `t_user_info`
     `perm_org`  int(1) DEFAULT NULL,
     `perm_pipe` int(1) DEFAULT NULL,
     PRIMARY KEY (`id`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_user_org`
 (
     `aid`       bigint(20) NOT NULL AUTO_INCREMENT,
@@ -209,7 +209,7 @@ CREATE TABLE `t_user_org`
     INDEX       `uid`(`uid`) USING BTREE,
     INDEX       `oid`(`org_id`) USING BTREE,
     INDEX       `uoid`(`uid`, `org_id`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_user_msg`
 (
     `aid`          BIGINT NOT NULL AUTO_INCREMENT,
@@ -222,7 +222,7 @@ CREATE TABLE `t_user_msg`
     `deleted_time` datetime(0) NULL DEFAULT NULL,
     PRIMARY KEY (`aid`) USING BTREE,
     INDEX          `uid`(`uid`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_user_token`
 (
     `aid`           bigint(20) NOT NULL AUTO_INCREMENT,
@@ -243,7 +243,7 @@ CREATE TABLE `t_user_token`
     PRIMARY KEY (`aid`) USING BTREE,
     INDEX           `uid`(`uid`) USING BTREE,
     INDEX           `openid`(`openid`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_pipeline_var`
 (
     `aid`         bigint(20) NOT NULL AUTO_INCREMENT,
@@ -254,7 +254,7 @@ CREATE TABLE `t_pipeline_var`
     `remarks`     varchar(255) DEFAULT NULL,
     `public`      int(1) DEFAULT '0' COMMENT '公开',
     PRIMARY KEY (`aid`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_yml_plugin`
 (
     `aid`          bigint(20) NOT NULL AUTO_INCREMENT,
@@ -263,7 +263,7 @@ CREATE TABLE `t_yml_plugin`
     `deleted`      int(1) DEFAULT '0',
     `deleted_time` datetime    DEFAULT NULL,
     PRIMARY KEY (`aid`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 INSERT INTO `t_yml_plugin`(`aid`,
                            `name`,
                            `yml_content`,
@@ -302,7 +302,7 @@ CREATE TABLE `t_yml_template`
     `deleted`      int(1) DEFAULT '0',
     `deleted_time` datetime    DEFAULT NULL,
     PRIMARY KEY (`aid`) USING BTREE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 INSERT INTO `t_yml_template`(`aid`,
                              `name`,
                              `yml_content`,
