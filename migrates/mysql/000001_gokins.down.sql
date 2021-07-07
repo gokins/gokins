@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS `t_message`;
 DROP TABLE IF EXISTS `t_org`;
 DROP TABLE IF EXISTS `t_org_pipe`;
 DROP TABLE IF EXISTS `t_pipeline`;
+DROP TABLE IF EXISTS `t_pipeline_conf`;
 DROP TABLE IF EXISTS `t_pipeline_var`;
 DROP TABLE IF EXISTS `t_pipeline_version`;
 DROP TABLE IF EXISTS `t_param`;

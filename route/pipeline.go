@@ -175,12 +175,19 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 	pipeline := &model.TPipeline{
 		Name:        name,
 		DisplayName: displayName,
+	}
+	_, err = comm.Db.Cols("name,display_name").Where("id = ?", pipelineId).Update(pipeline)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	tpc := &model.TPipelineConf{
 		YmlContent:  content,
 		Url:         ul,
 		Username:    username,
 		AccessToken: accessToken,
 	}
-	_, err = comm.Db.Cols("name , display_name,json_content,yml_content,url,username,access_token").Where("id = ?", pipelineId).Update(pipeline)
+	_, err = comm.Db.Cols("yml_content,url,username,access_token").Where("id = ?", pipelineId).Update(tpc)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
@@ -261,12 +268,20 @@ func (PipelineController) new(c *gin.Context, npipe *bean.NewPipeline) {
 		Name:         npipe.Name,
 		DisplayName:  npipe.DisplayName,
 		PipelineType: "",
-		YmlContent:   npipe.Content,
-		Url:          npipe.Url,
-		Username:     npipe.Username,
-		AccessToken:  npipe.AccessToken,
 	}
 	_, err = comm.Db.InsertOne(pipeline)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	tpc := &model.TPipelineConf{
+		PipelineId:  pipeline.Id,
+		YmlContent:  npipe.Content,
+		Url:         npipe.Url,
+		Username:    npipe.Username,
+		AccessToken: npipe.AccessToken,
+	}
+	_, err = comm.Db.InsertOne(tpc)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
@@ -324,11 +339,28 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "No Auth")
 		return
 	}
-	pipe := &model.TPipeline{}
+	pipe := &models.TPipelineInfo{}
 	ok, _ := comm.Db.Where("id=? and deleted != 1", id).Get(pipe)
 	if !ok {
 		c.String(404, "未找到流水线信息")
 		return
+	}
+	tpc := &model.TPipelineConf{}
+	_, err := comm.Db.Where("pipeline_id=?", pipe.Id).Get(tpc)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	pipe.YmlContent = tpc.YmlContent
+	s := "***"
+	if perm.CanWrite() {
+		pipe.Username = tpc.Username
+		pipe.AccessToken = tpc.AccessToken
+		pipe.Url = tpc.Url
+	} else {
+		pipe.Username = s
+		pipe.AccessToken = s
+		pipe.Url = s
 	}
 	c.JSON(200, hbtp.Map{
 		"pipe": pipe,
@@ -394,10 +426,6 @@ func (PipelineController) copy(c *gin.Context, m *hbtp.Map) {
 		Name:         fmt.Sprintf("%s_copy", perm.Pipeline().Name),
 		DisplayName:  perm.Pipeline().DisplayName,
 		PipelineType: perm.Pipeline().PipelineType,
-		YmlContent:   perm.Pipeline().YmlContent,
-		AccessToken:  perm.Pipeline().AccessToken,
-		Url:          perm.Pipeline().Url,
-		Username:     perm.Pipeline().Username,
 	}
 	_, err := comm.Db.InsertOne(pipe)
 	if err != nil {
@@ -405,6 +433,18 @@ func (PipelineController) copy(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 
+	tpc := &model.TPipelineConf{}
+	_, err = comm.Db.Where("pipeline_id=?", perm.Pipeline().Id).Get(tpc)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	tpc.PipelineId = pipe.Id
+	_, err = comm.Db.InsertOne(tpc)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
 	c.JSON(200, pipe)
 }
 func (PipelineController) rebuild(c *gin.Context, m *hbtp.Map) {

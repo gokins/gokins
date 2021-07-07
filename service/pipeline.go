@@ -16,8 +16,8 @@ import (
 )
 
 func Run(pipeId string, sha string) (*model.TPipelineVersion, error) {
-	tpipe := &model.TPipeline{}
-	ok, _ := comm.Db.Where("id=? and deleted != 1", pipeId).Get(tpipe)
+	tpipe := &model.TPipelineConf{}
+	ok, _ := comm.Db.Where("pipeline_id=?", pipeId).Get(tpipe)
 	if !ok {
 		return nil, errors.New("流水线不存在")
 	}
@@ -33,8 +33,8 @@ func Run(pipeId string, sha string) (*model.TPipelineVersion, error) {
 }
 
 func ReBuild(tvp *model.TPipelineVersion) (*model.TPipelineVersion, error) {
-	tpipe := &model.TPipeline{}
-	ok, _ := comm.Db.Where("id=? and deleted != 1", tvp.PipelineId).Get(tpipe)
+	tpipe := &model.TPipelineConf{}
+	ok, _ := comm.Db.Where("pipeline_id=?", tvp.PipelineId).Get(tpipe)
 	if !ok {
 		return nil, errors.New("流水线不存在")
 	}
@@ -49,14 +49,19 @@ func ReBuild(tvp *model.TPipelineVersion) (*model.TPipelineVersion, error) {
 	return preBuild(pipe, tpipe, tvp.Sha)
 }
 
-func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.TPipelineVersion, error) {
+func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*model.TPipelineVersion, error) {
+	tp := &model.TPipeline{}
+	ok, _ := comm.Db.Where("id=? and deleted != 1", tpipe.PipelineId).Get(tp)
+	if !ok {
+		return nil, errors.New("流水线不存在")
+	}
 	err := pipe.Check()
 	if err != nil {
 		return nil, err
 	}
 	pipe.ConvertCmd()
 
-	m, err := convertVar(tpipe.Id, pipe.Vars)
+	m, err := convertVar(tpipe.PipelineId, pipe.Vars)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +69,7 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 
 	number := int64(0)
 	_, err = comm.Db.
-		SQL("SELECT max(number) FROM t_pipeline_version WHERE pipeline_id = ?", tpipe.Id).
+		SQL("SELECT max(number) FROM t_pipeline_version WHERE pipeline_id = ?", tpipe.PipelineId).
 		Get(&number)
 	if err != nil {
 		return nil, err
@@ -74,9 +79,9 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 		Number:              number + 1,
 		Events:              "run",
 		Sha:                 sha,
-		PipelineName:        tpipe.Name,
-		PipelineDisplayName: tpipe.DisplayName,
-		PipelineId:          tpipe.Id,
+		PipelineName:        tp.Name,
+		PipelineDisplayName: tp.DisplayName,
+		PipelineId:          tpipe.PipelineId,
 		Version:             "",
 		Content:             tpipe.YmlContent,
 		Created:             time.Now(),
@@ -90,7 +95,7 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 
 	tb := &model.TBuild{
 		Id:                utils.NewXid(),
-		PipelineId:        tpipe.Id,
+		PipelineId:        tpipe.PipelineId,
 		PipelineVersionId: tpv.Id,
 		Status:            common.BuildStatusPending,
 		Created:           time.Now(),
