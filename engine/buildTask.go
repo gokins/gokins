@@ -53,7 +53,7 @@ type BuildTask struct {
 	stages map[string]*taskStage
 
 	buildPath string
-	repoPaths string
+	repoPaths string //fs
 	workpgss  int
 
 	isClone  bool

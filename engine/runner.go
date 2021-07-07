@@ -93,11 +93,20 @@ func (c *baseRunner) PushOutLine(jobid, cmdid, bs string, iserr bool) error {
 	return nil
 }
 
-func (c *baseRunner) ReadDir(buildId, dir string, pth string) ([]*runners.DirEntry, error) {
-	if buildId == "" || dir == "" || pth == "" {
+func (c *baseRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.DirEntry, error) {
+	if buildId == "" || pth == "" {
 		return nil, errors.New("param err")
 	}
-	pths := filepath.Join(comm.WorkPath, common.PathBuild, buildId, dir, pth)
+	build, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return nil, errors.New("not found build")
+	}
+	pths := ""
+	if fs == 1 {
+		pths = filepath.Join(build.repoPaths, pth)
+	} else if fs == 2 {
+		pths = filepath.Join(comm.WorkPath, common.PathBuild, buildId, common.PathJobs, pth)
+	}
 	fls, err := os.ReadDir(pths)
 	if err != nil {
 		return nil, err
@@ -116,11 +125,20 @@ func (c *baseRunner) ReadDir(buildId, dir string, pth string) ([]*runners.DirEnt
 	}
 	return ls, nil
 }
-func (c *baseRunner) ReadFile(buildId, dir string, pth string) (io.ReadCloser, error) {
-	if buildId == "" || dir == "" || pth == "" {
+func (c *baseRunner) ReadFile(fs int, buildId string, pth string) (io.ReadCloser, error) {
+	if buildId == "" || pth == "" {
 		return nil, errors.New("param err")
 	}
-	pths := filepath.Join(comm.WorkPath, common.PathBuild, buildId, dir, pth)
+	build, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return nil, errors.New("not found build")
+	}
+	pths := ""
+	if fs == 1 {
+		pths = filepath.Join(build.repoPaths, pth)
+	} else if fs == 2 {
+		pths = filepath.Join(comm.WorkPath, common.PathBuild, buildId, common.PathJobs, pth)
+	}
 	fl, err := os.Open(pths)
 	if err != nil {
 		return nil, err

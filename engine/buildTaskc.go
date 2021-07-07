@@ -34,6 +34,7 @@ func (c *BuildTask) check() bool {
 			return false
 		}
 		c.isClone = true
+		c.repoPaths = c.repoPath
 	}
 	if c.build.Stages == nil || len(c.build.Stages) <= 0 {
 		c.build.Event = common.BuildEventCheckParam
@@ -141,8 +142,6 @@ func (c *BuildTask) genRunjob(job *jobSync) (rterr error) {
 		Env:             job.step.Env,
 		Artifacts:       job.step.Artifacts,
 		DependArtifacts: job.step.DependArtifacts,
-		IsClone:         c.isClone,
-		RepoPath:        c.repoPath,
 	}
 	var err error
 	switch job.step.Commands.(type) {
@@ -188,15 +187,18 @@ func (c *BuildTask) genRunjob(job *jobSync) (rterr error) {
 			if k == "" {
 				continue
 			}
+			vas := ""
+			secret := false
 			va, ok := c.build.Vars[k]
-			if !ok {
-				continue
+			if ok {
+				vas = va.Value
+				secret = va.Secret
 			}
-			v.Conts = strings.ReplaceAll(v.Conts, zs[0], va.Value)
-			if va.Secret {
+			v.Conts = strings.ReplaceAll(v.Conts, zs[0], vas)
+			if secret {
 				cmd.Content = strings.ReplaceAll(cmd.Content, zs[0], "***")
 			} else {
-				cmd.Content = strings.ReplaceAll(cmd.Content, zs[0], va.Value)
+				cmd.Content = strings.ReplaceAll(cmd.Content, zs[0], vas)
 			}
 		}
 		_, err = comm.Db.InsertOne(cmd)
@@ -212,7 +214,7 @@ func (c *BuildTask) appendcmds(runjb *runners.RunJob, conts string) {
 		Id:    utils.NewXid(),
 		Conts: conts,
 	}
-	logrus.Debugf("append cmd(%d)-%s:%s", len(runjb.Commands), m.Conts)
+	logrus.Debugf("append cmd(%d)-%s", len(runjb.Commands), m.Conts)
 	//job.Commands[m.Id] = m
 	runjb.Commands = append(runjb.Commands, m)
 }

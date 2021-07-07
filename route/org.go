@@ -53,11 +53,20 @@ func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 		`
 		if !service.IsAdmin(lgusr) {
 			gen.FindCols = "org.*,urg.perm_adm,urg.perm_rw,urg.perm_exec"
-			gen.SQL = `
+			/*gen.SQL = `
 			select {{select}} from t_org org
 			LEFT JOIN t_user_org urg on urg.uid=? and urg.org_id=org.id
 			where org.deleted!=1
 			and (org.public=1 or org.uid=?)
+			`*/
+			gen.SQL = `
+			select * from t_org org
+			where org.deleted!=1 and
+			(
+			org.public=1
+			or org.uid=?
+			or org.id in (select org_id from t_user_org where uid=?)
+			)
 			`
 			gen.Args = append(gen.Args, lgusr.Id)
 			gen.Args = append(gen.Args, lgusr.Id)
