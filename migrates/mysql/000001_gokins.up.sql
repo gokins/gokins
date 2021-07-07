@@ -1,3 +1,52 @@
+CREATE TABLE `t_artifact_package` (
+                                      `id` varchar(64) NOT NULL,
+                                      `aid` bigint(20) NOT NULL AUTO_INCREMENT,
+                                      `repo_id` varchar(64) DEFAULT NULL,
+                                      `name` varchar(100) DEFAULT NULL,
+                                      `display_name` varchar(255) DEFAULT NULL,
+                                      `desc` varchar(500) DEFAULT NULL,
+                                      `latestVersion` varchar(64) DEFAULT NULL,
+                                      `latestVersionSha` varchar(100) DEFAULT NULL,
+                                      `created` datetime DEFAULT NULL,
+                                      `updated` datetime DEFAULT NULL,
+                                      `deleted` datetime DEFAULT NULL,
+                                      `deleted_time` datetime DEFAULT NULL,
+                                      PRIMARY KEY (`aid`,`id`),
+                                      KEY `pid` (`repo_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE `t_artifact_version` (
+                                      `id` varchar(64) NOT NULL,
+                                      `aid` bigint(20) NOT NULL AUTO_INCREMENT,
+                                      `repo_id` varchar(64) DEFAULT NULL,
+                                      `package_id` varchar(64) DEFAULT NULL,
+                                      `name` varchar(100) DEFAULT NULL,
+                                      `version` varchar(100) DEFAULT NULL,
+                                      `sha` varchar(100) DEFAULT NULL,
+                                      `desc` varchar(500) DEFAULT NULL,
+                                      `preview` int(1) DEFAULT NULL,
+                                      `created` datetime DEFAULT NULL,
+                                      `updated` datetime DEFAULT NULL,
+                                      `deleted` int(1) DEFAULT NULL,
+                                      `deleted_time` datetime DEFAULT NULL,
+                                      PRIMARY KEY (`aid`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE `t_artifactory` (
+                                 `id` varchar(64) NOT NULL,
+                                 `aid` bigint(20) NOT NULL AUTO_INCREMENT,
+                                 `uid` varchar(64) DEFAULT NULL,
+                                 `org_id` varchar(64) DEFAULT NULL,
+                                 `identifier` varchar(50) DEFAULT NULL,
+                                 `name` varchar(200) DEFAULT NULL,
+                                 `disabled` int(1) DEFAULT '0' COMMENT '是否归档(1归档|0正常)',
+                                 `source` varchar(50) DEFAULT NULL,
+                                 `desc` varchar(500) DEFAULT NULL,
+                                 `logo` varchar(255) DEFAULT NULL,
+                                 `created` datetime DEFAULT NULL,
+                                 `updated` datetime DEFAULT NULL,
+                                 `deleted` int(1) DEFAULT NULL,
+                                 `deleted_time` datetime DEFAULT NULL,
+                                 PRIMARY KEY (`aid`,`id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_build`
 (
     `id`                  varchar(64) NOT NULL,

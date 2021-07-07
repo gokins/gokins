@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS `t_artifact_package`;
+DROP TABLE IF EXISTS `t_artifact_version`;
+DROP TABLE IF EXISTS `t_artifactory`;
 DROP TABLE IF EXISTS `t_build`;
 DROP TABLE IF EXISTS `t_cmd_line`;
 DROP TABLE IF EXISTS `t_stage`;
