@@ -10,6 +10,7 @@ import (
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/model"
+	"gopkg.in/yaml.v3"
 	"regexp"
 	"strings"
 	"time"
@@ -21,11 +22,11 @@ func Run(pipeId string, sha string) (*model.TPipelineVersion, error) {
 	if !ok {
 		return nil, errors.New("流水线不存在")
 	}
-	if tpipe.JsonContent == "" {
+	if tpipe.YmlContent == "" {
 		return nil, errors.New("流水线Yaml为空")
 	}
 	pipe := &bean.Pipeline{}
-	err := json.Unmarshal([]byte(tpipe.JsonContent), pipe)
+	err := yaml.Unmarshal([]byte(tpipe.YmlContent), pipe)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func ReBuild(tvp *model.TPipelineVersion) (*model.TPipelineVersion, error) {
 		return nil, errors.New("流水线Yaml为空")
 	}
 	pipe := &bean.Pipeline{}
-	err := json.Unmarshal([]byte(tvp.Content), pipe)
+	err := yaml.Unmarshal([]byte(tvp.Content), pipe)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +79,7 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipeline, sha string) (*model.T
 		PipelineDisplayName: tpipe.DisplayName,
 		PipelineId:          tpipe.Id,
 		Version:             "",
-		Content:             tpipe.JsonContent,
+		Content:             tpipe.YmlContent,
 		Created:             time.Now(),
 		Deleted:             0,
 		RepoCloneUrl:        tpipe.Url,
@@ -201,6 +202,8 @@ func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Va
 			Secret: v.Public == 1,
 		}
 	}
+
+	replaceEnvs(vm, vms)
 	for k, v := range vm {
 		k1, kok := replaceVariable(common.RegVar, k, vms)
 		v1, vok := replaceVariable(common.RegVar, v, vms)
@@ -210,6 +213,7 @@ func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Va
 			Secret: kok || vok,
 		}
 	}
+
 	return vms, nil
 }
 
@@ -265,7 +269,7 @@ func replaceStep(step *bean.Step, mVars map[string]*runtime.Variables) {
 func replaceEnvs(envs map[string]string, mVars map[string]*runtime.Variables) map[string]string {
 	m := map[string]string{}
 	for k, v := range envs {
-		m[replace(k, mVars)] = replace(v, mVars, true)
+		m[k] = replace(v, mVars, true)
 	}
 	return m
 }
@@ -282,13 +286,14 @@ func replace(s string, mVars map[string]*runtime.Variables, mustShow ...bool) st
 		all := common.RegVar.FindAllStringSubmatch(s, -1)
 		for _, v2 := range all {
 			rVar, ok := mVars[v2[1]]
-			if !ok {
-				continue
+			va := ""
+			if ok {
+				va = rVar.Value
 			}
 			if !ms && rVar.Secret {
 				s = strings.ReplaceAll(s, v2[0], "***")
 			} else {
-				s = strings.ReplaceAll(s, v2[0], rVar.Value)
+				s = strings.ReplaceAll(s, v2[0], va)
 			}
 		}
 	}

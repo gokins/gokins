@@ -172,15 +172,9 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "yaml Check err:"+err.Error())
 		return
 	}
-	js, err := y.ToJson()
-	if err != nil {
-		c.String(500, "yaml ToJson err:"+err.Error())
-		return
-	}
 	pipeline := &model.TPipeline{
 		Name:        name,
 		DisplayName: displayName,
-		JsonContent: string(js),
 		YmlContent:  content,
 		Url:         ul,
 		Username:    username,
@@ -244,11 +238,6 @@ func (PipelineController) new(c *gin.Context, npipe *bean.NewPipeline) {
 		c.String(500, "yaml Check err:"+err.Error())
 		return
 	}
-	js, err := y.ToJson()
-	if err != nil {
-		c.String(500, "yaml ToJson err:"+err.Error())
-		return
-	}
 	lgusr := service.GetMidLgUser(c)
 	perm := service.NewOrgPerm(lgusr, npipe.OrgId)
 	if npipe.OrgId != "" && perm.Org() == nil {
@@ -272,7 +261,6 @@ func (PipelineController) new(c *gin.Context, npipe *bean.NewPipeline) {
 		Name:         npipe.Name,
 		DisplayName:  npipe.DisplayName,
 		PipelineType: "",
-		JsonContent:  string(js),
 		YmlContent:   npipe.Content,
 		Url:          npipe.Url,
 		Username:     npipe.Username,
@@ -406,7 +394,6 @@ func (PipelineController) copy(c *gin.Context, m *hbtp.Map) {
 		Name:         fmt.Sprintf("%s_copy", perm.Pipeline().Name),
 		DisplayName:  perm.Pipeline().DisplayName,
 		PipelineType: perm.Pipeline().PipelineType,
-		JsonContent:  perm.Pipeline().JsonContent,
 		YmlContent:   perm.Pipeline().YmlContent,
 		AccessToken:  perm.Pipeline().AccessToken,
 		Url:          perm.Pipeline().Url,
