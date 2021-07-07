@@ -134,14 +134,14 @@ func (c *BuildTask) genRunjob(job *jobSync) (rterr error) {
 		}
 	}()
 	runjb := &runners.RunJob{
-		Id:              job.step.Id,
-		StageId:         job.step.StageId,
-		BuildId:         job.step.BuildId,
-		Step:            job.step.Step,
-		Name:            job.step.Name,
-		Env:             job.step.Env,
-		Artifacts:       job.step.Artifacts,
-		DependArtifacts: job.step.DependArtifacts,
+		Id:           job.step.Id,
+		StageId:      job.step.StageId,
+		BuildId:      job.step.BuildId,
+		Step:         job.step.Step,
+		Name:         job.step.Name,
+		Env:          job.step.Env,
+		Artifacts:    job.step.Artifacts,
+		UseArtifacts: job.step.UseArtifacts,
 	}
 	var err error
 	switch job.step.Commands.(type) {
