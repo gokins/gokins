@@ -180,6 +180,25 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*mod
 				Waits:       step.Waits,
 				Env:         step.Env,
 			}
+			for _, v := range step.Artifacts {
+				rtp.Artifacts = append(rtp.Artifacts, &runtime.Artifact{
+					Scope:      v.Scope,
+					Repository: v.Repository,
+					Name:       v.Name,
+					Path:       v.Path,
+				})
+			}
+			for _, v := range step.UseArtifacts {
+				rtp.UseArtifacts = append(rtp.UseArtifacts, &runtime.UseArtifact{
+					Scope:       v.Scope,
+					Repository:  v.Repository,
+					Name:        v.Name,
+					Path:        v.Path,
+					IsForce:     v.IsForce,
+					SourceStage: v.SourceStage,
+					SourceStep:  v.SourceStep,
+				})
+			}
 			_, err = comm.Db.InsertOne(tsp)
 			if err != nil {
 				return nil, err

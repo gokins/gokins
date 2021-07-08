@@ -37,38 +37,33 @@ type Stage struct {
 }
 
 type Step struct {
-	Step            string            `yaml:"step" json:"step"`
-	DisplayName     string            `yaml:"displayName,omitempty" json:"displayName"`
-	Name            string            `yaml:"name,omitempty" json:"name"`
-	Env             map[string]string `yaml:"env,omitempty" json:"env"`
-	Commands        interface{}       `yaml:"commands,omitempty" json:"commands"`
-	Waits           []string          `yaml:"waits,omitempty" json:"waits"`
-	Image           string            `yaml:"image,omitempty" json:"image"`
-	Artifacts       []*Artifact       `yaml:"artifacts,omitempty" json:"artifacts"`
-	DependArtifacts []*DependArtifact `yaml:"dependArtifacts,omitempty" json:"dependArtifacts"`
+	Step         string            `yaml:"step" json:"step"`
+	DisplayName  string            `yaml:"displayName,omitempty" json:"displayName"`
+	Name         string            `yaml:"name,omitempty" json:"name"`
+	Env          map[string]string `yaml:"env,omitempty" json:"env"`
+	Commands     interface{}       `yaml:"commands,omitempty" json:"commands"`
+	Waits        []string          `yaml:"waits,omitempty" json:"waits"`
+	Image        string            `yaml:"image,omitempty" json:"image"`
+	Artifacts    []*Artifact       `yaml:"artifacts,omitempty" json:"artifacts"`
+	UseArtifacts []*UseArtifacts   `yaml:"useArtifacts,omitempty" json:"useArtifacts"`
 }
 
 type Artifact struct {
-	Name       string `yaml:"name,omitempty" json:"name"`
 	Scope      string `yaml:"scope,omitempty" json:"scope"`
-	Path       string `yaml:"path,omitempty" json:"path"`
 	Repository string `yaml:"repository,omitempty" json:"repository"`
-	Value      string `yaml:"value,omitempty" json:"value"`
+	Name       string `yaml:"name,omitempty" json:"name"`
+	Path       string `yaml:"path,omitempty" json:"path"`
 }
 
-type DependArtifact struct {
-	BuildName string `yaml:"buildName,omitempty" json:"buildName"`
-	StageName string `yaml:"stageName,omitempty" json:"stageName"`
-	StepName  string `yaml:"stepName,omitempty" json:"stepName"`
+type UseArtifacts struct {
+	Scope      string `yaml:"scope" json:"scope"`           //archive,pipeline,env
+	Repository string `yaml:"repository" json:"repository"` // archive,制品库ID
+	Name       string `yaml:"name" json:"name"`             //archive,pipeline,env
+	IsForce    bool   `yaml:"isForce" json:"is_force"`
+	Path       string `yaml:"path" json:"path"` //archive,pipeline
 
-	Type       string `yaml:"type,omitempty" json:"type"`
-	Repository string `yaml:"repository,omitempty" json:"repository"`
-	Name       string `yaml:"name,omitempty" json:"name"`
-	Target     string `yaml:"target,omitempty" json:"target"`
-	IsForce    bool   `yaml:"isForce,omitempty" json:"isForce"`
-
-	SourceStage string `yaml:"sourceStage,omitempty" json:"sourceStage"`
-	SourceStep  string `yaml:"sourceStep,omitempty" json:"sourceStep"`
+	SourceStage string `yaml:"sourceStage" json:"source_stage"` //pipeline
+	SourceStep  string `yaml:"sourceStep" json:"source_step"`   //pipeline
 }
 
 func (c *Pipeline) ToJson() ([]byte, error) {
