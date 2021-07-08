@@ -187,7 +187,7 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 		Username:    username,
 		AccessToken: accessToken,
 	}
-	_, err = comm.Db.Cols("yml_content,url,username,access_token").Where("id = ?", pipelineId).Update(tpc)
+	_, err = comm.Db.Cols("yml_content,url,username,access_token").Where("pipeline_id = ?", pipelineId).Update(tpc)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
@@ -352,15 +352,14 @@ func (PipelineController) info(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	pipe.YmlContent = tpc.YmlContent
+	pipe.Url = tpc.Url
 	s := "***"
 	if perm.CanWrite() {
 		pipe.Username = tpc.Username
 		pipe.AccessToken = tpc.AccessToken
-		pipe.Url = tpc.Url
 	} else {
 		pipe.Username = s
 		pipe.AccessToken = s
-		pipe.Url = s
 	}
 	c.JSON(200, hbtp.Map{
 		"pipe": pipe,
