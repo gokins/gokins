@@ -150,7 +150,7 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*mod
 			if err != nil {
 				return nil, err
 			}
-			djs, err := json.Marshal(step.Wait)
+			djs, err := json.Marshal(step.Waits)
 			if err != nil {
 				return nil, err
 			}
@@ -177,7 +177,7 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*mod
 				Status:      common.BuildStatusPending,
 				Name:        step.Name,
 				Commands:    step.Commands,
-				Waits:       step.Wait,
+				Waits:       step.Waits,
 				Env:         step.Env,
 			}
 			for _, v := range step.Artifacts {
