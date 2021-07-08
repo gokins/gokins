@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gokins-main/core/common"
+	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/bean"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/runner/runners"
+	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -80,8 +83,8 @@ func (c *baseRunner) PushOutLine(jobid, cmdid, bs string, iserr bool) error {
 		return err
 	}
 
-	dir := filepath.Join(comm.WorkPath, common.PathBuild, job.step.BuildId, common.PathJobs)
-	logpth := filepath.Join(dir, fmt.Sprintf("%v.log", jobid))
+	dir := filepath.Join(comm.WorkPath, common.PathBuild, job.step.BuildId, common.PathJobs, job.step.Id)
+	logpth := filepath.Join(dir, "build.log")
 	os.MkdirAll(dir, 0755)
 	logfl, err := os.OpenFile(logpth, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 	if err != nil {
@@ -91,6 +94,27 @@ func (c *baseRunner) PushOutLine(jobid, cmdid, bs string, iserr bool) error {
 	logfl.Write(bts)
 	logfl.WriteString("\n")
 	return nil
+}
+func (c *baseRunner) FindJobId(buildId, stgNm, stpNm string) (string, bool) {
+	if buildId == "" || stgNm == "" || stpNm == "" {
+		return "", false
+	}
+	build, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return "", false
+	}
+	build.staglk.RLock()
+	defer build.staglk.RUnlock()
+	stg, ok := build.stages[stgNm]
+	if !ok {
+		return "", false
+	}
+	for _, v := range stg.jobs {
+		if v.step.Name == stpNm {
+			return v.step.Id, true
+		}
+	}
+	return "", false
 }
 
 func (c *baseRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.DirEntry, error) {
@@ -105,7 +129,7 @@ func (c *baseRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.Dir
 	if fs == 1 {
 		pths = filepath.Join(build.repoPaths, pth)
 	} else if fs == 2 {
-		pths = filepath.Join(comm.WorkPath, common.PathBuild, buildId, common.PathJobs, pth)
+		pths = filepath.Join(build.buildPath, common.PathJobs, pth)
 	}
 	fls, err := os.ReadDir(pths)
 	if err != nil {
@@ -125,23 +149,89 @@ func (c *baseRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.Dir
 	}
 	return ls, nil
 }
-func (c *baseRunner) ReadFile(fs int, buildId string, pth string) (io.ReadCloser, error) {
+func (c *baseRunner) ReadFile(fs int, buildId string, pth string) (int64, io.ReadCloser, error) {
 	if buildId == "" || pth == "" {
-		return nil, errors.New("param err")
+		return 0, nil, errors.New("param err")
 	}
 	build, ok := Mgr.buildEgn.Get(buildId)
 	if !ok {
-		return nil, errors.New("not found build")
+		return 0, nil, errors.New("not found build")
 	}
 	pths := ""
 	if fs == 1 {
 		pths = filepath.Join(build.repoPaths, pth)
 	} else if fs == 2 {
-		pths = filepath.Join(comm.WorkPath, common.PathBuild, buildId, common.PathJobs, pth)
+		pths = filepath.Join(build.buildPath, common.PathJobs, pth)
+	}
+	if pths == "" {
+		return 0, nil, errors.New("path param err")
+	}
+	stat, err := os.Stat(pths)
+	if err != nil {
+		return 0, nil, err
 	}
 	fl, err := os.Open(pths)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
-	return fl, nil
+	return stat.Size(), fl, nil
+}
+
+func (c *baseRunner) GetEnv(jobid, key string) (string, bool) {
+	if jobid == "" || key == "" {
+		return "", false
+	}
+	job, ok := Mgr.jobEgn.GetJob(jobid)
+	if !ok {
+		return "", false
+	}
+	dir := filepath.Join(comm.WorkPath, common.PathBuild, job.step.BuildId, common.PathJobs, job.step.Id)
+	bts, err := ioutil.ReadFile(filepath.Join(dir, "build.env"))
+	if err != nil {
+		return "", false
+	}
+	mp := hbtp.NewMaps(bts)
+	v, ok := mp.Get(key)
+	if !ok {
+		return "", false
+	}
+	switch v.(type) {
+	case string:
+		return v.(string), true
+	}
+	return fmt.Sprintf("%v", v), true
+}
+func (c *baseRunner) GenEnv(jobid string, env utils.EnvVal) error {
+	if jobid == "" || env == nil {
+		return errors.New("param err")
+	}
+	job, ok := Mgr.jobEgn.GetJob(jobid)
+	if !ok {
+		return errors.New("not found job")
+	}
+	bts, err := json.Marshal(env)
+	if err != nil {
+		return err
+	}
+	dir := filepath.Join(comm.WorkPath, common.PathBuild, job.step.BuildId, common.PathJobs, job.step.Id)
+	err = ioutil.WriteFile(filepath.Join(dir, "build.env"), bts, 0640)
+	return err
+}
+
+func (c *baseRunner) UploadFile(jobid string, name, pth string) (io.WriteCloser, error) {
+	if jobid == "" || pth == "" {
+		return nil, errors.New("param err")
+	}
+	job, ok := Mgr.jobEgn.GetJob(jobid)
+	if !ok {
+		return nil, errors.New("not found job")
+	}
+	pths := filepath.Join(job.task.buildPath, common.PathJobs, job.step.Id, common.PathArts, name, pth)
+	dir := filepath.Dir(pths)
+	os.MkdirAll(dir, 0750)
+	fl, err := os.OpenFile(pths, os.O_CREATE|os.O_RDWR, 0640)
+	/*if err!=nil{
+		return nil,err
+	}*/
+	return fl, err
 }

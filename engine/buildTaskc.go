@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gokins-main/core/common"
+	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/model"
@@ -24,17 +25,17 @@ func (c *BuildTask) check() bool {
 		c.status(common.BuildEventCheckParam, "repo param err:clone url")
 		return false
 	}
-	s, err := os.Stat(c.build.Repo.CloneURL)
+	c.repoPath = c.build.Repo.CloneURL
+	s, err := os.Stat(c.repoPath)
 	if err == nil && s.IsDir() {
 		c.isClone = false
-		c.repoPath = c.build.Repo.CloneURL
+		c.repoPaths = c.repoPath
 	} else {
 		if !common.RegUrl.MatchString(c.build.Repo.CloneURL) {
 			c.status(common.BuildEventCheckParam, "repo param err:clone url")
 			return false
 		}
 		c.isClone = true
-		c.repoPaths = c.repoPath
 	}
 	if c.build.Stages == nil || len(c.build.Stages) <= 0 {
 		c.build.Event = common.BuildEventCheckParam
@@ -96,10 +97,11 @@ func (c *BuildTask) check() bool {
 				return false
 			}
 			job := &jobSync{
+				task:  c,
 				step:  e,
 				cmdmp: make(map[string]*cmdSync),
 			}
-			err = c.genRunjob(job)
+			err = c.genRunjob(v, job)
 			if err != nil {
 				c.build.Event = common.BuildEventCheckParam
 				c.build.Error = fmt.Sprintf("build Job.%s Commands err", e.Name)
@@ -125,7 +127,7 @@ func (c *BuildTask) check() bool {
 	return true
 }
 
-func (c *BuildTask) genRunjob(job *jobSync) (rterr error) {
+func (c *BuildTask) genRunjob(stage *runtime.Stage, job *jobSync) (rterr error) {
 	defer func() {
 		if err := recover(); err != nil {
 			rterr = fmt.Errorf("recover:%v", err)
@@ -137,6 +139,7 @@ func (c *BuildTask) genRunjob(job *jobSync) (rterr error) {
 		Id:           job.step.Id,
 		StageId:      job.step.StageId,
 		BuildId:      job.step.BuildId,
+		StageName:    stage.Name,
 		Step:         job.step.Step,
 		Name:         job.step.Name,
 		Env:          job.step.Env,

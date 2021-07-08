@@ -111,6 +111,7 @@ func (c *BuildTask) run() {
 	}()
 
 	c.buildPath = filepath.Join(comm.WorkPath, common.PathBuild, c.build.Id)
+	c.repoPaths = filepath.Join(c.buildPath, common.PathRepo)
 	err := os.MkdirAll(c.buildPath, 0750)
 	if err != nil {
 		c.status(common.BuildStatusError, "build path err:"+err.Error(), common.BuildEventPath)
@@ -311,7 +312,7 @@ func (c *BuildTask) getRepo() error {
 	if !c.isClone {
 		return nil
 	}
-	c.repoPaths = filepath.Join(c.buildPath, common.PathRepo)
+	os.MkdirAll(c.repoPaths, 0750)
 	err := c.gitClone(c.ctx, c.repoPaths, c.build.Repo)
 	if err != nil {
 		return err

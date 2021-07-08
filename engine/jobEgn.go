@@ -38,6 +38,7 @@ type cmdSync struct {
 }
 type jobSync struct {
 	sync.RWMutex
+	task  *BuildTask
 	step  *runtime.Step
 	runjb *runners.RunJob
 	cmdmp map[string]*cmdSync

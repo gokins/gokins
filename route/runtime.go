@@ -3,7 +3,6 @@ package route
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/gokins/bean"
@@ -156,8 +155,8 @@ func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "Not Found")
 		return
 	}*/
-	dir := filepath.Join(comm.WorkPath, common.PathBuild, buildId, common.PathJobs)
-	logpth := filepath.Join(dir, fmt.Sprintf("%v.log", stepId))
+	dir := filepath.Join(comm.WorkPath, common.PathBuild, buildId, common.PathJobs, stepId)
+	logpth := filepath.Join(dir, "build.log")
 	fl, err := os.Open(logpth)
 	if err != nil {
 		c.String(404, "Not Found File")
