@@ -225,7 +225,7 @@ CREATE TABLE `t_user`
 INSERT INTO `t_user`
 VALUES ("admin",
         1,
-        'admin',
+        'gokins',
         'e10adc3949ba59abbe56e057f20f883e',
         '管理员',
         NULL,
