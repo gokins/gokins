@@ -12,7 +12,7 @@ type TStep struct {
 	PipelineVersionId string    `xorm:"comment('流水线id') VARCHAR(64)" json:"pipelineVersionId"`
 	Step              string    `xorm:"VARCHAR(255)" json:"step"`
 	Status            string    `xorm:"comment('构建状态') VARCHAR(100)" json:"status"`
-	Event             string    `xorm:"VARCHAR(100)" json:"event"`
+	Event             string    `xorm:"comment('事件') VARCHAR(100)" json:"event"`
 	ExitCode          int       `xorm:"comment('退出码') INT(11)" json:"exitCode"`
 	Error             string    `xorm:"comment('错误信息') VARCHAR(500)" json:"error"`
 	Name              string    `xorm:"comment('名字') VARCHAR(100)" json:"name"`

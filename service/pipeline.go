@@ -8,62 +8,61 @@ import (
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/bean"
 	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/model"
 	"gopkg.in/yaml.v3"
 	"strings"
 	"time"
 )
 
-func Run(pipeId string, sha string) (*model.TPipelineVersion, error) {
+func Run(uid string, pipeId string, sha string) (*model.TPipelineVersion, *runtime.Build, error) {
 	tpipe := &model.TPipelineConf{}
 	ok, _ := comm.Db.Where("pipeline_id=?", pipeId).Get(tpipe)
 	if !ok {
-		return nil, errors.New("流水线不存在")
+		return nil, nil, errors.New("流水线不存在")
 	}
 	if tpipe.YmlContent == "" {
-		return nil, errors.New("流水线Yaml为空")
+		return nil, nil, errors.New("流水线Yaml为空")
 	}
 	pipe := &bean.Pipeline{}
 	err := yaml.Unmarshal([]byte(tpipe.YmlContent), pipe)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return preBuild(pipe, tpipe, sha)
+	return preBuild(uid, pipe, tpipe, sha)
 }
 
-func ReBuild(tvp *model.TPipelineVersion) (*model.TPipelineVersion, error) {
+func ReBuild(uid string, tvp *model.TPipelineVersion) (*model.TPipelineVersion, *runtime.Build, error) {
 	tpipe := &model.TPipelineConf{}
 	ok, _ := comm.Db.Where("pipeline_id=?", tvp.PipelineId).Get(tpipe)
 	if !ok {
-		return nil, errors.New("流水线不存在")
+		return nil, nil, errors.New("流水线不存在")
 	}
 	if tvp.Content == "" {
-		return nil, errors.New("流水线Yaml为空")
+		return nil, nil, errors.New("流水线Yaml为空")
 	}
 	pipe := &bean.Pipeline{}
 	err := yaml.Unmarshal([]byte(tvp.Content), pipe)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return preBuild(pipe, tpipe, tvp.Sha)
+	return preBuild(uid, pipe, tpipe, tvp.Sha)
 }
 
-func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*model.TPipelineVersion, error) {
+func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*model.TPipelineVersion, *runtime.Build, error) {
 	tp := &model.TPipeline{}
 	ok, _ := comm.Db.Where("id=? and deleted != 1", tpipe.PipelineId).Get(tp)
 	if !ok {
-		return nil, errors.New("流水线不存在")
+		return nil, nil, errors.New("流水线不存在")
 	}
 	err := pipe.Check()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	pipe.ConvertCmd()
 
 	m, err := convertVar(tpipe.PipelineId, pipe.Vars)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	replaceStages(pipe.Stages, m)
 
@@ -72,10 +71,11 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*mod
 		SQL("SELECT max(number) FROM t_pipeline_version WHERE pipeline_id = ?", tpipe.PipelineId).
 		Get(&number)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	tpv := &model.TPipelineVersion{
 		Id:                  utils.NewXid(),
+		Uid:                 uid,
 		Number:              number + 1,
 		Events:              "run",
 		Sha:                 sha,
@@ -90,7 +90,7 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*mod
 	}
 	_, err = comm.Db.InsertOne(tpv)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	tb := &model.TBuild{
@@ -103,14 +103,15 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*mod
 	}
 	_, err = comm.Db.InsertOne(tb)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	rb := &runtime.Build{
-		Id:         tb.Id,
-		PipelineId: tb.PipelineId,
-		Status:     common.BuildStatusPending,
-		Created:    time.Now(),
+		Id:                tb.Id,
+		PipelineId:        tb.PipelineId,
+		PipelineVersionId: tb.PipelineVersionId,
+		Status:            common.BuildStatusPending,
+		Created:           time.Now(),
 		Repo: &runtime.Repository{
 			Name:     tpipe.Username,
 			Token:    tpipe.AccessToken,
@@ -143,16 +144,16 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*mod
 		}
 		_, err = comm.Db.InsertOne(ts)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		for j, step := range stage.Steps {
 			cmds, err := json.Marshal(step.Commands)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			djs, err := json.Marshal(step.Waits)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			tsp := &model.TStep{
 				Id:                utils.NewXid(),
@@ -190,25 +191,24 @@ func preBuild(pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*mod
 			}
 			for _, v := range step.UseArtifacts {
 				rtp.UseArtifacts = append(rtp.UseArtifacts, &runtime.UseArtifact{
-					Scope:       v.Scope,
-					Repository:  v.Repository,
-					Name:        v.Name,
-					Path:        v.Path,
-					IsForce:     v.IsForce,
+					Scope:      v.Scope,
+					Repository: v.Repository,
+					Name:       v.Name,
+					Path:       v.Path,
+					//IsForce:     v.IsForce,
 					SourceStage: v.SourceStage,
 					SourceStep:  v.SourceStep,
 				})
 			}
 			_, err = comm.Db.InsertOne(tsp)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			rt.Steps = append(rt.Steps, rtp)
 		}
 		rb.Stages = append(rb.Stages, rt)
 	}
-	engine.Mgr.BuildEgn().Put(rb)
-	return tpv, nil
+	return tpv, rb, nil
 }
 
 func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Variables, error) {

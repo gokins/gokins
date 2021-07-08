@@ -8,12 +8,15 @@ import (
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/bean"
 	"github.com/gokins-main/gokins/comm"
+	"github.com/gokins-main/gokins/model"
+	"github.com/gokins-main/gokins/service"
 	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -234,4 +237,52 @@ func (c *baseRunner) UploadFile(jobid string, name, pth string) (io.WriteCloser,
 		return nil,err
 	}*/
 	return fl, err
+}
+func (c *baseRunner) FindArtPackId(buildId, idnt string, name string) (string, error) {
+	name = strings.Split(name, "@")[0]
+	if buildId == "" || idnt == "" || name == "" {
+		return "", errors.New("param err")
+	}
+	build, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return "", errors.New("not found build")
+	}
+
+	pv := &model.TPipelineVersion{}
+	ok = service.GetIdOrAid(build.build.PipelineVersionId, pv)
+	if !ok {
+		return "", errors.New("not found pv")
+	}
+	arty := &model.TArtifactory{}
+	ok, _ = comm.Db.Where("deleted!=1 and identifier=? and org_id in (select org_id from t_org_pipe where pipe_id=?)",
+		idnt, pv.PipelineId).Get(arty)
+	if !ok {
+		return "", errors.New("not found artifactory")
+	}
+
+	usr := &model.TUser{}
+	ok = service.GetIdOrAid(pv.Uid, usr)
+	if !ok {
+		return "", errors.New("not found user")
+	}
+	perm := service.NewPipePerm(usr, pv.PipelineId)
+	if !perm.CanExec() {
+		return "", errors.New("no permission")
+	}
+
+	artp := &model.TArtifactPackage{}
+	ok, _ = comm.Db.Where("deleted!=1 and repo_id=? and name=?", arty.Id, name).Get(arty)
+	if !ok {
+		artp.Id = utils.NewXid()
+		artp.RepoId = arty.Id
+		artp.Name = name
+		artp.Created = time.Now()
+		artp.Updated = time.Now()
+		_, err := comm.Db.InsertOne(artp)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return artp.Id, nil
 }

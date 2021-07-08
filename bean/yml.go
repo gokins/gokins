@@ -59,11 +59,11 @@ type UseArtifacts struct {
 	Scope      string `yaml:"scope" json:"scope"`           //archive,pipeline,env
 	Repository string `yaml:"repository" json:"repository"` // archive,制品库ID
 	Name       string `yaml:"name" json:"name"`             //archive,pipeline,env
-	IsForce    bool   `yaml:"isForce" json:"is_force"`
-	Path       string `yaml:"path" json:"path"` //archive,pipeline
+	//IsForce    bool   `yaml:"isForce" json:"isForce"`
+	Path string `yaml:"path" json:"path"` //archive,pipeline
 
-	SourceStage string `yaml:"sourceStage" json:"source_stage"` //pipeline
-	SourceStep  string `yaml:"sourceStep" json:"source_step"`   //pipeline
+	SourceStage string `yaml:"fromStage" json:"sourceStage"` //pipeline
+	SourceStep  string `yaml:"fromStep" json:"sourceStep"`   //pipeline
 }
 
 func (c *Pipeline) ToJson() ([]byte, error) {

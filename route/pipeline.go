@@ -2,6 +2,7 @@ package route
 
 import (
 	"fmt"
+	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/models"
 	"net/http"
 	"time"
@@ -378,8 +379,8 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "param err")
 		return
 	}
-	usr := service.GetMidLgUser(c)
-	perm := service.NewPipePerm(usr, pipelineId)
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewPipePerm(lgusr, pipelineId)
 	if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
 		c.String(404, "未找到流水线信息")
 		return
@@ -388,11 +389,12 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "No Auth")
 		return
 	}
-	tvp, err := service.Run(pipelineId, sha)
+	tvp, rb, err := service.Run(lgusr.Id, pipelineId, sha)
 	if err != nil {
 		c.String(500, err.Error())
 		return
 	}
+	engine.Mgr.BuildEgn().Put(rb)
 	c.JSON(200, tvp)
 }
 
@@ -458,8 +460,8 @@ func (PipelineController) rebuild(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "构建记录不存在")
 		return
 	}
-	usr := service.GetMidLgUser(c)
-	perm := service.NewPipePerm(usr, tvp.PipelineId)
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewPipePerm(lgusr, tvp.PipelineId)
 	if perm.Pipeline() == nil || perm.Pipeline().Deleted == 1 {
 		c.String(404, "未找到流水线信息")
 		return
@@ -468,11 +470,12 @@ func (PipelineController) rebuild(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "No Permission")
 		return
 	}
-	tvp, err := service.ReBuild(tvp)
+	tvp, rb, err := service.ReBuild(lgusr.Id, tvp)
 	if err != nil {
 		c.String(500, err.Error())
 		return
 	}
+	engine.Mgr.BuildEgn().Put(rb)
 	c.JSON(200, tvp)
 }
 

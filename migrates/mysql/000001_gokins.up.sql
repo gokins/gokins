@@ -185,6 +185,7 @@ CREATE TABLE `t_pipeline_conf`
 CREATE TABLE `t_pipeline_version`
 (
     `id`                    varchar(64) NOT NULL,
+    `uid`                   varchar(64) DEFAULT NULL,
     `number`                bigint(20) DEFAULT NULL COMMENT '构建次数',
     `events`                varchar(100) DEFAULT NULL COMMENT '事件push、pr、note',
     `sha`                   varchar(255) DEFAULT NULL,
