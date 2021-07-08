@@ -651,6 +651,16 @@ func (PipelineController) vars(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
+	if !perm.CanWrite() {
+		lss := make([]*models.TPipelineVar, 0)
+		for _, v := range ls {
+			if v.Public != 0 {
+				v.Value = "***"
+			}
+			lss = append(lss, v)
+		}
+		page.Data = lss
+	}
 	c.JSON(200, page)
 }
 func (PipelineController) varSave(c *gin.Context, pv *bean.PipelineVar) {
