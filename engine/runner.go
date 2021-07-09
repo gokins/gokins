@@ -4,6 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/bean"
@@ -11,12 +18,6 @@ import (
 	"github.com/gokins-main/gokins/model"
 	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 type baseRunner struct{}
@@ -137,6 +138,7 @@ func (c *baseRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.Dir
 	if fs == 1 {
 		pths = filepath.Join(build.repoPaths, pth)
 	} else if fs == 2 {
+		pths = filepath.Join(comm.WorkPath, common.PathArtifacts, pth)
 	} else if fs == 3 {
 		pths = filepath.Join(build.buildPath, common.PathJobs, pth)
 	}
@@ -170,6 +172,7 @@ func (c *baseRunner) ReadFile(fs int, buildId string, pth string) (int64, io.Rea
 	if fs == 1 {
 		pths = filepath.Join(build.repoPaths, pth)
 	} else if fs == 2 {
+		pths = filepath.Join(comm.WorkPath, common.PathArtifacts, pth)
 	} else if fs == 3 {
 		pths = filepath.Join(build.buildPath, common.PathJobs, pth)
 	}
@@ -266,7 +269,7 @@ func (c *baseRunner) UploadFile(fs int, buildId, jobId string, dir, pth string) 
 	return fl, err
 }
 func (c *baseRunner) FindArtVersionId(buildId, idnt string, names string) (string, error) {
-	tnms := strings.Split(names, "@")
+	tnms := strings.Split(strings.TrimSpace(names), "@")
 	name := tnms[0]
 	vers := ""
 	if len(tnms) > 1 {
@@ -300,19 +303,24 @@ func (c *baseRunner) FindArtVersionId(buildId, idnt string, names string) (strin
 	}*/
 	//n,_:=comm.Db.Where("")
 
+	artp := &model.TArtifactPackage{}
+	ok, _ = comm.Db.Where("deleted!=1 and repo_id=? and name=?", arty.Id, name).Get(artp)
+	if !ok {
+		return "", fmt.Errorf("not found artifact '%s'", names)
+	}
 	artv := &model.TArtifactVersion{}
-	ses := comm.Db.Where("deleted!=1 and repo_id=? and name=?", arty.Id, name)
+	ses := comm.Db.Where("deleted!=1 and package_id=?", artp.Id)
 	if vers != "" {
 		ses.And("version=? or sha=?", vers)
 	}
 	ok, _ = ses.OrderBy("aid DESC").Get(artv)
 	if !ok {
-		return "", fmt.Errorf("not found artifact %s", names)
+		return "", fmt.Errorf("not found artifacts '%s'", names)
 	}
 	return artv.Id, nil
 }
 func (c *baseRunner) NewArtVersionId(buildId, idnt string, name string) (string, error) {
-	name = strings.Split(name, "@")[0]
+	name = strings.Split(strings.TrimSpace(name), "@")[0]
 	if buildId == "" || idnt == "" || name == "" {
 		return "", errors.New("param err")
 	}
@@ -329,7 +337,7 @@ func (c *baseRunner) NewArtVersionId(buildId, idnt string, name string) (string,
 	}
 
 	artp := &model.TArtifactPackage{}
-	ok, _ = comm.Db.Where("deleted!=1 and repo_id=? and name=?", arty.Id, name).Get(arty)
+	ok, _ = comm.Db.Where("deleted!=1 and repo_id=? and name=?", arty.Id, name).Get(artp)
 	if !ok {
 		artp.Id = utils.NewXid()
 		artp.RepoId = arty.Id
@@ -351,7 +359,7 @@ func (c *baseRunner) NewArtVersionId(buildId, idnt string, name string) (string,
 		Updated:   time.Now(),
 	}
 	artv.Sha = artv.Id
-	_, err := comm.Db.InsertOne(artp)
+	_, err := comm.Db.InsertOne(artv)
 	if err != nil {
 		return "", err
 	}

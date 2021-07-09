@@ -3,6 +3,9 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"strings"
+	"time"
+
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/runtime"
 	"github.com/gokins-main/core/utils"
@@ -10,8 +13,6 @@ import (
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/model"
 	"gopkg.in/yaml.v3"
-	"strings"
-	"time"
 )
 
 func Run(uid string, pipeId string, sha string) (*model.TPipelineVersion, *runtime.Build, error) {
@@ -196,8 +197,8 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha s
 					Name:       v.Name,
 					Path:       v.Path,
 					//IsForce:     v.IsForce,
-					SourceStage: v.SourceStage,
-					SourceStep:  v.SourceStep,
+					SourceStage: v.FromStage,
+					SourceStep:  v.FromStep,
 				})
 			}
 			_, err = comm.Db.InsertOne(tsp)

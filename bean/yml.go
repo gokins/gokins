@@ -62,8 +62,8 @@ type UseArtifacts struct {
 	//IsForce    bool   `yaml:"isForce" json:"isForce"`
 	Path string `yaml:"path" json:"path"` //archive,pipeline
 
-	SourceStage string `yaml:"fromStage" json:"sourceStage"` //pipeline
-	SourceStep  string `yaml:"fromStep" json:"sourceStep"`   //pipeline
+	FromStage string `yaml:"fromStage" json:"sourceStage"` //pipeline
+	FromStep  string `yaml:"fromStep" json:"sourceStep"`   //pipeline
 }
 
 func (c *Pipeline) ToJson() ([]byte, error) {

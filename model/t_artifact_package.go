@@ -15,6 +15,6 @@ type TArtifactPackage struct {
 	Latestversionsha string    `xorm:"VARCHAR(100)" json:"latestversionsha"`
 	Created          time.Time `xorm:"DATETIME" json:"created"`
 	Updated          time.Time `xorm:"DATETIME" json:"updated"`
-	Deleted          time.Time `xorm:"DATETIME" json:"deleted"`
+	Deleted          int       `xorm:"INT(1)" json:"deleted"`
 	DeletedTime      time.Time `xorm:"DATETIME" json:"deletedTime"`
 }
