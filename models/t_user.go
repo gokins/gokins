@@ -27,6 +27,7 @@ type TUserOrgInfo struct {
 	PermAdm  int       `xorm:"default 0 comment('管理员') INT(1)" json:"permAdm"`
 	PermRw   int       `xorm:"default 0 comment('1只读,2读写') INT(1)" json:"permRw"`
 	PermExec int       `xorm:"default 0 comment('执行权限') INT(1)" json:"permExec"`
+	PermDown int       `xorm:"comment('下载制品权限') INT(1)" json:"permDown"`
 	JoinTime time.Time `xorm:"join_time" json:"joinTime"`
 }
 

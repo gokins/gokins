@@ -170,12 +170,13 @@ func (c *JobEngine) Pull(plugs []string) *runners.RunJob {
 	}
 	return nil
 }
-func (c *JobEngine) GetJob(id string) (*jobSync, bool) {
+
+/*func (c *JobEngine) GetJob(id string) (*jobSync, bool) {
 	if id == "" {
 		return nil, false
 	}
-	Mgr.jobEgn.joblk.RLock()
-	defer Mgr.jobEgn.joblk.RUnlock()
+	c.joblk.RLock()
+	defer c.joblk.RUnlock()
 	job, ok := c.jobs[id]
 	return job, ok
-}
+}*/

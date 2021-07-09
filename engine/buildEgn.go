@@ -113,6 +113,9 @@ func (c *BuildEngine) Put(bd *runtime.Build) {
 	c.taskw.PushBack(bd)
 }
 func (c *BuildEngine) Get(buildid string) (*BuildTask, bool) {
+	if buildid == "" {
+		return nil, false
+	}
 	c.tskslk.Lock()
 	defer c.tskslk.Unlock()
 	v, ok := c.tasks[buildid]

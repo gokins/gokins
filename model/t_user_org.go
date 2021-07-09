@@ -12,4 +12,5 @@ type TUserOrg struct {
 	PermAdm  int       `xorm:"default 0 comment('管理员') INT(1)" json:"permAdm"`
 	PermRw   int       `xorm:"default 0 comment('编辑权限') INT(1)" json:"permRw"`
 	PermExec int       `xorm:"default 0 comment('执行权限') INT(1)" json:"permExec"`
+	PermDown int       `xorm:"comment('下载制品权限') INT(1)" json:"permDown"`
 }

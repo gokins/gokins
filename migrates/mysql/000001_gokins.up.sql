@@ -244,6 +244,7 @@ CREATE TABLE `t_user_info`
     `perm_user` int(1) DEFAULT NULL,
     `perm_org`  int(1) DEFAULT NULL,
     `perm_pipe` int(1) DEFAULT NULL,
+    `perm_down` int(1) DEFAULT NULL COMMENT '下载制品权限',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE `t_user_org`

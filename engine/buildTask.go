@@ -50,7 +50,9 @@ type BuildTask struct {
 	ctrlendtm time.Time
 
 	staglk sync.RWMutex
-	stages map[string]*taskStage
+	stages map[string]*taskStage // key:name
+	joblk  sync.RWMutex
+	jobs   map[string]*jobSync //key:id
 
 	buildPath string
 	repoPaths string //fs
@@ -120,6 +122,7 @@ func (c *BuildTask) run() {
 
 	c.bngtm = time.Now()
 	c.stages = make(map[string]*taskStage)
+	c.jobs = make(map[string]*jobSync)
 
 	c.build.Started = time.Now()
 	c.build.Status = common.BuildStatusPending
@@ -178,7 +181,9 @@ func (c *BuildTask) runStage(stage *runtime.Stage) {
 
 	c.staglk.RLock()
 	for _, v := range stage.Steps {
+		stg.RLock()
 		jb, ok := stg.jobs[v.Name]
+		stg.RUnlock()
 		if !ok {
 			jb.status(common.BuildStatusError, "")
 			break
@@ -208,6 +213,7 @@ func (c *BuildTask) runStage(stage *runtime.Stage) {
 func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 	defer stage.wg.Done()
 	defer func() {
+		job.ended = true
 		job.step.Finished = time.Now()
 		go c.updateStep(job)
 		if err := recover(); err != nil {
@@ -230,7 +236,9 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 			if v == "" {
 				continue
 			}
+			stage.RLock()
 			e, ok := stage.jobs[v]
+			stage.RUnlock()
 			//core.Log.Debugf("job(%s) depend %s(ok:%t)",job.step.Name,v,ok)
 			if !ok {
 				job.status(common.BuildStatusError, fmt.Sprintf("wait on %s not found", v))
@@ -274,6 +282,7 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 	}
 
 	job.Lock()
+	job.ended = false
 	job.step.Status = common.BuildStatusPreparation
 	job.step.Started = time.Now()
 	job.Unlock()
@@ -484,4 +493,14 @@ func (c *BuildTask) Show() (*runtime.BuildShow, bool) {
 		}
 	}
 	return rtbd, true
+}
+
+func (c *BuildTask) GetJob(id string) (*jobSync, bool) {
+	if id == "" {
+		return nil, false
+	}
+	c.joblk.RLock()
+	defer c.joblk.RUnlock()
+	job, ok := c.jobs[id]
+	return job, ok
 }

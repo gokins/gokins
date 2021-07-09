@@ -95,7 +95,7 @@ func (ArtifactController) edit(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "not found org")
 		return
 	}
-	if !perm.IsOrgAdmin() {
+	if !perm.CanWrite() {
 		c.String(405, "No Permission")
 		return
 	}
@@ -162,7 +162,7 @@ func (ArtifactController) rm(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "not found org")
 		return
 	}
-	if !perm.IsOrgAdmin() {
+	if !perm.CanWrite() {
 		c.String(405, "No Permission")
 		return
 	}

@@ -24,7 +24,7 @@ func GetUserInfo(uid string) (*model.TUserInfo, bool) {
 	if uid == "" {
 		return nil, false
 	}
-	e := &model.TUserInfo{}
+	e := &model.TUserInfo{Id: uid}
 	ok, err := comm.Db.Where("id=?", uid).Get(e)
 	if err != nil {
 		logrus.Errorf("GetUser(%s) err:%v", uid, err)
@@ -189,6 +189,15 @@ func (c *OrgPerm) CanWrite() bool {
 	}
 	return false
 }
+func (c *OrgPerm) CanDownload() bool {
+	if c.IsOrgAdmin() {
+		return true
+	}
+	if c.usrOrg != nil && c.usrOrg.PermDown == 1 {
+		return true
+	}
+	return false
+}
 func (c *OrgPerm) CanExec() bool {
 	if c.IsOrgAdmin() {
 		return true
@@ -243,7 +252,7 @@ func NewPipePerm(lgusr *model.TUser, pipeId string) *PipePerm {
 		if comm.IsMySQL && lgusr != nil {
 			ses := comm.Db.SQL(`
 select org.id as org_id,org.name as org_name,org.uid as org_uid,org.public as org_public,op.public as op_public,
-uo.uid as cur_uid,uo.perm_adm,uo.perm_rw,uo.perm_exec 
+uo.uid as cur_uid,uo.perm_adm,uo.perm_rw,uo.perm_exec,uo.perm_down
 from t_org org
 JOIN t_org_pipe op ON op.pipe_id=? and org.id=op.org_id
 LEFT JOIN t_user_org uo ON uo.uid=? and org.id=uo.org_id

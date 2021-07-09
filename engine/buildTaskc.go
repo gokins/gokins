@@ -107,7 +107,12 @@ func (c *BuildTask) check() bool {
 				c.build.Error = fmt.Sprintf("build Job.%s Commands err", e.Name)
 				return false
 			}
+			vs.RLock()
 			vs.jobs[e.Name] = job
+			vs.RUnlock()
+			c.joblk.Lock()
+			c.jobs[e.Id] = job
+			c.joblk.Unlock()
 		}
 	}
 	/*for _,v:=range stages{

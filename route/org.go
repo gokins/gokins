@@ -187,7 +187,7 @@ func (OrgController) users(c *gin.Context, m *hbtp.Map) {
 	var usrs []*models.TUserOrgInfo
 	if comm.IsMySQL {
 		ses := comm.Db.SQL(`
-		select usr.*,urg.perm_adm,urg.perm_rw,urg.perm_exec,urg.created as join_time from t_user usr
+		select usr.*,urg.perm_adm,urg.perm_rw,urg.perm_exec,urg.perm_down,urg.created as join_time from t_user usr
 		JOIN t_user_org urg ON urg.org_id=?
 		where usr.id=urg.uid
 		ORDER BY urg.created ASC
@@ -279,6 +279,7 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 	adm := m.GetBool("adm")
 	rw := m.GetBool("rw")
 	ex := m.GetBool("ex")
+	dw := m.GetBool("dw")
 	isadd := m.GetBool("add")
 	perm := service.NewOrgPerm(service.GetMidLgUser(c), id)
 	if perm.Org() == nil || perm.Org().Deleted == 1 {
@@ -327,9 +328,15 @@ func (OrgController) userEdit(c *gin.Context, m *hbtp.Map) {
 		} else {
 			ne.PermExec = 0
 		}
+		if dw {
+			ne.PermDown = 1
+		} else {
+			ne.PermDown = 0
+		}
 	}
 	if isup {
-		_, err = comm.Db.Cols("perm_adm", "perm_rw", "perm_exec").Where("aid=?", ne.Aid).Update(ne)
+		_, err = comm.Db.Cols("perm_adm", "perm_rw", "perm_exec", "perm_down").
+			Where("aid=?", ne.Aid).Update(ne)
 	} else {
 		ne.Uid = usr.Id
 		ne.OrgId = perm.Org().Id

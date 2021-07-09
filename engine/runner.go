@@ -9,7 +9,6 @@ import (
 	"github.com/gokins-main/gokins/bean"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/model"
-	"github.com/gokins-main/gokins/service"
 	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"io"
@@ -40,26 +39,26 @@ func (c *baseRunner) CheckCancel(buildId string) bool {
 	return v.stopd()
 }
 func (c *baseRunner) Update(m *runners.UpdateJobInfo) error {
-	job, ok := Mgr.jobEgn.GetJob(m.Id)
+	tsk, ok := Mgr.buildEgn.Get(m.BuildId)
+	if !ok {
+		return errors.New("not found build")
+	}
+	job, ok := tsk.GetJob(m.JobId)
 	if !ok {
 		return errors.New("not found job")
-	}
-	tsk, ok := Mgr.buildEgn.Get(job.step.BuildId)
-	if !ok {
-		return errors.New("not found task")
 	}
 	tsk.UpJob(job, m.Status, m.Error, m.ExitCode)
 	return nil
 }
 
-func (c *baseRunner) UpdateCmd(jobid, cmdid string, fs, code int) error {
-	job, ok := Mgr.jobEgn.GetJob(jobid)
+func (c *baseRunner) UpdateCmd(buildId, jobId, cmdid string, fs, code int) error {
+	tsk, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return errors.New("not found build")
+	}
+	job, ok := tsk.GetJob(jobId)
 	if !ok {
 		return errors.New("not found job")
-	}
-	tsk, ok := Mgr.buildEgn.Get(job.step.BuildId)
-	if !ok {
-		return errors.New("not found task")
 	}
 	job.RLock()
 	cmd, ok := job.cmdmp[cmdid]
@@ -70,10 +69,14 @@ func (c *baseRunner) UpdateCmd(jobid, cmdid string, fs, code int) error {
 	tsk.UpJobCmd(cmd, fs, code)
 	return nil
 }
-func (c *baseRunner) PushOutLine(jobid, cmdid, bs string, iserr bool) error {
-	job, ok := Mgr.jobEgn.GetJob(jobid)
+func (c *baseRunner) PushOutLine(buildId, jobId, cmdid, bs string, iserr bool) error {
+	tsk, ok := Mgr.buildEgn.Get(buildId)
 	if !ok {
-		return errors.New("not found")
+		return errors.New("not found build")
+	}
+	job, ok := tsk.GetJob(jobId)
+	if !ok {
+		return errors.New("not found job")
 	}
 
 	bts, err := json.Marshal(&bean.LogOutJson{
@@ -112,6 +115,8 @@ func (c *baseRunner) FindJobId(buildId, stgNm, stpNm string) (string, bool) {
 	if !ok {
 		return "", false
 	}
+	stg.RLock()
+	defer stg.RUnlock()
 	for _, v := range stg.jobs {
 		if v.step.Name == stpNm {
 			return v.step.Id, true
@@ -132,6 +137,7 @@ func (c *baseRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.Dir
 	if fs == 1 {
 		pths = filepath.Join(build.repoPaths, pth)
 	} else if fs == 2 {
+	} else if fs == 3 {
 		pths = filepath.Join(build.buildPath, common.PathJobs, pth)
 	}
 	fls, err := os.ReadDir(pths)
@@ -164,6 +170,7 @@ func (c *baseRunner) ReadFile(fs int, buildId string, pth string) (int64, io.Rea
 	if fs == 1 {
 		pths = filepath.Join(build.repoPaths, pth)
 	} else if fs == 2 {
+	} else if fs == 3 {
 		pths = filepath.Join(build.buildPath, common.PathJobs, pth)
 	}
 	if pths == "" {
@@ -180,11 +187,15 @@ func (c *baseRunner) ReadFile(fs int, buildId string, pth string) (int64, io.Rea
 	return stat.Size(), fl, nil
 }
 
-func (c *baseRunner) GetEnv(jobid, key string) (string, bool) {
-	if jobid == "" || key == "" {
+func (c *baseRunner) GetEnv(buildId, jobId, key string) (string, bool) {
+	if jobId == "" || key == "" {
 		return "", false
 	}
-	job, ok := Mgr.jobEgn.GetJob(jobid)
+	tsk, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return "", false
+	}
+	job, ok := tsk.GetJob(jobId)
 	if !ok {
 		return "", false
 	}
@@ -204,11 +215,15 @@ func (c *baseRunner) GetEnv(jobid, key string) (string, bool) {
 	}
 	return fmt.Sprintf("%v", v), true
 }
-func (c *baseRunner) GenEnv(jobid string, env utils.EnvVal) error {
-	if jobid == "" || env == nil {
+func (c *baseRunner) GenEnv(buildId, jobId string, env utils.EnvVal) error {
+	if jobId == "" || env == nil {
 		return errors.New("param err")
 	}
-	job, ok := Mgr.jobEgn.GetJob(jobid)
+	tsk, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return errors.New("not found build")
+	}
+	job, ok := tsk.GetJob(jobId)
 	if !ok {
 		return errors.New("not found job")
 	}
@@ -221,24 +236,82 @@ func (c *baseRunner) GenEnv(jobid string, env utils.EnvVal) error {
 	return err
 }
 
-func (c *baseRunner) UploadFile(jobid string, name, pth string) (io.WriteCloser, error) {
-	if jobid == "" || pth == "" {
+func (c *baseRunner) UploadFile(fs int, buildId, jobId string, dir, pth string) (io.WriteCloser, error) {
+	if jobId == "" || pth == "" {
 		return nil, errors.New("param err")
 	}
-	job, ok := Mgr.jobEgn.GetJob(jobid)
+	tsk, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return nil, errors.New("not found build")
+	}
+	job, ok := tsk.GetJob(jobId)
 	if !ok {
 		return nil, errors.New("not found job")
 	}
-	pths := filepath.Join(job.task.buildPath, common.PathJobs, job.step.Id, common.PathArts, name, pth)
-	dir := filepath.Dir(pths)
-	os.MkdirAll(dir, 0750)
+	pths := ""
+	if fs == 1 {
+		pths = filepath.Join(comm.WorkPath, common.PathArtifacts, dir, pth)
+	} else if fs == 2 {
+		pths = filepath.Join(job.task.buildPath, common.PathJobs, job.step.Id, common.PathArts, dir, pth)
+	}
+	if pths == "" {
+		return nil, errors.New("path param err")
+	}
+	dirs := filepath.Dir(pths)
+	os.MkdirAll(dirs, 0750)
 	fl, err := os.OpenFile(pths, os.O_CREATE|os.O_RDWR, 0640)
 	/*if err!=nil{
 		return nil,err
 	}*/
 	return fl, err
 }
-func (c *baseRunner) FindArtPackId(buildId, idnt string, name string) (string, error) {
+func (c *baseRunner) FindArtVersionId(buildId, idnt string, names string) (string, error) {
+	tnms := strings.Split(names, "@")
+	name := tnms[0]
+	vers := ""
+	if len(tnms) > 1 {
+		vers = tnms[1]
+	}
+	if buildId == "" || idnt == "" || name == "" {
+		return "", errors.New("param err")
+	}
+	build, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return "", errors.New("not found build")
+	}
+
+	arty := &model.TArtifactory{}
+	ok, _ = comm.Db.Where("deleted!=1 and identifier=? and org_id in (select org_id from t_org_pipe where pipe_id=?)",
+		idnt, build.build.PipelineId).Get(arty)
+	if !ok {
+		return "", errors.New("not found artifactory")
+	}
+
+	//TODO: upload permission
+	/*pv := &model.TPipelineVersion{}
+	ok = service.GetIdOrAid(build.build.PipelineVersionId, pv)
+	if !ok {
+		return "", errors.New("not found pv")
+	}
+	usr := &model.TUser{}
+	ok = service.GetIdOrAid(pv.Uid, usr)
+	if !ok {
+		return "", errors.New("not found user")
+	}*/
+	//n,_:=comm.Db.Where("")
+
+	artv := &model.TArtifactVersion{}
+	ses := comm.Db.Where("deleted!=1 and repo_id=? and name=?", arty.Id, name)
+	if vers != "" {
+		ses.And("version=? or sha=?", vers)
+	}
+	ok, _ = ses.OrderBy("aid DESC").Get(artv)
+	if !ok {
+		return "", fmt.Errorf("not found artifact %s", names)
+	}
+	return artv.Id, nil
+}
+func (c *baseRunner) NewArtVersionId(buildId, idnt string, name string) (string, error) {
 	name = strings.Split(name, "@")[0]
 	if buildId == "" || idnt == "" || name == "" {
 		return "", errors.New("param err")
@@ -248,26 +321,11 @@ func (c *baseRunner) FindArtPackId(buildId, idnt string, name string) (string, e
 		return "", errors.New("not found build")
 	}
 
-	pv := &model.TPipelineVersion{}
-	ok = service.GetIdOrAid(build.build.PipelineVersionId, pv)
-	if !ok {
-		return "", errors.New("not found pv")
-	}
 	arty := &model.TArtifactory{}
 	ok, _ = comm.Db.Where("deleted!=1 and identifier=? and org_id in (select org_id from t_org_pipe where pipe_id=?)",
-		idnt, pv.PipelineId).Get(arty)
+		idnt, build.build.PipelineId).Get(arty)
 	if !ok {
 		return "", errors.New("not found artifactory")
-	}
-
-	usr := &model.TUser{}
-	ok = service.GetIdOrAid(pv.Uid, usr)
-	if !ok {
-		return "", errors.New("not found user")
-	}
-	perm := service.NewPipePerm(usr, pv.PipelineId)
-	if !perm.CanExec() {
-		return "", errors.New("no permission")
 	}
 
 	artp := &model.TArtifactPackage{}
@@ -283,6 +341,19 @@ func (c *baseRunner) FindArtPackId(buildId, idnt string, name string) (string, e
 			return "", err
 		}
 	}
-
-	return artp.Id, nil
+	artv := &model.TArtifactVersion{
+		Id:        utils.NewXid(),
+		RepoId:    arty.Id,
+		PackageId: artp.Id,
+		Name:      artp.Name,
+		Preview:   1,
+		Created:   time.Now(),
+		Updated:   time.Now(),
+	}
+	artv.Sha = artv.Id
+	_, err := comm.Db.InsertOne(artp)
+	if err != nil {
+		return "", err
+	}
+	return artv.Id, nil
 }
