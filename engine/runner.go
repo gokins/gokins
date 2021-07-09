@@ -342,6 +342,9 @@ func (c *baseRunner) NewArtVersionId(buildId, idnt string, name string) (string,
 	if !ok {
 		return "", errors.New("not found artifactory")
 	}
+	if arty.Disabled == 1 {
+		return "", errors.New("artifactory already disabled")
+	}
 
 	artp := &model.TArtifactPackage{}
 	ok, _ = comm.Db.Where("deleted!=1 and repo_id=? and name=?", arty.Id, name).Get(artp)
