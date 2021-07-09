@@ -95,6 +95,22 @@ func (c *BuildTask) Cancel() {
 		c.cncl()
 	}
 }
+func (c *BuildTask) clears() {
+	defer func() {
+		if err := recover(); err != nil {
+			logrus.Warnf("BuildTask clears recover:%v", err)
+			logrus.Warnf("BuildTask stack:%s", string(debug.Stack()))
+		}
+	}()
+
+	if c.isClone {
+		os.RemoveAll(c.repoPaths)
+	}
+	for _, v := range c.jobs {
+		pth := filepath.Join(c.buildPath, common.PathJobs, v.step.Id, common.PathArts)
+		os.RemoveAll(pth)
+	}
+}
 func (c *BuildTask) run() {
 	defer func() {
 		if err := recover(); err != nil {
@@ -107,9 +123,7 @@ func (c *BuildTask) run() {
 		c.endtm = time.Now()
 		c.build.Finished = time.Now()
 		c.updateBuild(c.build)
-		if c.isClone {
-			os.RemoveAll(c.repoPaths)
-		}
+		c.clears()
 	}()
 
 	c.buildPath = filepath.Join(comm.WorkPath, common.PathBuild, c.build.Id)
