@@ -10,6 +10,7 @@ import (
 	"github.com/gokins-main/gokins/service"
 	"github.com/gokins-main/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 	"time"
@@ -26,6 +27,9 @@ func (c *ArtifactController) Routes(g gin.IRoutes) {
 	g.POST("/info", util.GinReqParseJson(c.info))
 	g.POST("/edit", util.GinReqParseJson(c.edit))
 	g.POST("/rm", util.GinReqParseJson(c.rm))
+	g.POST("/package/list", util.GinReqParseJson(c.packageList))
+	g.POST("/version/list", util.GinReqParseJson(c.versionList))
+	g.POST("/version/infos", util.GinReqParseJson(c.versionInfos))
 }
 func (ArtifactController) orgList(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
@@ -84,12 +88,31 @@ func (ArtifactController) info(c *gin.Context, m *hbtp.Map) {
 	id := m.GetString("id")
 	arty := &model.TArtifactory{}
 	ok := service.GetIdOrAid(id, arty)
-	if !ok {
+	if !ok || arty.Deleted == 1 {
 		c.String(404, "not found art")
+		return
+	}
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), arty.OrgId)
+	if !perm.CanRead() {
+		c.String(405, "no permission")
+		return
+	}
+	usr := &models.TUser{}
+	ok = service.GetIdOrAid(arty.Uid, usr)
+	if !ok {
+		c.String(404, "not found user?")
 		return
 	}
 	c.JSON(200, hbtp.Map{
 		"arty": arty,
+		"user": usr,
+		"perm": hbtp.Map{
+			"adm":   perm.IsOrgAdmin(),
+			"own":   perm.IsOrgOwner(),
+			"read":  perm.CanRead(),
+			"write": perm.CanWrite(),
+			"exec":  perm.CanExec(),
+		},
 	})
 }
 func (ArtifactController) edit(c *gin.Context, m *hbtp.Map) {
@@ -188,4 +211,82 @@ func (ArtifactController) rm(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	c.String(200, art.Id)
+}
+func (ArtifactController) packageList(c *gin.Context, m *hbtp.Map) {
+	repoId := m.GetString("repoId")
+	if repoId == "" {
+		c.String(500, "param err")
+		return
+	}
+	q := m.GetString("q")
+	pg, _ := m.GetInt("page")
+	var ls []*models.TArtifactPackage
+	ses := comm.Db.Where("deleted!=1 and repo_id=?", repoId).OrderBy("aid DESC")
+	if q != "" {
+		qs := "%" + q + "%"
+		ses.And("name like ? or display_name like ?", qs, qs)
+	}
+	page, err := comm.FindPage(ses, &ls, pg, 20)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	for _, v := range ls {
+		/*usr, ok := service.GetUser(v.Uid)
+		if ok {
+			v.Nick = usr.Nick
+			v.Avat = usr.Avatar
+		}*/
+		e := &model.TArtifactVersion{}
+		v.Verln, _ = comm.Db.Where("package_id=?", v.Id).Count(e)
+	}
+	c.JSON(200, page)
+}
+func (ArtifactController) versionList(c *gin.Context, m *hbtp.Map) {
+	packId := m.GetString("packId")
+	if packId == "" {
+		c.String(500, "param err")
+		return
+	}
+	q := m.GetString("q")
+	pg, _ := m.GetInt("page")
+	var ls []*model.TArtifactVersion
+	ses := comm.Db.Where("deleted!=1 and package_id=?", packId).OrderBy("aid DESC")
+	if q != "" {
+		qs := "%" + q + "%"
+		ses.And("name like ? or display_name like ?", qs, qs)
+	}
+	page, err := comm.FindPage(ses, &ls, pg, 20)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	/*for _, v := range ls {
+		usr, ok := service.GetUser(v.Uid)
+		if ok {
+			v.Nick = usr.Nick
+			v.Avat = usr.Avatar
+		}
+		e := &model.TArtifactVersion{}
+		v.Verln, _ = comm.Db.Where("package_id=?", v.Id).Count(e)
+	}*/
+	c.JSON(200, page)
+}
+func (ArtifactController) versionInfos(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	artv := &models.TArtifactVersion{}
+	ok := service.GetIdOrAid(id, artv)
+	if !ok || artv.Deleted == 1 {
+		c.String(404, "Not Found")
+		return
+	}
+	err := artv.ReadFiles()
+	if err != nil {
+		//c.String(511, "Files is err")
+		//return
+		logrus.Debugf("files err:%v", err)
+	}
+	c.JSON(200, hbtp.Map{
+		"info": artv,
+	})
 }
