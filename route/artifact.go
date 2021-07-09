@@ -23,6 +23,7 @@ func (ArtifactController) GetPath() string {
 func (c *ArtifactController) Routes(g gin.IRoutes) {
 	g.Use(service.MidUserCheck)
 	g.POST("/org-list", util.GinReqParseJson(c.orgList))
+	g.POST("/info", util.GinReqParseJson(c.info))
 	g.POST("/edit", util.GinReqParseJson(c.edit))
 	g.POST("/rm", util.GinReqParseJson(c.rm))
 }
@@ -78,6 +79,18 @@ func (ArtifactController) orgList(c *gin.Context, m *hbtp.Map) {
 		v.Artln, _ = comm.Db.Where("repo_id=?", v.Id).Count(e)
 	}
 	c.JSON(http.StatusOK, page)
+}
+func (ArtifactController) info(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	arty := &model.TArtifactory{}
+	ok := service.GetIdOrAid(id, arty)
+	if !ok {
+		c.String(404, "not found art")
+		return
+	}
+	c.JSON(200, hbtp.Map{
+		"arty": arty,
+	})
 }
 func (ArtifactController) edit(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
