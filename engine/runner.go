@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gokins-main/gokins/service"
 	"io"
 	"io/ioutil"
 	"os"
@@ -297,8 +298,7 @@ func (c *baseRunner) FindArtVersionId(buildId, idnt string, names string) (strin
 		return "", errors.New("not found artifactory")
 	}
 
-	//TODO: upload permission
-	/*pv := &model.TPipelineVersion{}
+	pv := &model.TPipelineVersion{}
 	ok = service.GetIdOrAid(build.build.PipelineVersionId, pv)
 	if !ok {
 		return "", errors.New("not found pv")
@@ -307,8 +307,11 @@ func (c *baseRunner) FindArtVersionId(buildId, idnt string, names string) (strin
 	ok = service.GetIdOrAid(pv.Uid, usr)
 	if !ok {
 		return "", errors.New("not found user")
-	}*/
-	//n,_:=comm.Db.Where("")
+	}
+	perm := service.NewOrgPerm(usr, arty.OrgId)
+	if !perm.CanExec() {
+		return "", fmt.Errorf("user put '%s' no permission", idnt)
+	}
 
 	artp := &model.TArtifactPackage{}
 	ok, _ = comm.Db.Where("deleted!=1 and repo_id=? and name=?", arty.Id, name).Get(artp)
