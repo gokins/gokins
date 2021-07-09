@@ -1,11 +1,12 @@
 package models
 
 import (
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/gokins/comm"
 	"io/ioutil"
 	"path/filepath"
 	"time"
+
+	"github.com/gokins-main/core/common"
+	"github.com/gokins-main/gokins/comm"
 )
 
 type FlInfo struct {
@@ -34,20 +35,19 @@ type TArtifactVersion struct {
 
 func (c *TArtifactVersion) ReadFiles() error {
 	dir := filepath.Join(comm.WorkPath, common.PathArtifacts, c.Id)
-	fls, err := c.readDir(dir, "/")
+	fls, err := c.readDir(dir)
 	c.Files = fls
 	return err
 }
-func (c *TArtifactVersion) readDir(dir, pth string) ([]*FlInfo, error) {
+func (c *TArtifactVersion) readDir(pth string) ([]*FlInfo, error) {
 	var rts []*FlInfo
-	fls, err := ioutil.ReadDir(dir)
+	fls, err := ioutil.ReadDir(pth)
 	if err != nil {
 		return nil, err
 	}
 	for _, v := range fls {
-		pths := filepath.Join(dir, pth, v.Name())
 		if v.IsDir() {
-			rts, err = c.readDir(dir, pths)
+			fls, err := c.readDir(filepath.Join(pth, v.Name()))
 			if err != nil {
 				return nil, err
 			}
@@ -57,6 +57,7 @@ func (c *TArtifactVersion) readDir(dir, pth string) ([]*FlInfo, error) {
 				Size:  0,
 				Child: rts,
 			})
+			rts = append(rts, fls...)
 		} else {
 			rts = append(rts, &FlInfo{
 				Name:  v.Name(),
