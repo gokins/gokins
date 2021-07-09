@@ -46,10 +46,11 @@ func ReBuild(uid string, tvp *model.TPipelineVersion) (*model.TPipelineVersion, 
 	if err != nil {
 		return nil, nil, err
 	}
-	return preBuild(uid, pipe, tpipe, tvp.Sha)
+	return preBuild(uid, pipe, tpipe, "", tvp)
 }
 
-func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string) (*model.TPipelineVersion, *runtime.Build, error) {
+func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string,
+	tvp ...*model.TPipelineVersion) (*model.TPipelineVersion, *runtime.Build, error) {
 	tp := &model.TPipeline{}
 	ok, _ := comm.Db.Where("id=? and deleted != 1", tpipe.PipelineId).Get(tp)
 	if !ok {
@@ -88,6 +89,10 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha s
 		Created:             time.Now(),
 		Deleted:             0,
 		RepoCloneUrl:        tpipe.Url,
+	}
+	if len(tvp) > 0 && tvp[0] != nil {
+		tpv.Sha = tvp[0].Sha
+		tpv.Content = tvp[0].Content
 	}
 	_, err = comm.Db.InsertOne(tpv)
 	if err != nil {
