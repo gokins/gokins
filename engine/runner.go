@@ -22,6 +22,13 @@ import (
 
 type baseRunner struct{}
 
+func (c *baseRunner) ServerInfo() runners.ServerInfo {
+	return runners.ServerInfo{
+		WebHost:   comm.Cfg.Server.Host,
+		DownToken: "",
+	}
+}
+
 func (c *baseRunner) PullJob(plugs []string) (*runners.RunJob, error) {
 	tms := time.Now()
 	for time.Since(tms).Seconds() < 5 {
