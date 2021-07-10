@@ -98,6 +98,7 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 
 	comm.Cfg.Server.Host = m.Server.Host
 	comm.Cfg.Server.LoginKey = utils.RandomString(32)
+	comm.Cfg.Server.DevDownToken = utils.RandomString(32)
 	comm.Cfg.Server.Shells = []string{"shell@sh", "shell@bash"}
 	if runtime.GOOS == "windows" {
 		comm.Cfg.Server.Shells = []string{"shell@cmd", "shell@powershell"}

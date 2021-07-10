@@ -26,7 +26,7 @@ type baseRunner struct{}
 func (c *baseRunner) ServerInfo() runners.ServerInfo {
 	return runners.ServerInfo{
 		WebHost:   comm.Cfg.Server.Host,
-		DownToken: "",
+		DownToken: comm.Cfg.Server.DevDownToken,
 	}
 }
 

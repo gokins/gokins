@@ -6,6 +6,7 @@ import (
 	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
+	"os"
 	"path/filepath"
 	"runtime/debug"
 	"time"
@@ -34,6 +35,7 @@ func Start() error {
 		Mgr.shellRun = runr
 	}
 	go func() {
+		os.RemoveAll(filepath.Join(comm.WorkPath, common.PathTmp))
 		for !hbtp.EndContext(comm.Ctx) {
 			//Mgr.run()
 			time.Sleep(time.Millisecond * 100)

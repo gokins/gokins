@@ -41,13 +41,14 @@ func regApi() {
 		comm.WebEgn.Use(util.MidAccessAllowFun)
 	}
 	util.GinRegController(comm.WebEgn, &route.ApiController{})
+	util.GinRegController(comm.WebEgn, &route.ArtifactController{})
+	util.GinRegController(comm.WebEgn, &route.ArtPublicController{})
 	util.GinRegController(comm.WebEgn, &route.LoginController{})
 	util.GinRegController(comm.WebEgn, &route.UserController{})
 	util.GinRegController(comm.WebEgn, &route.OrgController{})
 	util.GinRegController(comm.WebEgn, &route.PipelineController{})
 	util.GinRegController(comm.WebEgn, &route.RuntimeController{})
 	util.GinRegController(comm.WebEgn, &route.YmlController{})
-	util.GinRegController(comm.WebEgn, &route.ArtifactController{})
 }
 func midUiHandle(c *gin.Context) {
 	c.Next()
