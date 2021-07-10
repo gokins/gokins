@@ -103,6 +103,7 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 	if runtime.GOOS == "windows" {
 		comm.Cfg.Server.Shells = []string{"shell@cmd", "shell@powershell"}
 	}
+	comm.Cfg.Server.Shells = append(comm.Cfg.Server.Shells, "shell@ssh")
 	if m.Server.NoRun {
 		comm.Cfg.Server.Shells = nil
 	}
