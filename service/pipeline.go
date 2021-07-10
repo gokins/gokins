@@ -186,6 +186,7 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha s
 				Commands:    step.Commands,
 				Waits:       step.Waits,
 				Env:         step.Env,
+				Input:       step.Input,
 			}
 			for _, v := range step.Artifacts {
 				rtp.Artifacts = append(rtp.Artifacts, &runtime.Artifact{

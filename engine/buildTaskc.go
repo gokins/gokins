@@ -147,6 +147,7 @@ func (c *BuildTask) genRunjob(stage *runtime.Stage, job *jobSync) (rterr error) 
 		StageName:    stage.Name,
 		Step:         job.step.Step,
 		Name:         job.step.Name,
+		Input:        job.step.Input,
 		Env:          job.step.Env,
 		Artifacts:    job.step.Artifacts,
 		UseArtifacts: job.step.UseArtifacts,

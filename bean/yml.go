@@ -36,10 +36,15 @@ type Stage struct {
 	Steps       []*Step `yaml:"steps,omitempty" json:"steps"`
 }
 
+/*type Input struct {
+	Value string `yaml:"value"`
+	Required bool `yaml:"required"`
+}*/
 type Step struct {
 	Step         string            `yaml:"step" json:"step"`
 	DisplayName  string            `yaml:"displayName,omitempty" json:"displayName"`
 	Name         string            `yaml:"name,omitempty" json:"name"`
+	Input        map[string]string `yaml:"input,omitempty" json:"input"`
 	Env          map[string]string `yaml:"env,omitempty" json:"env"`
 	Commands     interface{}       `yaml:"commands,omitempty" json:"commands"`
 	Waits        []string          `yaml:"wait,omitempty" json:"wait"`
