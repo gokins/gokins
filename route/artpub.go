@@ -2,6 +2,11 @@ package route
 
 import (
 	"fmt"
+	"io"
+	"net/url"
+	"os"
+	"path/filepath"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/utils"
@@ -9,10 +14,6 @@ import (
 	"github.com/gokins-main/gokins/model"
 	"github.com/gokins-main/gokins/service"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"io"
-	"net/url"
-	"os"
-	"path/filepath"
 )
 
 type ArtPublicController struct{}
@@ -21,7 +22,7 @@ func (ArtPublicController) GetPath() string {
 	return "/api/art/pub"
 }
 func (c *ArtPublicController) Routes(g gin.IRoutes) {
-	g.GET("/down/:id/:pth", c.down)
+	g.GET("/down/:id/*pth", c.down)
 }
 func (ArtPublicController) down(c *gin.Context) {
 	id := c.Param("id")
@@ -31,13 +32,13 @@ func (ArtPublicController) down(c *gin.Context) {
 	sign := c.Query("sign")
 
 	artv := &model.TArtifactVersion{}
-	ok := service.GetIdOrAid(artv, id)
+	ok := service.GetIdOrAid(id, artv)
 	if !ok || artv.Deleted == 1 {
 		c.String(404, "Not Found")
 		return
 	}
 	arty := &model.TArtifactory{}
-	ok = service.GetIdOrAid(arty, id)
+	ok = service.GetIdOrAid(artv.RepoId, arty)
 	if !ok || arty.Deleted == 1 {
 		c.String(404, "Not Found repo")
 		return
@@ -68,6 +69,7 @@ func (ArtPublicController) down(c *gin.Context) {
 	var contsz int64
 	var rdr io.Reader
 	if stat.IsDir() {
+		nms = stat.Name() + ".zip"
 		zipth := filepath.Join(comm.WorkPath, common.PathTmp, utils.NewXid())
 		err = utils.Zip(fls, zipth)
 		if err != nil {
@@ -81,7 +83,6 @@ func (ArtPublicController) down(c *gin.Context) {
 			return
 		}
 		fls = zipth
-		nms = stat.Name() + ".zip"
 	} else {
 		nms = stat.Name()
 	}

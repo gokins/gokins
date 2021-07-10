@@ -51,13 +51,14 @@ func (c *TArtifactVersion) readDir(pth string) ([]*FlInfo, error) {
 			if err != nil {
 				return nil, err
 			}
-			rts = append(rts, &FlInfo{
+			e := &FlInfo{
 				Name:  v.Name(),
 				Dir:   true,
 				Size:  0,
 				Child: rts,
-			})
-			rts = append(rts, fls...)
+			}
+			e.Child = append(e.Child, fls...)
+			rts = append(rts, e)
 		} else {
 			rts = append(rts, &FlInfo{
 				Name:  v.Name(),
