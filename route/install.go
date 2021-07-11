@@ -174,14 +174,15 @@ func Install(c *gin.Context) {
 				padding: 10px;
 			}
 	
-			.content div {
+			.content .layui-card div {
 				margin-bottom: 10px;
 			}
 	
 			.headers {
-				text-align: center;
 				background: #fff;
 				padding-bottom: 10px;
+				line-height: 70px;
+				display: flex;
 			}
 	
 			.headers h1 {
@@ -191,7 +192,7 @@ func Install(c *gin.Context) {
 			.login-dog {
 				width: 100px;
 				height: 60px;
-				margin: 10px;
+				margin: 10px 20px 0 0;
 			}
 	
 			#msgDiv {
@@ -207,8 +208,12 @@ func Install(c *gin.Context) {
 	<body>
 		<div class="content">
 			<div class="headers" style="margin: 0;">
+				<div style="flex: 1;"></div>
 				<img class="login-dog" src="gokinsui/imgs/logo.png" />
-				<h1>安装Gokins</h1>
+				<div style="padding-top: 5px;">
+					<h1>安装Gokins</h1>
+				</div>
+				<div style="flex: 1;"></div>
 			</div>
 	
 			<div class="layui-card">
@@ -220,7 +225,7 @@ func Install(c *gin.Context) {
 								<input type="text" id="hostTxt" name="txt1" lay-verify="required" placeholder="请输入标题" autocomplete="off"
 									class="layui-input">
 							</div>
-							<div class="layui-form-mid layui-word-aux">webhook,制品下载建议使用外网</div>
+							<div class="layui-form-mid layui-word-aux">需要 webhook,ssh,制品下载 建议使用<span style="color:red">外网</span></div>
 						</div>
 						<div class="layui-form-item">
 							<label class="layui-form-label">插件服务</label>
