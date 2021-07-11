@@ -1,15 +1,16 @@
 package engine
 
 import (
+	"os"
+	"path/filepath"
+	"runtime/debug"
+	"time"
+
 	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"runtime/debug"
-	"time"
 )
 
 var Mgr = &Manager{}
@@ -23,6 +24,9 @@ type Manager struct {
 func Start() error {
 	Mgr.buildEgn = StartBuildEngine()
 	Mgr.jobEgn = StartJobEngine()
+
+	//runners
+	comm.Cfg.Server.Shells = append(comm.Cfg.Server.Shells, "shell@ssh")
 	if len(comm.Cfg.Server.Shells) > 0 {
 		runr := runners.NewEngine(runners.Config{
 			Workspace: filepath.Join(comm.WorkPath, common.PathRunner),
@@ -34,6 +38,7 @@ func Start() error {
 		}
 		Mgr.shellRun = runr
 	}
+
 	go func() {
 		os.RemoveAll(filepath.Join(comm.WorkPath, common.PathTmp))
 		for !hbtp.EndContext(comm.Ctx) {
