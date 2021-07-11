@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/common"
@@ -30,6 +31,26 @@ func (ArtPublicController) down(c *gin.Context) {
 	tms := c.Query("times")
 	random := c.Query("random")
 	sign := c.Query("sign")
+	if tms == "" || random == "" || sign == "" {
+		c.String(500, "param err")
+		return
+	}
+
+	tm, err := time.Parse(time.RFC3339Nano, tms)
+	if err != nil {
+		c.String(500, "param err:times")
+		return
+	}
+	if time.Since(tm).Hours() > 20 {
+		c.String(500, "the url timeout")
+		return
+	}
+
+	signs := utils.Md5String(id + tms + random + comm.Cfg.Server.DevDownToken)
+	if sign != signs {
+		c.String(403, "No Permission")
+		return
+	}
 
 	artv := &model.TArtifactVersion{}
 	ok := service.GetIdOrAid(id, artv)
@@ -42,21 +63,6 @@ func (ArtPublicController) down(c *gin.Context) {
 	if !ok || arty.Deleted == 1 {
 		c.String(404, "Not Found repo")
 		return
-	}
-
-	lgusr, ok := service.CurrUserCache(c)
-	if ok {
-		perm := service.NewOrgPerm(lgusr, arty.OrgId)
-		if !perm.CanDownload() {
-			c.String(403, "No Permission")
-			return
-		}
-	} else {
-		signs := utils.Md5String(id + tms + random + comm.Cfg.Server.DevDownToken)
-		if sign != signs {
-			c.String(403, "No Permission")
-			return
-		}
 	}
 
 	fls := filepath.Join(comm.WorkPath, common.PathArtifacts, artv.Id, pth)

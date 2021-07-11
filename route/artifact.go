@@ -1,6 +1,12 @@
 package route
 
 import (
+	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/bean"
@@ -11,9 +17,6 @@ import (
 	"github.com/gokins-main/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"strings"
-	"time"
 )
 
 type ArtifactController struct{}
@@ -30,6 +33,7 @@ func (c *ArtifactController) Routes(g gin.IRoutes) {
 	g.POST("/package/list", util.GinReqParseJson(c.packageList))
 	g.POST("/version/list", util.GinReqParseJson(c.versionList))
 	g.POST("/version/infos", util.GinReqParseJson(c.versionInfos))
+	g.POST("/version/url", util.GinReqParseJson(c.versionUrl))
 }
 func (ArtifactController) orgList(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
@@ -288,5 +292,40 @@ func (ArtifactController) versionInfos(c *gin.Context, m *hbtp.Map) {
 	}
 	c.JSON(200, hbtp.Map{
 		"info": artv,
+	})
+}
+func (ArtifactController) versionUrl(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	pth := m.GetString("path")
+	artv := &models.TArtifactVersion{}
+	ok := service.GetIdOrAid(id, artv)
+	if !ok || artv.Deleted == 1 {
+		c.String(404, "Not Found")
+		return
+	}
+	arty := &model.TArtifactory{}
+	ok = service.GetIdOrAid(artv.RepoId, arty)
+	if !ok || arty.Deleted == 1 {
+		c.String(404, "Not Found repo")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewOrgPerm(lgusr, arty.OrgId)
+	if !perm.CanDownload() {
+		c.String(405, "No Permission")
+		return
+	}
+
+	tms := time.Now().Format(time.RFC3339Nano)
+	random := utils.RandomString(20)
+	sign := utils.Md5String(artv.Id + tms + random + comm.Cfg.Server.DevDownToken)
+	ul := fmt.Sprintf("%s/api/art/pub/down/%s/%s?times=%s&random=%s&sign=%s",
+		comm.Cfg.Server.Host, artv.Id, pth, url.QueryEscape(tms), random, sign)
+	c.JSON(200, hbtp.Map{
+		"id":     artv.Id,
+		"times":  tms,
+		"random": random,
+		"sign":   sign,
+		"url":    ul,
 	})
 }
