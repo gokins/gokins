@@ -202,7 +202,7 @@ func Install(c *gin.Context) {
 			}
 		</style>
 		<!-- 引入 layui.css -->
-		<link rel="stylesheet" href="https://unpkg.com/layui@2.6.8/dist/css/layui.css" />
+		<link rel="stylesheet" href="gokinsui/plugs/layui.css" />
 		<!-- 引入 layui.js -->
 	</head>
 	
@@ -293,9 +293,9 @@ func Install(c *gin.Context) {
 				</div>
 			</div>
 		</div>
-		<script src="https://lib.baomitu.com/axios/0.21.1/axios.js"></script>
-		<script src="https://lib.baomitu.com/jquery/3.6.0/jquery.js"></script>
-		<script src="https://unpkg.com/layui@2.6.8/dist/layui.js"></script>
+		<script src="gokinsui/plugs/axios.js"></script>
+		<script src="gokinsui/plugs/jquery.js"></script>
+		<script src="gokinsui/plugs/layui.js"></script>
 		<script>
 			var msgDiv = $('#msgDiv');
 			var subBtn = $('#subBtn');
