@@ -438,6 +438,9 @@ func Install(c *gin.Context) {
 	
 						const stat = err.response ? err.response.status : 0;
 						switch (stat) {
+							case 404:
+								window.location = 'gokins';
+								break
 							case 511:
 								layer.msg('无法连接访问地址,请重试!', { icon: 2 });
 								break
