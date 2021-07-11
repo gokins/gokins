@@ -426,7 +426,7 @@ func Install(c *gin.Context) {
 						// subBtn.removeAttr('disabled');
 						subBtn.value = '跳转中';
 						msgDiv.text('安装成功:' + res.data);
-						layer.msg('安装成功:' + res.data, { icon: 2 });
+						layer.msg('安装成功:' + res.data, { icon: 1 });
 						setTimeout(function () {
 							window.location = 'gokins';
 						}, 1000)
