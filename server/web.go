@@ -5,10 +5,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
-	"github.com/gokins-main/gokins/util/httpex"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
+
+	"github.com/gokins-main/gokins/util/httpex"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core"
@@ -56,7 +58,7 @@ func midUiHandle(c *gin.Context) {
 		return
 	}
 	pth := c.Request.URL.Path
-	if !comm.Installed && pth != "/install" {
+	if !comm.Installed && !strings.HasPrefix(pth, "/gokinsui/") && pth != "/install" {
 		httpex.ResMsgUrl(c, "未安装,跳转中...", "/install")
 		return
 	}
