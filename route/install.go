@@ -1,6 +1,7 @@
 package route
 
 import (
+	"github.com/gokins-main/gokins/util/httpex"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -152,7 +153,7 @@ func initConfig() error {
 
 func Install(c *gin.Context) {
 	if comm.Installed {
-		c.String(404, "Not Found")
+		httpex.ResMsgUrl(c, "重复操作,跳转中...", "/")
 		return
 	}
 	bts := []byte(`
