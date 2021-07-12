@@ -5,6 +5,8 @@ DROP TABLE IF EXISTS `t_build`;
 DROP TABLE IF EXISTS `t_cmd_line`;
 DROP TABLE IF EXISTS `t_stage`;
 DROP TABLE IF EXISTS `t_step`;
+DROP TABLE IF EXISTS `t_trigger`;
+DROP TABLE IF EXISTS `t_trigger_run`;
 DROP TABLE IF EXISTS `t_message`;
 DROP TABLE IF EXISTS `t_org`;
 DROP TABLE IF EXISTS `t_org_pipe`;

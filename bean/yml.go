@@ -65,7 +65,9 @@ type UseArtifacts struct {
 	Repository string `yaml:"repository" json:"repository"` // archive,制品库ID
 	Name       string `yaml:"name" json:"name"`             //archive,pipeline,env
 	//IsForce    bool   `yaml:"isForce" json:"isForce"`
-	Path string `yaml:"path" json:"path"` //archive,pipeline
+	IsUrl bool   `yaml:"IsUrl" json:"IsUrl"`
+	Alias string `yaml:"alias" json:"alias"`
+	Path  string `yaml:"path" json:"path"` //archive,pipeline
 
 	FromStage string `yaml:"fromStage" json:"sourceStage"` //pipeline
 	FromStep  string `yaml:"fromStep" json:"sourceStep"`   //pipeline
