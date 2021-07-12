@@ -28,7 +28,7 @@ func (c *PipelineController) Routes(g gin.IRoutes) {
 	g.POST("/org/pipelines", util.GinReqParseJson(c.orgPipelines))
 	g.POST("/pipelines", util.GinReqParseJson(c.getPipelines))
 	g.POST("/new", util.GinReqParseJson(c.new))
-	g.POST("/deleted", util.GinReqParseJson(c.deleted))
+	g.POST("/delete", util.GinReqParseJson(c.delete))
 	g.POST("/info", util.GinReqParseJson(c.info))
 	g.POST("/save", util.GinReqParseJson(c.save))
 	g.POST("/run", util.GinReqParseJson(c.run))
@@ -195,7 +195,7 @@ func (PipelineController) save(c *gin.Context, m *hbtp.Map) {
 	}
 	c.String(http.StatusOK, "ok")
 }
-func (PipelineController) deleted(c *gin.Context, m *hbtp.Map) {
+func (PipelineController) delete(c *gin.Context, m *hbtp.Map) {
 	id := m.GetString("id")
 	if id == "" {
 		c.String(500, "param err")
