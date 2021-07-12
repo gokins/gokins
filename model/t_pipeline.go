@@ -10,10 +10,6 @@ type TPipeline struct {
 	Name         string    `xorm:"VARCHAR(255)" json:"name"`
 	DisplayName  string    `xorm:"VARCHAR(255)" json:"displayName"`
 	PipelineType string    `xorm:"VARCHAR(255)" json:"pipelineType"`
-	YmlContent   string    `xorm:"LONGTEXT" json:"ymlContent"`
-	AccessToken  string    `xorm:"VARCHAR(255)" json:"accessToken"`
-	Url          string    `xorm:"VARCHAR(255)" json:"url"`
-	Username     string    `xorm:"VARCHAR(255)" json:"username"`
 	Created      time.Time `xorm:"DATETIME" json:"created"`
 	Deleted      int       `xorm:"default 0 INT(1)" json:"deleted"`
 	DeletedTime  time.Time `xorm:"DATETIME" json:"deletedTime"`
