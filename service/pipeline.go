@@ -203,6 +203,7 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha s
 					Name:       v.Name,
 					Path:       v.Path,
 					//IsForce:     v.IsForce,
+					IsUrl:       v.IsUrl,
 					SourceStage: v.FromStage,
 					SourceStep:  v.FromStep,
 				})
