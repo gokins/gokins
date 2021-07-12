@@ -5,8 +5,6 @@ CREATE TABLE `t_artifact_package` (
   `name` varchar(100) DEFAULT NULL,
   `display_name` varchar(255) DEFAULT NULL,
   `desc` varchar(500) DEFAULT NULL,
-  `latestVersion` varchar(64) DEFAULT NULL,
-  `latestVersionSha` varchar(100) DEFAULT NULL,
   `created` datetime DEFAULT NULL,
   `updated` datetime DEFAULT NULL,
   `deleted` int(1) DEFAULT NULL,
@@ -115,6 +113,31 @@ CREATE TABLE `t_step` (
   `waits` json NULL,
   `sort` int(11) NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+CREATE TABLE `t_trigger` (
+  `id` varchar(64) NOT NULL,
+  `aid` bigint(20) NOT NULL AUTO_INCREMENT,
+  `uid` varchar(64) DEFAULT NULL,
+  `types` varchar(50) DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `desc` varchar(255) DEFAULT NULL,
+  `params` json DEFAULT NULL,
+  `enabled` int(1) DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  `updated` datetime DEFAULT NULL,
+  PRIMARY KEY (`aid`, `id`),
+  KEY `uid` (`uid`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+CREATE TABLE `t_trigger_run` (
+  `id` varchar(64) NOT NULL,
+  `aid` bigint(20) NOT NULL AUTO_INCREMENT,
+  `tid` varchar(64) DEFAULT NULL COMMENT '触发器ID',
+  `pipe_version_id` varchar(64) DEFAULT NULL,
+  `infos` json DEFAULT NULL,
+  `error` varchar(255) DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  PRIMARY KEY (`aid`, `id`),
+  KEY `tid` (`tid`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 CREATE TABLE `t_message` (
   `id` varchar(64) NOT NULL,
