@@ -118,6 +118,7 @@ CREATE TABLE `t_trigger` (
   `id` varchar(64) NOT NULL,
   `aid` bigint(20) NOT NULL AUTO_INCREMENT,
   `uid` varchar(64) DEFAULT NULL,
+  `pipeline_id` varchar(64) NOT NULL,
   `types` varchar(50) DEFAULT NULL,
   `name` varchar(100) DEFAULT NULL,
   `desc` varchar(255) DEFAULT NULL,
