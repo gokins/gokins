@@ -279,11 +279,14 @@ func replaceStep(step *bean.Step, mVars map[string]*runtime.Variables) {
 	s, _ = replace(step.Image, mVars)
 	step.Image = s
 	if step.Env != nil && len(step.Env) > 0 {
-		step.Env = replaceEnvs(step.Env, mVars)
+		step.Env = replaceMaps(step.Env, mVars)
+	}
+	if step.Input != nil && len(step.Input) > 0 {
+		step.Input = replaceMaps(step.Input, mVars)
 	}
 }
 
-func replaceEnvs(envs map[string]string, mVars map[string]*runtime.Variables) map[string]string {
+func replaceMaps(envs map[string]string, mVars map[string]*runtime.Variables) map[string]string {
 	m := map[string]string{}
 	for k, v := range envs {
 		s, _ := replace(v, mVars, true)
