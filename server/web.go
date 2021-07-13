@@ -52,6 +52,7 @@ func regApi() {
 	util.GinRegController(comm.WebEgn, &route.PipelineVersionController{})
 	util.GinRegController(comm.WebEgn, &route.RuntimeController{})
 	util.GinRegController(comm.WebEgn, &route.YmlController{})
+	util.GinRegController(comm.WebEgn, &route.TriggerController{})
 }
 func midUiHandle(c *gin.Context) {
 	c.Next()
