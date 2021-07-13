@@ -14,21 +14,25 @@ import (
 	"github.com/gokins-main/gokins/hook/gitlab"
 	"github.com/gokins-main/gokins/model"
 	"net/http"
+	"strings"
 	"time"
 )
 
 func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err error) {
 	tvpId := ""
+	infos := ""
 	defer func() {
 		ttr := &model.TTriggerRun{
 			Id:            utils.NewXid(),
 			Tid:           tt.Id,
 			PipeVersionId: tvpId,
-			Infos:         "",
 			Created:       time.Now(),
 		}
 		if err != nil {
 			ttr.Error = err.Error()
+		}
+		if infos != "" {
+			ttr.Infos = infos
 		}
 		comm.Db.InsertOne(ttr)
 	}()
@@ -39,7 +43,6 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 	err = json.Unmarshal([]byte(tt.Params), &m)
 	if err != nil {
 		return rb, errors.New("触发器配置参数错误")
-
 	}
 	hookType, ok := m["hookType"]
 	if !ok {
@@ -61,26 +64,25 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 	if err != nil {
 		return nil, err
 	}
-	var sha = ""
-	var events = ""
-	var branchs = ""
+	sha := ""
+	events := ""
+	branchs := ""
 	switch c := h.(type) {
 	case *hook.PullRequestHook:
 		events = "pr"
 		sha = c.PullRequest.Base.Sha
-		branchs = c.Repository().Ref
 	case *hook.PullRequestCommentHook:
 		events = "comment"
 		sha = c.PullRequest.Base.Sha
-		branchs = c.Repository().Ref
 	case *hook.PushHook:
 		events = "push"
 		sha = c.After
-		branchs = c.Repository().Ref
 	default:
 		return nil, errors.New("webhook解析失败")
 	}
-
+	branchs = h.Repository().Branch
+	bts, _ := json.Marshal(h)
+	infos = string(bts)
 	if event != "" && event != events {
 		return nil, errors.New("webhook事件不匹配")
 	}
@@ -97,7 +99,7 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 }
 
 func parseHook(hookType string, req *http.Request, secret string) (hook.WebHook, error) {
-	switch hookType {
+	switch strings.ToLower(hookType) {
 	case "gitee", "giteepremium":
 		return gitee.Parse(req, secret)
 	case "github":

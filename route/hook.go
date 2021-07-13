@@ -8,17 +8,17 @@ import (
 	"github.com/gokins-main/gokins/service"
 )
 
-type ReposController struct {
+type HookController struct {
 }
 
-func (ReposController) GetPath() string {
+func (HookController) GetPath() string {
 	return "/hook"
 }
-func (c *ReposController) Routes(g gin.IRoutes) {
+func (c *HookController) Routes(g gin.IRoutes) {
 	g.POST("/:triggerId", c.hooks)
 }
 
-func (ReposController) hooks(c *gin.Context) {
+func (HookController) hooks(c *gin.Context) {
 	triggerId := c.Param("triggerId")
 	if triggerId == "" {
 		c.String(500, "param err")
