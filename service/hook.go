@@ -41,7 +41,7 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 		return rb, errors.New("触发器配置参数错误")
 
 	}
-	ht, ok := m["hookType"]
+	hookType, ok := m["hookType"]
 	if !ok {
 		return rb, errors.New("hookType为空")
 	}
@@ -57,21 +57,9 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 	if s, ok := m["branch"]; ok {
 		branch = s
 	}
-	sha, err := Parse(req, ht, secret, event, branch)
-	if err != nil {
-		return rb, err
-	}
-	tvp, rb, err := Run(tt.Uid, tt.PipelineId, sha)
-	if err != nil {
-		return rb, err
-	}
-	tvpId = tvp.Id
-	return rb, nil
-}
-func Parse(req *http.Request, hookType, secret, event, branch string) (string, error) {
 	h, err := parseHook(hookType, req, secret)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	var sha = ""
 	var events = ""
@@ -90,15 +78,22 @@ func Parse(req *http.Request, hookType, secret, event, branch string) (string, e
 		sha = c.After
 		branchs = c.Repository().Ref
 	default:
-		return "", errors.New("webhook解析失败")
+		return nil, errors.New("webhook解析失败")
 	}
+
 	if event != "" && event != events {
-		return "", errors.New("webhook事件不匹配")
+		return nil, errors.New("webhook事件不匹配")
 	}
 	if branch != "" && branch != branchs {
-		return "", errors.New("分支不匹配")
+		return nil, errors.New("分支不匹配")
 	}
-	return sha, nil
+
+	tvp, rb, err := Run(tt.Uid, tt.PipelineId, sha)
+	if err != nil {
+		return nil, err
+	}
+	tvpId = tvp.Id
+	return rb, nil
 }
 
 func parseHook(hookType string, req *http.Request, secret string) (hook.WebHook, error) {
