@@ -312,11 +312,15 @@ func Install(c *gin.Context) {
 			function plugChange() {
 				switch ($('#plugServ').val()) {
 					case '1':
+						if($('#plugPort').val()=='')
+							$('#plugPort').val('8031');
 						$('#plugSecret').val('');
 						$('#plugPort').removeAttr('disabled');
 						$('#plugSecret').prop('disabled', 'disabled');
 						break
 					case '2':
+						if($('#plugPort').val()=='')
+							$('#plugPort').val('8031');
 						$('#plugPort').removeAttr('disabled');
 						$('#plugSecret').removeAttr('disabled');
 						break
