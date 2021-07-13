@@ -70,7 +70,10 @@ func (TriggerController) triggers(c *gin.Context, m *hbtp.Map) {
 			v.Avat = usr.Avatar
 		}
 	}
-	c.JSON(200, page)
+	ms := map[string]interface{}{}
+	ms["page"] = page
+	ms["host"] = comm.Cfg.Server.Host
+	c.JSON(200, ms)
 }
 
 func (TriggerController) save(c *gin.Context, tp *bean.TriggerParam) {

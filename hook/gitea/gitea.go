@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gokins-main/gokins/hook"
-	"github.com/gokins-main/gokins/thirdapi"
 	"github.com/sirupsen/logrus"
 	"hash"
 	"io"
@@ -21,7 +20,7 @@ import (
 	"time"
 )
 
-func Parse(req *http.Request, fn hook.SecretFunc, cl *thirdapi.Client) (hook.WebHook, error) {
+func Parse(req *http.Request, secret string) (hook.WebHook, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			logrus.Warnf("WebhookService Parse err:%+v", err)
@@ -40,7 +39,7 @@ func Parse(req *http.Request, fn hook.SecretFunc, cl *thirdapi.Client) (hook.Web
 	case hook.GITEA_EVENT_PUSH:
 		wb, err = parsePushHook(data)
 	case hook.GITEA_EVENT_NOTE:
-		wb, err = parseCommentHook(data, cl)
+		wb, err = parseCommentHook(data)
 	case hook.GITEA_EVENT_PR:
 		wb, err = parsePullRequestHook(data)
 	default:
@@ -49,12 +48,8 @@ func Parse(req *http.Request, fn hook.SecretFunc, cl *thirdapi.Client) (hook.Web
 	if err != nil {
 		return nil, err
 	}
-	key, err := fn(wb)
-	if err != nil {
-		return wb, err
-	}
 	sig := req.Header.Get("X-Gitea-Signature")
-	if !validatePrefix(data, []byte(key), sig) {
+	if !validatePrefix(data, []byte(secret), sig) {
 		logrus.Debugf("Gitea validatePrefix failed")
 		return wb, errors.New("密钥不正确")
 	}
@@ -86,7 +81,7 @@ func validate(h func() hash.Hash, message, key, signature []byte) bool {
 	return hmac.Equal(signature, sum)
 }
 
-func parseCommentHook(data []byte, cl *thirdapi.Client) (*hook.PullRequestCommentHook, error) {
+func parseCommentHook(data []byte) (*hook.PullRequestCommentHook, error) {
 	gp := new(giteaCommentHook)
 	err := json.Unmarshal(data, gp)
 	if err != nil {
@@ -95,7 +90,7 @@ func parseCommentHook(data []byte, cl *thirdapi.Client) (*hook.PullRequestCommen
 	if !gp.IsPull {
 		return nil, errors.New("not pull_request comment")
 	}
-	return convertCommentHook(gp, cl)
+	return convertCommentHook(gp)
 }
 
 func parsePullRequestHook(data []byte) (*hook.PullRequestHook, error) {
@@ -230,7 +225,7 @@ func convertPullRequestHook(gp *giteaPRHook) *hook.PullRequestHook {
 		Sender: hook.User{},
 	}
 }
-func convertPullRequestURL(gc *giteaCommentHook, cl *thirdapi.Client) (*giteaPullRequestURL, error) {
+func convertPullRequestURL(gc *giteaCommentHook) (*giteaPullRequestURL, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			logrus.Warnf("convertPullRequestURL err:%+v", err)
@@ -260,8 +255,8 @@ func convertPullRequestURL(gc *giteaCommentHook, cl *thirdapi.Client) (*giteaPul
 	return nil, nil
 }
 
-func convertCommentHook(gp *giteaCommentHook, cl *thirdapi.Client) (*hook.PullRequestCommentHook, error) {
-	pullRequestHook, err := convertPullRequestURL(gp, cl)
+func convertCommentHook(gp *giteaCommentHook) (*hook.PullRequestCommentHook, error) {
+	pullRequestHook, err := convertPullRequestURL(gp)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-func Parse(req *http.Request, fn hook.SecretFunc) (hook.WebHook, error) {
+func Parse(req *http.Request, secret string) (hook.WebHook, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			logrus.Warnf("WebhookService Parse err:%+v", err)
@@ -47,12 +47,8 @@ func Parse(req *http.Request, fn hook.SecretFunc) (hook.WebHook, error) {
 	if err != nil {
 		return nil, err
 	}
-	key, err := fn(wb)
-	if err != nil {
-		return wb, err
-	}
 	sig := req.Header.Get("X-Gitlab-Token")
-	if key != sig {
+	if secret != sig {
 		return wb, errors.New("密钥不正确")
 	}
 	return wb, nil

@@ -1,101 +1,116 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gokins-main/core/runtime"
+	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/hook"
 	"github.com/gokins-main/gokins/hook/gitea"
 	"github.com/gokins-main/gokins/hook/gitee"
 	"github.com/gokins-main/gokins/hook/github"
 	"github.com/gokins-main/gokins/hook/gitlab"
-	"github.com/sirupsen/logrus"
+	"github.com/gokins-main/gokins/model"
 	"net/http"
+	"time"
 )
 
-func Parse(req *http.Request, hookType string) (*runtime.Build, error) {
-	fn := func(webhook hook.WebHook) (string, error) {
-		//TODO get HookSecret
-		//repository := webhook.Repository()
-		//repo := new(pipeline.TRepo)
-		//db := comm.DBMain.GetDB()
-		//ok, err := db.
-		//	Where("openid=? and deleted != 1 and active != 0",
-		//		repository.RepoOpenid).
-		//	Get(repo)
-		//if err != nil {
-		//	return "", err
-		//}
-		//if !ok {
-		//	return "", errors.New("仓库不存在! ")
-		//}
-		return "repo.HookSecret", nil
+func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err error) {
+	tvpId := ""
+	defer func() {
+		ttr := &model.TTriggerRun{
+			Id:            utils.NewXid(),
+			Tid:           tt.Id,
+			PipeVersionId: tvpId,
+			Infos:         "",
+			Created:       time.Now(),
+		}
+		if err != nil {
+			ttr.Error = err.Error()
+		}
+		comm.Db.InsertOne(ttr)
+	}()
+	if tt.Params == "" {
+		return rb, errors.New("触发器没有配置参数")
 	}
-	h, err := parseHook(hookType, req, fn)
+	m := map[string]string{}
+	err = json.Unmarshal([]byte(tt.Params), &m)
 	if err != nil {
-		return nil, err
-	}
-	var rb *runtime.Build
-	switch c := h.(type) {
-	case *hook.PullRequestHook:
-		fmt.Sprintf("%v", c)
-	case *hook.PullRequestCommentHook:
-	case *hook.PushHook:
-	default:
-		return nil, errors.New("Build Parse Failed ")
-	}
+		return rb, errors.New("触发器配置参数错误")
 
-	//marshal, err := json.Marshal(pb)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//TODO insert webhook table
-	//repository := h.Repository()
-	//repo, b := checkRepo(repository)
-	//if !b {
-	//	return nil, fmt.Errorf("%v 仓库不存在", repository.Name)
-	//}
-	//pb.Info.Repository.Id = repo.Id
-	//th := &pipeline.THook{
-	//	Id:       utils.NewXid(),
-	//	HookType: req.Header.Get(common.GITEE_EVENT),
-	//	Type:     common.GITEE,
-	//	Snapshot: string(marshal),
-	//	Status:   common.PIPELINE_VERSION_STATUS_OK,
-	//	Msg:      "",
-	//}
-	//db := comm.DBMain.GetDB()
-	//_, err = db.Insert(th)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//logrus.Debugf("Parse preBuild %s ", string(marshal))
+	}
+	ht, ok := m["hookType"]
+	if !ok {
+		return rb, errors.New("hookType为空")
+	}
+	secret := ""
+	if s, ok := m["secret"]; ok {
+		secret = s
+	}
+	event := ""
+	if s, ok := m["event"]; ok {
+		event = s
+	}
+	branch := ""
+	if s, ok := m["branch"]; ok {
+		branch = s
+	}
+	sha, err := Parse(req, ht, secret, event, branch)
+	if err != nil {
+		return rb, err
+	}
+	tvp, rb, err := Run(tt.Uid, tt.PipelineId, sha)
+	if err != nil {
+		return rb, err
+	}
+	tvpId = tvp.Id
 	return rb, nil
 }
+func Parse(req *http.Request, hookType, secret, event, branch string) (string, error) {
+	h, err := parseHook(hookType, req, secret)
+	if err != nil {
+		return "", err
+	}
+	var sha = ""
+	var events = ""
+	var branchs = ""
+	switch c := h.(type) {
+	case *hook.PullRequestHook:
+		events = "pr"
+		sha = c.PullRequest.Base.Sha
+		branchs = c.Repository().Ref
+	case *hook.PullRequestCommentHook:
+		events = "comment"
+		sha = c.PullRequest.Base.Sha
+		branchs = c.Repository().Ref
+	case *hook.PushHook:
+		events = "push"
+		sha = c.After
+		branchs = c.Repository().Ref
+	default:
+		return "", errors.New("webhook解析失败")
+	}
+	if event != "" && event != events {
+		return "", errors.New("webhook事件不匹配")
+	}
+	if branch != "" && branch != branchs {
+		return "", errors.New("分支不匹配")
+	}
+	return sha, nil
+}
 
-func parseHook(hookType string, req *http.Request, fn hook.SecretFunc) (hook.WebHook, error) {
+func parseHook(hookType string, req *http.Request, secret string) (hook.WebHook, error) {
 	switch hookType {
 	case "gitee", "giteepremium":
-		return gitee.Parse(req, fn)
+		return gitee.Parse(req, secret)
 	case "github":
-		return github.Parse(req, fn)
+		return github.Parse(req, secret)
 	case "gitlab":
-		return gitlab.Parse(req, fn)
+		return gitlab.Parse(req, secret)
 	case "gitea":
-		//TODO 获取SourceHost
-		//appinfo, err := GetsParamOAuthKey()
-		//if err != nil {
-		//	core.Log.Errorf("convertPullRequestURL.GetsParamOAuthKey err : %v", err)
-		//	return nil, err
-		//}
-		//k, info := appinfo.DefAppInfo()
-		cl, err := comm.GetThirdApi("k", "info.SourceHost")
-		if err != nil {
-			logrus.Errorf("convertPullRequestURL.GetThirdApi err : %v", err)
-			return nil, err
-		}
-		return gitea.Parse(req, fn, cl)
+		return gitea.Parse(req, secret)
 	default:
 		return nil, fmt.Errorf("未知的webhook类型")
 	}

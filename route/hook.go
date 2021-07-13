@@ -2,7 +2,9 @@ package route
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/engine"
+	"github.com/gokins-main/gokins/model"
 	"github.com/gokins-main/gokins/service"
 )
 
@@ -10,25 +12,27 @@ type ReposController struct {
 }
 
 func (ReposController) GetPath() string {
-	return "/api/repos"
+	return "/hook"
 }
 func (c *ReposController) Routes(g gin.IRoutes) {
-	g.POST("/hooks/:hookType", c.hooks)
+	g.POST("/:triggerId", c.hooks)
 }
 
 func (ReposController) hooks(c *gin.Context) {
-	hookType := c.Param("hookType")
-	if hookType == "" {
-		c.JSON(200, gin.H{
-			"msg": "hook类型为空",
-		})
+	triggerId := c.Param("triggerId")
+	if triggerId == "" {
+		c.String(500, "param err")
 		return
 	}
-	rb, err := service.Parse(c.Request, hookType)
+	tt := &model.TTrigger{}
+	ok, _ := comm.Db.Where("id = ? and enabled != 0", triggerId).Get(tt)
+	if !ok {
+		c.String(404, "触发器不存在或者未激活")
+		return
+	}
+	rb, err := service.TriggerHook(tt, c.Request)
 	if err != nil {
-		c.JSON(200, gin.H{
-			"err": err,
-		})
+		c.String(500, err.Error())
 		return
 	}
 	engine.Mgr.BuildEgn().Put(rb)
