@@ -1,6 +1,7 @@
 package models
 
 import (
+	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"io/ioutil"
 	"path/filepath"
 	"time"
@@ -9,12 +10,6 @@ import (
 	"github.com/gokins-main/gokins/comm"
 )
 
-type FlInfo struct {
-	Name  string    `json:"name"`
-	Dir   bool      `json:"dir"`
-	Size  int64     `json:"size"`
-	Child []*FlInfo `json:"child"`
-}
 type TArtifactVersion struct {
 	Id        string    `xorm:"not null pk VARCHAR(64)" json:"id"`
 	Aid       int64     `xorm:"not null pk autoincr BIGINT(20)" json:"aid"`
@@ -28,7 +23,7 @@ type TArtifactVersion struct {
 	Created   time.Time `xorm:"DATETIME" json:"created"`
 	Updated   time.Time `xorm:"DATETIME" json:"updated"`
 
-	Files []*FlInfo `xorm:"-" json:"files"`
+	Files []hbtp.Map `xorm:"-" json:"files"`
 }
 
 func (c *TArtifactVersion) ReadFiles() error {
@@ -37,8 +32,8 @@ func (c *TArtifactVersion) ReadFiles() error {
 	c.Files = fls
 	return err
 }
-func (c *TArtifactVersion) readDir(pth string) ([]*FlInfo, error) {
-	var rts []*FlInfo
+func (c *TArtifactVersion) readDir(pth string) ([]hbtp.Map, error) {
+	var rts []hbtp.Map
 	fls, err := ioutil.ReadDir(pth)
 	if err != nil {
 		return nil, err
@@ -49,20 +44,19 @@ func (c *TArtifactVersion) readDir(pth string) ([]*FlInfo, error) {
 			if err != nil {
 				return nil, err
 			}
-			e := &FlInfo{
-				Name:  v.Name(),
-				Dir:   true,
-				Size:  0,
-				Child: rts,
-			}
-			e.Child = append(e.Child, fls...)
-			rts = append(rts, e)
+			var chd []hbtp.Map
+			chd = append(chd, fls...)
+			rts = append(rts, hbtp.Map{
+				"name":  v.Name(),
+				"dir":   true,
+				"size":  0,
+				"child": chd,
+			})
 		} else {
-			rts = append(rts, &FlInfo{
-				Name:  v.Name(),
-				Dir:   false,
-				Size:  v.Size(),
-				Child: nil,
+			rts = append(rts, hbtp.Map{
+				"name": v.Name(),
+				"dir":  false,
+				"size": v.Size(),
 			})
 		}
 	}
