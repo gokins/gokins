@@ -289,6 +289,18 @@ func (ArtifactController) versionInfos(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "Not Found")
 		return
 	}
+	arty := &model.TArtifactory{}
+	ok = service.GetIdOrAid(artv.RepoId, arty)
+	if !ok || arty.Deleted == 1 {
+		c.String(404, "Not Found repo")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewOrgPerm(lgusr, arty.OrgId)
+	if !perm.CanRead() {
+		c.String(405, "No Permission")
+		return
+	}
 	err := artv.ReadFiles()
 	if err != nil {
 		//c.String(511, "Files is err")
@@ -297,6 +309,10 @@ func (ArtifactController) versionInfos(c *gin.Context, m *hbtp.Map) {
 	}
 	c.JSON(200, hbtp.Map{
 		"info": artv,
+		"perm": hbtp.Map{
+			"read":  perm.CanRead(),
+			"write": perm.CanWrite(),
+		},
 	})
 }
 func (ArtifactController) versionUrl(c *gin.Context, m *hbtp.Map) {
