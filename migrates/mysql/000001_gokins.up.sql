@@ -255,7 +255,6 @@ VALUES
     `perm_user` int(1) DEFAULT NULL,
     `perm_org` int(1) DEFAULT NULL,
     `perm_pipe` int(1) DEFAULT NULL,
-    `perm_down` int(1) DEFAULT NULL COMMENT '下载制品权限',
     PRIMARY KEY (`id`)
   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 CREATE TABLE `t_user_org` (
@@ -266,6 +265,7 @@ CREATE TABLE `t_user_org` (
     `perm_adm` INT(1) NULL DEFAULT 0 COMMENT '管理员',
     `perm_rw` INT(1) NULL DEFAULT 0 COMMENT '编辑权限',
     `perm_exec` INT(1) NULL DEFAULT 0 COMMENT '执行权限',
+    `perm_down` int(1) DEFAULT NULL COMMENT '下载制品权限',
     PRIMARY KEY (`aid`) USING BTREE,
     INDEX `uid`(`uid`) USING BTREE,
     INDEX `oid`(`org_id`) USING BTREE,
