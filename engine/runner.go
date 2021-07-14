@@ -60,7 +60,7 @@ func (c *baseRunner) Update(m *runners.UpdateJobInfo) error {
 	return nil
 }
 
-func (c *baseRunner) UpdateCmd(buildId, jobId, cmdid string, fs, code int) error {
+func (c *baseRunner) UpdateCmd(buildId, jobId, cmdId string, fs, code int) error {
 	tsk, ok := Mgr.buildEgn.Get(buildId)
 	if !ok {
 		return errors.New("not found build")
@@ -70,7 +70,7 @@ func (c *baseRunner) UpdateCmd(buildId, jobId, cmdid string, fs, code int) error
 		return errors.New("not found job")
 	}
 	job.RLock()
-	cmd, ok := job.cmdmp[cmdid]
+	cmd, ok := job.cmdmp[cmdId]
 	job.RUnlock()
 	if !ok {
 		return errors.New("not found cmd")
@@ -78,7 +78,7 @@ func (c *baseRunner) UpdateCmd(buildId, jobId, cmdid string, fs, code int) error
 	tsk.UpJobCmd(cmd, fs, code)
 	return nil
 }
-func (c *baseRunner) PushOutLine(buildId, jobId, cmdid, bs string, iserr bool) error {
+func (c *baseRunner) PushOutLine(buildId, jobId, cmdId, bs string, iserr bool) error {
 	tsk, ok := Mgr.buildEgn.Get(buildId)
 	if !ok {
 		return errors.New("not found build")
@@ -89,7 +89,7 @@ func (c *baseRunner) PushOutLine(buildId, jobId, cmdid, bs string, iserr bool) e
 	}
 
 	bts, err := json.Marshal(&bean.LogOutJson{
-		Id:      cmdid,
+		Id:      cmdId,
 		Content: bs,
 		Times:   time.Now(),
 		Errs:    iserr,

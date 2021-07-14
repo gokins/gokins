@@ -19,19 +19,23 @@ type Manager struct {
 	buildEgn *BuildEngine
 	jobEgn   *JobEngine
 	shellRun *runners.Engine
+	brun     *baseRunner
+	hrun     *HbtpRunner
 }
 
 func Start() error {
 	Mgr.buildEgn = StartBuildEngine()
 	Mgr.jobEgn = StartJobEngine()
 
+	Mgr.brun = &baseRunner{}
+	Mgr.hrun = &HbtpRunner{}
 	//runners
 	comm.Cfg.Server.Shells = append(comm.Cfg.Server.Shells, "shell@ssh")
 	if len(comm.Cfg.Server.Shells) > 0 {
 		runr := runners.NewEngine(runners.Config{
 			Workspace: filepath.Join(comm.WorkPath, common.PathRunner),
 			Plugin:    comm.Cfg.Server.Shells,
-		}, &baseRunner{})
+		}, Mgr.brun)
 		err := runr.Start(comm.Ctx)
 		if err != nil {
 			return err
@@ -64,4 +68,7 @@ func (c *Manager) run() {
 
 func (c *Manager) BuildEgn() *BuildEngine {
 	return c.buildEgn
+}
+func (c *Manager) HRun() *HbtpRunner {
+	return c.hrun
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/gokins-main/gokins/comm"
+	"github.com/gokins-main/gokins/engine"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 )
@@ -16,6 +17,7 @@ func runHbtp() {
 		return
 	}
 	comm.HbtpEgn = hbtp.NewEngine(comm.Ctx)
+	comm.HbtpEgn.RegGrpcFun(1, engine.Mgr.HRun())
 	err := comm.HbtpEgn.Run(comm.Cfg.Server.HbtpHost)
 	if err != nil {
 		logrus.Errorf("Hbtp err:%v", err)
