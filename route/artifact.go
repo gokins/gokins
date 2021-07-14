@@ -318,7 +318,7 @@ func (ArtifactController) versionUrl(c *gin.Context, m *hbtp.Map) {
 
 	tms := time.Now().Format(time.RFC3339Nano)
 	random := utils.RandomString(20)
-	sign := utils.Md5String(artv.Id + tms + random + comm.Cfg.Server.DevDownToken)
+	sign := utils.Md5String(artv.Id + tms + random + comm.Cfg.Server.DownToken)
 	ul := fmt.Sprintf("%s/api/art/pub/down/%s/%s?times=%s&random=%s&sign=%s",
 		comm.Cfg.Server.Host, artv.Id, pth, url.QueryEscape(tms), random, sign)
 	c.JSON(200, hbtp.Map{

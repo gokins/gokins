@@ -46,7 +46,7 @@ func (ArtPublicController) down(c *gin.Context) {
 		return
 	}
 
-	signs := utils.Md5String(id + tms + random + comm.Cfg.Server.DevDownToken)
+	signs := utils.Md5String(id + tms + random + comm.Cfg.Server.DownToken)
 	if sign != signs {
 		c.String(403, "No Permission")
 		return
