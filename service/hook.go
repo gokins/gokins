@@ -37,7 +37,11 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 		comm.Db.InsertOne(ttr)
 	}()
 	if tt.Params == "" {
-		return rb, errors.New("触发器没有配置参数")
+		return nil, errors.New("触发器没有配置参数")
+	}
+	err = TriggerPerm(tt)
+	if err != nil {
+		return nil, err
 	}
 	m := map[string]string{}
 	err = json.Unmarshal([]byte(tt.Params), &m)

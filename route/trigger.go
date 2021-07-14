@@ -1,6 +1,7 @@
 package route
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/bean"
@@ -69,6 +70,7 @@ func (TriggerController) triggers(c *gin.Context, m *hbtp.Map) {
 			v.Nick = usr.Nick
 			v.Avat = usr.Avatar
 		}
+		_ = json.Unmarshal([]byte(v.Params), &v.Param)
 	}
 	ms := map[string]interface{}{}
 	ms["page"] = page
@@ -178,6 +180,22 @@ func (TriggerController) runs(c *gin.Context, m *hbtp.Map) {
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
+	}
+	for _, v := range ls {
+		if v.Error != "" || v.PipeVersionId == "" {
+			continue
+		}
+		rpv := &models.RunPipelineVersion{}
+		ok, _ = comm.Db.Table("t_pipeline_version").
+			Where("t_pipeline_version.id = ?", v.PipeVersionId).
+			Join("left", "t_build", "t_build.pipeline_version_id = ?", v.PipeVersionId).
+			Get(rpv)
+		if ok {
+			v.Number = rpv.Number
+			v.PipelineName = rpv.PipelineName
+			v.PipelineDisplayName = rpv.PipelineDisplayName
+			v.BStatus = rpv.Status
+		}
 	}
 	c.JSON(200, page)
 }

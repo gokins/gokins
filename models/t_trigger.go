@@ -10,10 +10,12 @@ type TTrigger struct {
 	Types      string    `xorm:"VARCHAR(50)" json:"types"`
 	Name       string    `xorm:"VARCHAR(100)" json:"name"`
 	Desc       string    `xorm:"VARCHAR(255)" json:"desc"`
-	Params     string    `xorm:"JSON" json:"params"`
+	Params     string    `xorm:"JSON" json:"-"`
 	Enabled    int       `xorm:"INT(1)" json:"enabled"`
 	Nick       string    `xorm:"-" json:"nick"`
 	Avat       string    `xorm:"-" json:"avat"`
 	Created    time.Time `xorm:"DATETIME" json:"created"`
 	//Updated    time.Time `xorm:"DATETIME" json:"updated"`
+
+	Param map[string]interface{} `xorm:"-" json:"params"`
 }

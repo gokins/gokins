@@ -12,4 +12,10 @@ type TTriggerRun struct {
 	Infos         string    `xorm:"JSON" json:"infos"`
 	Error         string    `xorm:"VARCHAR(255)" json:"error"`
 	Created       time.Time `xorm:"DATETIME" json:"created"`
+	//version
+	Number              int64  `xorm:"-" json:"number"`
+	PipelineName        string `xorm:"-" json:"pipelineName"`
+	PipelineDisplayName string `xorm:"-" json:"pipelineDisplayName"`
+	//Build
+	BStatus string `xorm:"-" json:"bStatus"`
 }
