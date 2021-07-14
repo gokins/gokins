@@ -20,7 +20,7 @@ import (
 
 func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err error) {
 	tvpId := ""
-	infos := ""
+	infos := "{}"
 	defer func() {
 		ttr := &model.TTriggerRun{
 			Id:            utils.NewXid(),
@@ -46,11 +46,13 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 	m := map[string]string{}
 	err = json.Unmarshal([]byte(tt.Params), &m)
 	if err != nil {
-		return rb, errors.New("触发器配置参数错误")
+		err = errors.New("触发器配置参数错误")
+		return nil, err
 	}
 	hookType, ok := m["hookType"]
 	if !ok {
-		return rb, errors.New("hookType为空")
+		err = errors.New("hookType为空")
+		return nil, err
 	}
 	secret := ""
 	if s, ok := m["secret"]; ok {
