@@ -6,6 +6,7 @@ import (
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/bean"
 	"github.com/gokins-main/gokins/comm"
+	"github.com/gokins-main/gokins/engine"
 	"github.com/gokins-main/gokins/model"
 	"github.com/gokins-main/gokins/models"
 	"github.com/gokins-main/gokins/service"
@@ -119,7 +120,9 @@ func (TriggerController) save(c *gin.Context, tp *bean.TriggerParam) {
 			return
 		}
 	}
-
+	if tt.Types == "timer" && tt.Enabled != 0 {
+		engine.Mgr.TimerEng().AddTask(tt)
+	}
 	c.JSON(200, "ok")
 }
 
@@ -151,6 +154,10 @@ func (TriggerController) delete(c *gin.Context, m *hbtp.Map) {
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
+	}
+
+	if tt.Types == "timer" {
+		engine.Mgr.TimerEng().RemoveTasks(tt.Id)
 	}
 	c.JSON(200, "ok")
 }

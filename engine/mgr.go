@@ -21,11 +21,13 @@ type Manager struct {
 	shellRun *runners.Engine
 	brun     *baseRunner
 	hrun     *HbtpRunner
+	timerEgn *TimerEngine
 }
 
 func Start() error {
 	Mgr.buildEgn = StartBuildEngine()
 	Mgr.jobEgn = StartJobEngine()
+	Mgr.timerEgn = StartTimerEngine()
 
 	Mgr.brun = &baseRunner{}
 	Mgr.hrun = &HbtpRunner{}
@@ -71,4 +73,8 @@ func (c *Manager) BuildEgn() *BuildEngine {
 }
 func (c *Manager) HRun() *HbtpRunner {
 	return c.hrun
+}
+
+func (c *Manager) TimerEng() *TimerEngine {
+	return c.timerEgn
 }

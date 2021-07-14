@@ -104,6 +104,58 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 	return rb, nil
 }
 
+func TriggerWeb(tt *model.TTrigger, secret string) (rb *runtime.Build, err error) {
+	tvpId := ""
+	infos := "{}"
+	defer func() {
+		ttr := &model.TTriggerRun{
+			Id:            utils.NewXid(),
+			Tid:           tt.Id,
+			PipeVersionId: tvpId,
+			Created:       time.Now(),
+		}
+		if err != nil {
+			ttr.Error = err.Error()
+		}
+		if infos != "" {
+			ttr.Infos = infos
+		}
+		comm.Db.InsertOne(ttr)
+	}()
+	if tt.Params == "" {
+		return nil, errors.New("触发器没有配置参数")
+	}
+	err = TriggerPerm(tt)
+	if err != nil {
+		return nil, err
+	}
+	m := map[string]string{}
+	err = json.Unmarshal([]byte(tt.Params), &m)
+	if err != nil {
+		err = errors.New("触发器配置参数错误")
+		return nil, err
+	}
+	pSecret, ok := m["secret"]
+	if !ok {
+		err = errors.New("触发器配置参数错误")
+		return nil, err
+	}
+	if secret != pSecret {
+		err = errors.New("密钥不正确")
+		return nil, err
+	}
+	branch := ""
+	if s, ok := m["branch"]; ok {
+		branch = s
+	}
+	tvp, rb, err := Run(tt.Uid, tt.PipelineId, branch)
+	if err != nil {
+		return nil, err
+	}
+	tvpId = tvp.Id
+	return rb, nil
+}
+
 func parseHook(hookType string, req *http.Request, secret string) (hook.WebHook, error) {
 	switch strings.ToLower(hookType) {
 	case "gitee", "giteepremium":
