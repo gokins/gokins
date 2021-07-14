@@ -1,13 +1,14 @@
 package route
 
 import (
-	"github.com/gokins-main/gokins/util/httpex"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/gokins-main/gokins/util/httpex"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gokins-main/core"
@@ -241,7 +242,7 @@ func Install(c *gin.Context) {
 								<input type="text" id="plugPort" name="txt2" placeholder="服务端口" autocomplete="off" class="layui-input">
 							</div>
 							<div class="layui-input-inline" style="width:200px">
-								<input type="text" id="plugSecret" name="txt3" placeholder="服务token" autocomplete="off"
+								<input type="text" id="plugSecret" name="txt3" placeholder="服务Secret" autocomplete="off"
 									class="layui-input">
 							</div>
 							<!-- <div class="layui-form-mid layui-word-aux">差</div> -->
