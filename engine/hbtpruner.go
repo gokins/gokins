@@ -1,19 +1,48 @@
 package engine
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/core/utils"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
+	"strconv"
+	"time"
 )
 
 type HbtpRunner struct {
 }
 
 func (HbtpRunner) AuthFun() hbtp.AuthFun {
-	return nil
+	return func(c *hbtp.Context) bool {
+		cmds := c.Command()
+		times := c.Args().Get("times")
+		random := c.Args().Get("random")
+		sign := c.Args().Get("sign")
+		if cmds == "" || len(times) <= 5 || len(random) < 20 || sign == "" {
+			c.ResString(hbtp.ResStatusAuth, "auth param err")
+			return false
+		}
+		signs := utils.Md5String(cmds + random + times + comm.Cfg.Server.Secret)
+		if sign != signs {
+			println("token err:" + sign)
+			c.ResString(hbtp.ResStatusAuth, "token err:"+sign)
+			return false
+		}
+		tm, err := strconv.ParseInt(times, 10, 64)
+		if err != nil {
+			c.ResString(hbtp.ResStatusAuth, "times err:"+err.Error())
+			return false
+		}
+		tms := time.Unix(tm, 0)
+		/*if err != nil {
+			c.ResString(hbtp.ResStatusAuth, "times err:"+err.Error())
+			return false
+		}*/
+		hbtp.Debugf("HbtpRunnerAuth parse.times:%s", tms.Format(common.TimeFmt))
+		return true
+	}
 }
 func (HbtpRunner) ServerInfo(c *hbtp.Context) {
 	c.ResJson(hbtp.ResStatusOk, Mgr.brun.ServerInfo())
@@ -26,7 +55,8 @@ func (HbtpRunner) PullJob(c *hbtp.Context, plugs []string) {
 	}
 	c.ResJson(hbtp.ResStatusOk, rts)
 }
-func (HbtpRunner) CheckCancel(c *hbtp.Context, buildId string) {
+func (HbtpRunner) CheckCancel(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
 	c.ResString(hbtp.ResStatusOk, fmt.Sprintf("%t", Mgr.brun.CheckCancel(buildId)))
 }
 func (HbtpRunner) Update(c *hbtp.Context, m *runners.UpdateJobInfo) {
@@ -37,12 +67,12 @@ func (HbtpRunner) Update(c *hbtp.Context, m *runners.UpdateJobInfo) {
 	}
 	c.ResString(hbtp.ResStatusOk, "ok")
 }
-func (HbtpRunner) UpdateCmd(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	jobId := m.GetString("jobId")
-	cmdId := m.GetString("cmdId")
-	fs, err := m.GetInt("fs")
-	code, _ := m.GetInt("code")
+func (HbtpRunner) UpdateCmd(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	jobId := c.ReqHeader().GetString("jobId")
+	cmdId := c.ReqHeader().GetString("cmdId")
+	fs, err := c.ReqHeader().GetInt("fs")
+	code, _ := c.ReqHeader().GetInt("code")
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
@@ -54,12 +84,12 @@ func (HbtpRunner) UpdateCmd(c *hbtp.Context, m *hbtp.Map) {
 	}
 	c.ResString(hbtp.ResStatusOk, "ok")
 }
-func (HbtpRunner) PushOutLine(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	jobId := m.GetString("jobId")
-	cmdId := m.GetString("cmdId")
-	bs := m.GetString("bs")
-	iserr := m.GetBool("iserr")
+func (HbtpRunner) PushOutLine(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	jobId := c.ReqHeader().GetString("jobId")
+	cmdId := c.ReqHeader().GetString("cmdId")
+	bs := c.ReqHeader().GetString("bs")
+	iserr := c.ReqHeader().GetBool("iserr")
 	err := Mgr.brun.PushOutLine(buildId, jobId, cmdId, bs, iserr)
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
@@ -67,10 +97,10 @@ func (HbtpRunner) PushOutLine(c *hbtp.Context, m *hbtp.Map) {
 	}
 	c.ResString(hbtp.ResStatusOk, "ok")
 }
-func (HbtpRunner) FindJobId(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	stgNm := m.GetString("stgNm")
-	stpNm := m.GetString("stpNm")
+func (HbtpRunner) FindJobId(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	stgNm := c.ReqHeader().GetString("stgNm")
+	stpNm := c.ReqHeader().GetString("stpNm")
 	rts, ok := Mgr.brun.FindJobId(buildId, stgNm, stpNm)
 	if !ok {
 		c.ResString(hbtp.ResStatusNotFound, "")
@@ -78,10 +108,10 @@ func (HbtpRunner) FindJobId(c *hbtp.Context, m *hbtp.Map) {
 	}
 	c.ResString(hbtp.ResStatusOk, rts)
 }
-func (HbtpRunner) ReadDir(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	pth := m.GetString("pth")
-	fs, err := m.GetInt("fs")
+func (HbtpRunner) ReadDir(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	pth := c.ReqHeader().GetString("pth")
+	fs, err := c.ReqHeader().GetInt("fs")
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
@@ -93,10 +123,10 @@ func (HbtpRunner) ReadDir(c *hbtp.Context, m *hbtp.Map) {
 	}
 	c.ResJson(hbtp.ResStatusOk, rts)
 }
-func (HbtpRunner) ReadFile(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	pth := m.GetString("pth")
-	fs, err := m.GetInt("fs")
+func (HbtpRunner) ReadFile(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	pth := c.ReqHeader().GetString("pth")
+	fs, err := c.ReqHeader().GetInt("fs")
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
@@ -122,10 +152,10 @@ func (HbtpRunner) ReadFile(c *hbtp.Context, m *hbtp.Map) {
 		}
 	}
 }
-func (HbtpRunner) GetEnv(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	jobId := m.GetString("jobId")
-	key := m.GetString("key")
+func (HbtpRunner) GetEnv(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	jobId := c.ReqHeader().GetString("jobId")
+	key := c.ReqHeader().GetString("key")
 	rts, ok := Mgr.brun.GetEnv(buildId, jobId, key)
 	if !ok {
 		c.ResString(hbtp.ResStatusNotFound, "")
@@ -133,38 +163,22 @@ func (HbtpRunner) GetEnv(c *hbtp.Context, m *hbtp.Map) {
 	}
 	c.ResString(hbtp.ResStatusOk, rts)
 }
-func (HbtpRunner) GenEnv(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	jobId := m.GetString("jobId")
-	env, ok := m.Get("env")
-	if !ok {
-		c.ResString(hbtp.ResStatusNotFound, "")
-		return
-	}
-	envs := utils.EnvVal{}
-	bts, err := json.Marshal(env)
-	if err != nil {
-		c.ResString(hbtp.ResStatusErr, err.Error())
-		return
-	}
-	err = json.Unmarshal(bts, &envs)
-	if err != nil {
-		c.ResString(hbtp.ResStatusErr, err.Error())
-		return
-	}
-	err = Mgr.brun.GenEnv(buildId, jobId, envs)
+func (HbtpRunner) GenEnv(c *hbtp.Context, env utils.EnvVal) {
+	buildId := c.ReqHeader().GetString("buildId")
+	jobId := c.ReqHeader().GetString("jobId")
+	err := Mgr.brun.GenEnv(buildId, jobId, env)
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
 	}
 	c.ResString(hbtp.ResStatusOk, "ok")
 }
-func (HbtpRunner) UploadFile(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	jobId := m.GetString("jobId")
-	dir := m.GetString("dir")
-	pth := m.GetString("pth")
-	fs, err := m.GetInt("fs")
+func (HbtpRunner) UploadFile(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	jobId := c.ReqHeader().GetString("jobId")
+	dir := c.ReqHeader().GetString("dir")
+	pth := c.ReqHeader().GetString("pth")
+	fs, err := c.ReqHeader().GetInt("fs")
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
@@ -175,12 +189,12 @@ func (HbtpRunner) UploadFile(c *hbtp.Context, m *hbtp.Map) {
 		return
 	}
 	defer flw.Close()
-	ln := int64(0)
+	c.ResJson(hbtp.ResStatusOk, "ok")
+
 	bts := make([]byte, 10240)
 	for !hbtp.EndContext(comm.Ctx) {
 		n, err := c.Conn().Read(bts)
 		if n > 0 {
-			ln += int64(n)
 			_, err = flw.Write(bts[:n])
 			if err != nil {
 				break
@@ -190,12 +204,11 @@ func (HbtpRunner) UploadFile(c *hbtp.Context, m *hbtp.Map) {
 			break
 		}
 	}
-	c.ResJson(hbtp.ResStatusOk, fmt.Sprintf("%d", ln))
 }
-func (HbtpRunner) FindArtVersionId(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	idnt := m.GetString("idnt")
-	name := m.GetString("name")
+func (HbtpRunner) FindArtVersionId(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	idnt := c.ReqHeader().GetString("idnt")
+	name := c.ReqHeader().GetString("name")
 	rts, err := Mgr.brun.FindArtVersionId(buildId, idnt, name)
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
@@ -203,10 +216,10 @@ func (HbtpRunner) FindArtVersionId(c *hbtp.Context, m *hbtp.Map) {
 	}
 	c.ResString(hbtp.ResStatusOk, rts)
 }
-func (HbtpRunner) NewArtVersionId(c *hbtp.Context, m *hbtp.Map) {
-	buildId := m.GetString("buildId")
-	idnt := m.GetString("idnt")
-	name := m.GetString("name")
+func (HbtpRunner) NewArtVersionId(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	idnt := c.ReqHeader().GetString("idnt")
+	name := c.ReqHeader().GetString("name")
 	rts, err := Mgr.brun.NewArtVersionId(buildId, idnt, name)
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
