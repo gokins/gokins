@@ -319,7 +319,7 @@ func (c *baseRunner) FindArtVersionId(buildId, idnt string, names string) (strin
 		return "", fmt.Errorf("not found artifact '%s'", names)
 	}
 	artv := &model.TArtifactVersion{}
-	ses := comm.Db.Where("deleted!=1 and package_id=?", artp.Id)
+	ses := comm.Db.Where("package_id=?", artp.Id)
 	if vers != "" {
 		ses.And("version=? or sha=?", vers)
 	}

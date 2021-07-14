@@ -2,8 +2,11 @@ package route
 
 import (
 	"fmt"
+	"github.com/gokins-main/core/common"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -34,6 +37,8 @@ func (c *ArtifactController) Routes(g gin.IRoutes) {
 	g.POST("/version/list", util.GinReqParseJson(c.versionList))
 	g.POST("/version/infos", util.GinReqParseJson(c.versionInfos))
 	g.POST("/version/url", util.GinReqParseJson(c.versionUrl))
+	g.POST("/version/save", util.GinReqParseJson(c.versionSave))
+	g.POST("/version/rm", util.GinReqParseJson(c.versionRm))
 }
 func (ArtifactController) orgList(c *gin.Context, m *hbtp.Map) {
 	orgId := m.GetString("orgId")
@@ -255,7 +260,7 @@ func (ArtifactController) versionList(c *gin.Context, m *hbtp.Map) {
 	q := m.GetString("q")
 	pg, _ := m.GetInt("page")
 	var ls []*model.TArtifactVersion
-	ses := comm.Db.Where("deleted!=1 and package_id=?", packId).OrderBy("aid DESC")
+	ses := comm.Db.Where("package_id=?", packId).OrderBy("aid DESC")
 	if q != "" {
 		qs := "%" + q + "%"
 		ses.And("name like ? or display_name like ?", qs, qs)
@@ -280,7 +285,7 @@ func (ArtifactController) versionInfos(c *gin.Context, m *hbtp.Map) {
 	id := m.GetString("id")
 	artv := &models.TArtifactVersion{}
 	ok := service.GetIdOrAid(id, artv)
-	if !ok || artv.Deleted == 1 {
+	if !ok {
 		c.String(404, "Not Found")
 		return
 	}
@@ -299,7 +304,7 @@ func (ArtifactController) versionUrl(c *gin.Context, m *hbtp.Map) {
 	pth := m.GetString("path")
 	artv := &models.TArtifactVersion{}
 	ok := service.GetIdOrAid(id, artv)
-	if !ok || artv.Deleted == 1 {
+	if !ok {
 		c.String(404, "Not Found")
 		return
 	}
@@ -328,4 +333,68 @@ func (ArtifactController) versionUrl(c *gin.Context, m *hbtp.Map) {
 		"sign":   sign,
 		"url":    ul,
 	})
+}
+func (ArtifactController) versionSave(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	artv := &models.TArtifactVersion{}
+	ok := service.GetIdOrAid(id, artv)
+	if !ok {
+		c.String(404, "Not Found")
+		return
+	}
+	arty := &model.TArtifactory{}
+	ok = service.GetIdOrAid(artv.RepoId, arty)
+	if !ok || arty.Deleted == 1 {
+		c.String(404, "Not Found repo")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewOrgPerm(lgusr, arty.OrgId)
+	if !perm.CanWrite() {
+		c.String(405, "No Permission")
+		return
+	}
+	artv.Version = strings.TrimSpace(m.GetString("version"))
+	artv.Desc = strings.TrimSpace(m.GetString("desc"))
+	if m.GetBool("ispre") {
+		artv.Preview = 1
+	} else {
+		artv.Preview = 0
+	}
+	artv.Updated = time.Now()
+	_, err := comm.Db.Cols("version", "desc", "preview", "updated").Where("id=?", artv.Id).Update(artv)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, artv.Id)
+}
+func (ArtifactController) versionRm(c *gin.Context, m *hbtp.Map) {
+	id := m.GetString("id")
+	artv := &models.TArtifactVersion{}
+	ok := service.GetIdOrAid(id, artv)
+	if !ok {
+		c.String(404, "Not Found")
+		return
+	}
+	arty := &model.TArtifactory{}
+	ok = service.GetIdOrAid(artv.RepoId, arty)
+	if !ok || arty.Deleted == 1 {
+		c.String(404, "Not Found repo")
+		return
+	}
+	lgusr := service.GetMidLgUser(c)
+	perm := service.NewOrgPerm(lgusr, arty.OrgId)
+	if !perm.CanWrite() {
+		c.String(405, "No Permission")
+		return
+	}
+	_, err := comm.Db.Where("id=?", artv.Id).Delete(artv)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	fls := filepath.Join(comm.WorkPath, common.PathArtifacts, artv.Id)
+	os.RemoveAll(fls)
+	c.String(200, artv.Id)
 }

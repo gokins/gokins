@@ -54,7 +54,7 @@ func (ArtPublicController) down(c *gin.Context) {
 
 	artv := &model.TArtifactVersion{}
 	ok := service.GetIdOrAid(id, artv)
-	if !ok || artv.Deleted == 1 {
+	if !ok {
 		c.String(404, "Not Found")
 		return
 	}

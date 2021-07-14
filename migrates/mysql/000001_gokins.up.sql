@@ -25,8 +25,6 @@ CREATE TABLE `t_artifact_version` (
   `preview` int(1) DEFAULT NULL,
   `created` datetime DEFAULT NULL,
   `updated` datetime DEFAULT NULL,
-  `deleted` int(1) DEFAULT NULL,
-  `deleted_time` datetime DEFAULT NULL,
   PRIMARY KEY (`aid`, `id`),
   KEY `rpnm` (`repo_id`, `name`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
