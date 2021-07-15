@@ -106,19 +106,16 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 
 func TriggerWeb(tt *model.TTrigger, secret string) (rb *runtime.Build, err error) {
 	tvpId := ""
-	infos := "{}"
 	defer func() {
 		ttr := &model.TTriggerRun{
 			Id:            utils.NewXid(),
 			Tid:           tt.Id,
 			PipeVersionId: tvpId,
+			Infos:         "{}",
 			Created:       time.Now(),
 		}
 		if err != nil {
 			ttr.Error = err.Error()
-		}
-		if infos != "" {
-			ttr.Infos = infos
 		}
 		comm.Db.InsertOne(ttr)
 	}()
@@ -137,7 +134,7 @@ func TriggerWeb(tt *model.TTrigger, secret string) (rb *runtime.Build, err error
 	}
 	pSecret, ok := m["secret"]
 	if !ok {
-		err = errors.New("触发器配置参数错误")
+		err = errors.New("触发器没有配置密钥")
 		return nil, err
 	}
 	if secret != pSecret {
