@@ -14,13 +14,12 @@ type HookController struct {
 }
 
 func (HookController) GetPath() string {
-	return "/hook"
+	return "/trigger"
 }
 func (c *HookController) Routes(g gin.IRoutes) {
-	g.POST("/:triggerId", c.hooks)
+	g.POST("/hook/:triggerId", c.hooks)
 	g.POST("/web/:triggerId", util.GinReqParseJson(c.web))
 }
-
 func (HookController) hooks(c *gin.Context) {
 	triggerId := c.Param("triggerId")
 	if triggerId == "" {
