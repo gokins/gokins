@@ -553,6 +553,8 @@ func (PipelineController) pipelineVersion(c *gin.Context, m *hbtp.Map) {
 		c.String(404, "not found pv")
 		return
 	}
+	usr := &models.TUser{}
+	service.GetIdOrAid(pv.Uid, usr)
 	build := &models.RunBuild{}
 	ok, _ = comm.Db.Where("pipeline_version_id=?", pv.Id).Get(build)
 	if !ok {
@@ -583,6 +585,7 @@ func (PipelineController) pipelineVersion(c *gin.Context, m *hbtp.Map) {
 	c.JSON(200, hbtp.Map{
 		"build": build,
 		"pv":    pv,
+		"usr":   usr,
 		"pipe":  pipeShow,
 		"perm": hbtp.Map{
 			"read":  perm.CanRead(),
