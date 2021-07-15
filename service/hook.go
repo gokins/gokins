@@ -155,6 +155,29 @@ func TriggerWeb(tt *model.TTrigger, secret string) (rb *runtime.Build, err error
 	tvpId = tvp.Id
 	return rb, nil
 }
+func TriggerTimer(tt *model.TTrigger) (rb *runtime.Build, err error) {
+	ttr := &model.TTriggerRun{
+		Id:      utils.NewXid(),
+		Tid:     tt.Id,
+		Created: time.Now(),
+	}
+	defer func() {
+		if err != nil {
+			ttr.Error = err.Error()
+		}
+		comm.Db.InsertOne(ttr)
+	}()
+	err = TriggerPerm(tt)
+	if err != nil {
+		return nil, err
+	}
+	tvp, rb, err := Run(tt.Uid, tt.PipelineId, "")
+	if err != nil {
+		return nil, err
+	}
+	ttr.PipeVersionId = tvp.Id
+	return rb, err
+}
 
 func parseHook(hookType string, req *http.Request, secret string) (hook.WebHook, error) {
 	switch strings.ToLower(hookType) {

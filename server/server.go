@@ -58,7 +58,6 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	engine.Start()
 
 	go runHbtp()
 	hbtp.Infof("gokins running in %s", comm.WorkPath)

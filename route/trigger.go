@@ -120,8 +120,8 @@ func (TriggerController) save(c *gin.Context, tp *bean.TriggerParam) {
 			return
 		}
 	}
-	if tt.Types == "timer" && tt.Enabled != 0 {
-		engine.Mgr.TimerEng().AddTask(tt)
+	if tt.Types == "timer" {
+		engine.Mgr.TimerEng().Refresh(tt.Id)
 	}
 	c.JSON(200, "ok")
 }
@@ -157,7 +157,7 @@ func (TriggerController) delete(c *gin.Context, m *hbtp.Map) {
 	}
 
 	if tt.Types == "timer" {
-		engine.Mgr.TimerEng().RemoveTasks(tt.Id)
+		engine.Mgr.TimerEng().Delete(tt.Id)
 	}
 	c.JSON(200, "ok")
 }

@@ -1,12 +1,12 @@
 package engine
 
 import (
-	"container/list"
-	"context"
 	"encoding/json"
+	"errors"
+	"github.com/gokins-main/core/common"
 	"github.com/gokins-main/gokins/comm"
 	"github.com/gokins-main/gokins/model"
-	"github.com/gokins-main/gokins/models"
+	"github.com/gokins-main/gokins/service"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"runtime/debug"
@@ -14,147 +14,193 @@ import (
 	"time"
 )
 
-type (
-	TimerEngine struct {
-		lk        sync.Mutex
-		tasks     map[string]*TimerTask
-		ls        list.List
-		ctx       context.Context
-		ctxCancel context.CancelFunc
-	}
-)
+type TimerEngine struct {
+	tasklk sync.RWMutex
+	tasks  map[string]*timerExec
+}
+type timerExec struct {
+	tt   *model.TTrigger
+	typ  int64
+	tms  time.Time
+	tick time.Time
+}
 
 func StartTimerEngine() *TimerEngine {
-	defer func() {
-		if err := recover(); err != nil {
-			logrus.Warnf("TimerEngine run Start:%v", err)
-			logrus.Warnf("TimerEngine stack:%s", string(debug.Stack()))
-		}
-	}()
-	c := &TimerEngine{}
-	ctx, cancelFunc := context.WithCancel(comm.Ctx)
-	c.ctx = ctx
-	c.ctxCancel = cancelFunc
-	c.initTasks()
+	c := &TimerEngine{
+		tasks: make(map[string]*timerExec),
+	}
 	go func() {
-		for !hbtp.EndContext(c.ctx) {
-			c.refreshTasks()
-			time.Sleep(time.Millisecond * 200)
-		}
-	}()
-	go func() {
-		for !hbtp.EndContext(c.ctx) {
-			c.exec()
-			time.Sleep(time.Second * 1)
+		c.refresh()
+		for !hbtp.EndContext(comm.Ctx) {
+			c.run()
+			time.Sleep(time.Millisecond * 10)
 		}
 	}()
 	return c
 }
+func (c *TimerEngine) run() {
+	defer func() {
+		if err := recover(); err != nil {
+			logrus.Warnf("TimerEngine run recover:%v", err)
+			logrus.Warnf("TimerEngine stack:%s", string(debug.Stack()))
+		}
+	}()
 
-func (c *TimerEngine) initTasks() {
-	c.tasks = make(map[string]*TimerTask)
-	var ls []*models.TimerTriggerRun
-	sql := "SELECT `tt`.*, " +
-		" ( SELECT created FROM `t_trigger_run` WHERE tt.id = t_trigger_run.tid ORDER BY created DESC LIMIT 1 ) AS r_created " +
-		" FROM t_trigger AS tt " +
-		" WHERE ( enabled != 0 AND types = 'timer' );"
-	_ = comm.Db.SQL(sql).Find(&ls)
+	c.tasklk.RLock()
+	defer c.tasklk.RUnlock()
+	for _, v := range c.tasks {
+		c.execItem(v)
+	}
+}
+func (c *TimerEngine) execItem(v *timerExec) {
+	defer func() {
+		if err := recover(); err != nil {
+			logrus.Warnf("TimerEngine execItem recover:%v", err)
+			logrus.Warnf("TimerEngine stack:%s", string(debug.Stack()))
+		}
+	}()
+	if time.Since(v.tick) > 0 {
+		now := time.Now()
+		logrus.Debugf("Timer(%s[%d]:%s) tick on:%s", v.tt.Name, v.typ, now.Format(common.TimeFmt), v.tick.Format(common.TimeFmt))
+		switch v.typ {
+		case 0:
+			go c.Delete(v.tt.Id)
+			time.Sleep(time.Millisecond * 10)
+		case 1:
+			v.tick = now.Add(time.Minute)
+		case 2:
+			v.tick = now.Add(time.Hour)
+		case 3:
+			v.tick = now.Add(time.Hour * 24)
+		case 4:
+			v.tick = now.Add(time.Hour * 24 * 7)
+		case 5:
+			v.tick = now.Add(time.Hour * 24 * 30)
+		}
+
+		rb, err := service.TriggerTimer(v.tt)
+		if err != nil {
+			logrus.Errorf("TriggerTimer err:%v", err)
+		} else {
+			Mgr.BuildEgn().Put(rb)
+		}
+	}
+}
+
+func (c *TimerEngine) refresh() {
+	defer func() {
+		if err := recover(); err != nil {
+			logrus.Warnf("TimerEngine refresh recover:%v", err)
+			logrus.Warnf("TimerEngine stack:%s", string(debug.Stack()))
+		}
+	}()
+	var ls []*model.TTrigger
+	comm.Db.Where("enabled = 1 AND types = 'timer'").Find(&ls)
+
+	c.tasklk.Lock()
+	defer c.tasklk.Unlock()
 	for _, v := range ls {
-		date := v.RunCreated
-		tys := 0
-		if date.IsZero() {
-			param := &timerParam{}
-			err := json.Unmarshal([]byte(v.Params), param)
-			if err != nil {
-				logrus.Debugf("initTasks err:%v", err)
-				continue
-			}
-			if param.Date.IsZero() {
-				logrus.Debugf("initTasks err:%v time config is empty", v.Name)
-				continue
-			}
-			tys = param.TimerType
-			date = param.Date
-		}
-		ctx, cfn := context.WithCancel(c.ctx)
-		c.tasks[v.Id] = &TimerTask{
-			ctx:       ctx,
-			ctxCancel: cfn,
-			date:      date,
-			timerType: tys,
-			end:       false,
+		err := c.resetOne(v)
+		if err != nil {
+			logrus.Errorf("TimerEngine resetOne err:%v", err)
 		}
 	}
 }
-
-func (c *TimerEngine) AddTask(tt *model.TTrigger) {
-	c.lk.Lock()
-	defer c.lk.Unlock()
-	if task, ok := c.tasks[tt.Id]; ok {
-		task.stop()
-		delete(c.tasks, tt.Id)
+func (c *TimerEngine) resetOne(tmr *model.TTrigger) error {
+	defer func() {
+		if err := recover(); err != nil {
+			logrus.Warnf("TimerEngine refresh recover:%v", err)
+			logrus.Warnf("TimerEngine stack:%s", string(debug.Stack()))
+		}
+	}()
+	if tmr.Types != "timer" {
+		return errors.New("type is err:" + tmr.Types)
 	}
-	param := &timerParam{}
-	err := json.Unmarshal([]byte(tt.Params), param)
+	mp := hbtp.Map{}
+	err := json.Unmarshal([]byte(tmr.Params), &mp)
 	if err != nil {
-		logrus.Debugf("addTask err:%v", err)
-		return
+		return err
 	}
-	if param.Date.IsZero() {
-		logrus.Debugf("addTask err:%v time config is empty", tt.Name)
-		return
+	typ, err := mp.GetInt("timerType")
+	if err != nil {
+		return err
 	}
-	ctx, can := context.WithCancel(c.ctx)
-	c.tasks[tt.Id] = &TimerTask{
-		ctx:       ctx,
-		ctxCancel: can,
-		date:      param.Date,
-		timerType: param.TimerType,
-		end:       false,
+	dates := mp.GetString("dates")
+	tms, err := time.ParseInLocation(time.RFC3339Nano, dates, time.Local)
+	if err != nil {
+		return err
 	}
-}
-
-func (c *TimerEngine) refreshTasks() {
-	c.lk.Lock()
-	defer c.lk.Unlock()
-	for k, task := range c.tasks {
-		if task.end || hbtp.EndContext(task.ctx) {
-			delete(c.tasks, k)
-			continue
+	switch typ {
+	case 0:
+		if time.Since(tms) < 0 {
+			t, ok := c.tasks[tmr.Id]
+			if !ok {
+				t = &timerExec{
+					tt:  tmr,
+					typ: typ,
+				}
+				c.tasks[tmr.Id] = t
+			}
+			t.tms = tms
+			t.tick = tms
+			logrus.Debugf("Timer add(%s[%d]:%s) tick on:%s", tmr.Name, typ, tms.Format(common.TimeFmt), t.tick.Format(common.TimeFmt))
 		}
-		if isMatch(task) {
-			task.date = time.Now()
-			c.ls.PushBack(task)
+	case 1, 2, 3, 4, 5:
+		now := time.Now()
+		t, ok := c.tasks[tmr.Id]
+		if !ok {
+			t = &timerExec{
+				tt:  tmr,
+				typ: typ,
+			}
+			c.tasks[tmr.Id] = t
 		}
-	}
-}
-
-func (c *TimerEngine) RemoveTasks(id string) {
-	c.lk.Lock()
-	defer c.lk.Unlock()
-	if task, ok := c.tasks[id]; ok {
-		task.stop()
-		delete(c.tasks, id)
-	}
-}
-
-func (c *TimerEngine) exec() {
-	c.lk.Lock()
-	defer c.lk.Unlock()
-	for e := c.ls.Front(); e != nil; {
-		task := e.Value.(*TimerTask)
-		next := e.Next()
-		c.ls.Remove(e)
-		e = next
-		if !task.end || !hbtp.EndContext(task.ctx) {
-			task.run()
+		t.tms = tms
+		switch typ {
+		case 1:
+			t.tick = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), tms.Second(), 0, time.Local)
+			if time.Since(t.tick) > 0 {
+				t.tick = t.tick.Add(time.Minute)
+			}
+		case 2:
+			t.tick = time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), tms.Minute(), tms.Second(), 0, time.Local)
+			if time.Since(t.tick) > 0 {
+				t.tick = t.tick.Add(time.Hour)
+			}
+		case 3:
+			t.tick = time.Date(now.Year(), now.Month(), now.Day(), tms.Hour(), tms.Minute(), tms.Second(), 0, time.Local)
+			if time.Since(t.tick) > 0 {
+				t.tick = t.tick.Add(time.Hour * 24)
+			}
+		case 4:
+			t.tick = time.Date(now.Year(), now.Month(), tms.Day(), tms.Hour(), tms.Minute(), tms.Second(), 0, time.Local)
+			if time.Since(t.tick) > 0 {
+				t.tick = t.tick.Add(time.Hour * 24 * 7)
+			}
+		case 5:
+			t.tick = time.Date(now.Year(), now.Month(), tms.Day(), tms.Hour(), tms.Minute(), tms.Second(), 0, time.Local)
+			if time.Since(t.tick) > 0 {
+				t.tick = t.tick.Add(time.Hour * 24 * 30)
+			}
 		}
+		logrus.Debugf("Timer add(%s[%d]:%s) tick on:%s", tmr.Name, typ, tms.Format(common.TimeFmt), t.tick.Format(common.TimeFmt))
 	}
-
+	return nil
 }
-
-func (c *TimerEngine) Cancel() {
-	if c.ctxCancel != nil {
-		c.ctxCancel()
+func (c *TimerEngine) Refresh(tmrid string) error {
+	if tmrid == "" {
+		return errors.New("param err")
 	}
+	tmr := &model.TTrigger{}
+	ok, _ := comm.Db.Where("id=?", tmrid).Get(tmr)
+	if !ok || tmr.Enabled != 1 {
+		c.Delete(tmrid)
+		return errors.New("not found")
+	}
+	return c.resetOne(tmr)
+}
+func (c *TimerEngine) Delete(tmrid string) {
+	c.tasklk.Lock()
+	delete(c.tasks, tmrid)
+	c.tasklk.Unlock()
 }
