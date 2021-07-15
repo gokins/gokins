@@ -15,7 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Run(uid string, pipeId string, sha string) (*model.TPipelineVersion, *runtime.Build, error) {
+func Run(uid, pipeId, sha, event string) (*model.TPipelineVersion, *runtime.Build, error) {
 	tpipe := &model.TPipelineConf{}
 	ok, _ := comm.Db.Where("pipeline_id=?", pipeId).Get(tpipe)
 	if !ok {
@@ -29,7 +29,7 @@ func Run(uid string, pipeId string, sha string) (*model.TPipelineVersion, *runti
 	if err != nil {
 		return nil, nil, err
 	}
-	return preBuild(uid, pipe, tpipe, sha)
+	return preBuild(uid, pipe, tpipe, sha, event)
 }
 
 func ReBuild(uid string, tvp *model.TPipelineVersion) (*model.TPipelineVersion, *runtime.Build, error) {
@@ -46,10 +46,10 @@ func ReBuild(uid string, tvp *model.TPipelineVersion) (*model.TPipelineVersion, 
 	if err != nil {
 		return nil, nil, err
 	}
-	return preBuild(uid, pipe, tpipe, "", tvp)
+	return preBuild(uid, pipe, tpipe, "", "rebuild", tvp)
 }
 
-func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha string,
+func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha, event string,
 	tvp ...*model.TPipelineVersion) (*model.TPipelineVersion, *runtime.Build, error) {
 	tp := &model.TPipeline{}
 	ok, _ := comm.Db.Where("id=? and deleted != 1", tpipe.PipelineId).Get(tp)
@@ -79,7 +79,7 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha s
 		Id:                  utils.NewXid(),
 		Uid:                 uid,
 		Number:              number + 1,
-		Events:              "run",
+		Events:              event,
 		Sha:                 sha,
 		PipelineName:        tp.Name,
 		PipelineDisplayName: tp.DisplayName,
