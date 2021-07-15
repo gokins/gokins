@@ -78,7 +78,7 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 			gen.Args = append(gen.Args, "%"+q+"%")
 		}
 		gen.SQL += "\nORDER BY pipe.id DESC"
-		page, err = comm.FindPages(gen, &ls, pg, 20)
+		page, err = comm.FindPages(gen, &ls, pg, 10)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
 			return
@@ -124,7 +124,7 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 			gen.Args = append(gen.Args, "%"+q+"%")
 		}
 		gen.SQL += "\nORDER BY pipe.id DESC"
-		page, err = comm.FindPages(gen, &ls, pg, 20)
+		page, err = comm.FindPages(gen, &ls, pg, 10)
 		if err != nil {
 			c.String(500, "db err:"+err.Error())
 			return
