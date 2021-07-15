@@ -389,7 +389,7 @@ func (PipelineController) run(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "No Auth")
 		return
 	}
-	tvp, rb, err := service.Run(lgusr.Id, pipelineId, sha)
+	tvp, rb, err := service.Run(lgusr.Id, pipelineId, sha, "run")
 	if err != nil {
 		c.String(500, err.Error())
 		return

@@ -96,7 +96,7 @@ func TriggerHook(tt *model.TTrigger, req *http.Request) (rb *runtime.Build, err 
 		return nil, errors.New("分支不匹配")
 	}
 
-	tvp, rb, err := Run(tt.Uid, tt.PipelineId, sha)
+	tvp, rb, err := Run(tt.Uid, tt.PipelineId, sha, "webHook")
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func TriggerWeb(tt *model.TTrigger, secret string) (rb *runtime.Build, err error
 	if s, ok := m["branch"]; ok {
 		branch = s
 	}
-	tvp, rb, err := Run(tt.Uid, tt.PipelineId, branch)
+	tvp, rb, err := Run(tt.Uid, tt.PipelineId, branch, "web")
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func TriggerTimer(tt *model.TTrigger) (rb *runtime.Build, err error) {
 	if err != nil {
 		return nil, err
 	}
-	tvp, rb, err := Run(tt.Uid, tt.PipelineId, "")
+	tvp, rb, err := Run(tt.Uid, tt.PipelineId, "", "timer")
 	if err != nil {
 		return nil, err
 	}
