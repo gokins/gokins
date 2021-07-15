@@ -136,11 +136,11 @@ func (c *TimerEngine) resetOne(tmr *model.TTrigger) error {
 			t, ok := c.tasks[tmr.Id]
 			if !ok {
 				t = &timerExec{
-					tt:  tmr,
-					typ: typ,
+					tt: tmr,
 				}
 				c.tasks[tmr.Id] = t
 			}
+			t.typ = typ
 			t.tms = tms
 			t.tick = tms
 			logrus.Debugf("Timer add(%s[%d]:%s) tick on:%s", tmr.Name, typ, tms.Format(common.TimeFmt), t.tick.Format(common.TimeFmt))
@@ -150,11 +150,11 @@ func (c *TimerEngine) resetOne(tmr *model.TTrigger) error {
 		t, ok := c.tasks[tmr.Id]
 		if !ok {
 			t = &timerExec{
-				tt:  tmr,
-				typ: typ,
+				tt: tmr,
 			}
 			c.tasks[tmr.Id] = t
 		}
+		t.typ = typ
 		t.tms = tms
 		switch typ {
 		case 1:

@@ -157,6 +157,7 @@ func TriggerTimer(tt *model.TTrigger) (rb *runtime.Build, err error) {
 		Id:      utils.NewXid(),
 		Tid:     tt.Id,
 		Created: time.Now(),
+		Infos:   "{}",
 	}
 	defer func() {
 		if err != nil {
