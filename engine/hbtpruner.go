@@ -45,10 +45,15 @@ func (HbtpRunner) AuthFun() hbtp.AuthFun {
 	}
 }
 func (HbtpRunner) ServerInfo(c *hbtp.Context) {
-	c.ResJson(hbtp.ResStatusOk, Mgr.brun.ServerInfo())
+	rts, err := Mgr.brun.ServerInfo()
+	if err != nil {
+		c.ResString(hbtp.ResStatusErr, err.Error())
+		return
+	}
+	c.ResJson(hbtp.ResStatusOk, rts)
 }
-func (HbtpRunner) PullJob(c *hbtp.Context, plugs []string) {
-	rts, err := Mgr.brun.PullJob(plugs)
+func (HbtpRunner) PullJob(c *hbtp.Context, m *runners.ReqPullJob) {
+	rts, err := Mgr.brun.PullJob(m.Name, m.Plugs)
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
@@ -137,7 +142,7 @@ func (HbtpRunner) ReadFile(c *hbtp.Context) {
 		return
 	}
 	defer flr.Close()
-	c.ResJson(hbtp.ResStatusOk, fmt.Sprintf("%d", flsz))
+	c.ResString(hbtp.ResStatusOk, fmt.Sprintf("%d", flsz))
 	bts := make([]byte, 10240)
 	for !hbtp.EndContext(comm.Ctx) {
 		n, err := flr.Read(bts)
@@ -189,7 +194,7 @@ func (HbtpRunner) UploadFile(c *hbtp.Context) {
 		return
 	}
 	defer flw.Close()
-	c.ResJson(hbtp.ResStatusOk, "ok")
+	c.ResString(hbtp.ResStatusOk, "ok")
 
 	bts := make([]byte, 10240)
 	for !hbtp.EndContext(comm.Ctx) {

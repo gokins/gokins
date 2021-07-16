@@ -23,17 +23,17 @@ import (
 
 type baseRunner struct{}
 
-func (c *baseRunner) ServerInfo() runners.ServerInfo {
-	return runners.ServerInfo{
+func (c *baseRunner) ServerInfo() (*runners.ServerInfo, error) {
+	return &runners.ServerInfo{
 		WebHost:   comm.Cfg.Server.Host,
 		DownToken: comm.Cfg.Server.DownToken,
-	}
+	}, nil
 }
 
-func (c *baseRunner) PullJob(plugs []string) (*runners.RunJob, error) {
+func (c *baseRunner) PullJob(name string, plugs []string) (*runners.RunJob, error) {
 	tms := time.Now()
 	for time.Since(tms).Seconds() < 5 {
-		v := Mgr.jobEgn.Pull(plugs)
+		v := Mgr.jobEgn.Pull(name, plugs)
 		if v != nil {
 			return v, nil
 		}

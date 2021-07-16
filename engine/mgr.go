@@ -34,15 +34,17 @@ func Start() error {
 	//runners
 	comm.Cfg.Server.Shells = append(comm.Cfg.Server.Shells, "shell@ssh")
 	if len(comm.Cfg.Server.Shells) > 0 {
-		runr := runners.NewEngine(runners.Config{
+		Mgr.shellRun = runners.NewEngine(runners.Config{
+			Name:      "mainRunner",
 			Workspace: filepath.Join(comm.WorkPath, common.PathRunner),
 			Plugin:    comm.Cfg.Server.Shells,
 		}, Mgr.brun)
-		err := runr.Start(comm.Ctx)
-		if err != nil {
-			return err
-		}
-		Mgr.shellRun = runr
+		go func() {
+			err := Mgr.shellRun.Run(comm.Ctx)
+			if err != nil {
+				logrus.Errorf("runner err:%v", err)
+			}
+		}()
 	}
 
 	go func() {

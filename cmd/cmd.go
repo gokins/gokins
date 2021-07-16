@@ -14,9 +14,7 @@ import (
 
 const Version = "0.1.1"
 
-var (
-	app = kingpin.New("gokins", "A golang workflow application.")
-)
+var app = kingpin.New("gokins", "A golang workflow application.")
 
 func Run() {
 	regs()
@@ -81,17 +79,4 @@ func run(pc *kingpin.ParseContext) error {
 		hbtp.Debug = true
 	}
 	return server.Run()
-	/*err:=server.RunHbtp()
-	if err!=nil{
-		return err
-	}
-	mgr := monitor.NewManager(DevName)
-	monitor.YwtEgn = ywtree.NewEngine(mgr, &ywtree.Config{
-		Host:   HbtpHost,
-		Org:    "mgr",
-		Name:   "cpu-monitor",
-		Secret: DevSecret,
-	})
-	monitor.YwtEgn.RegGrpcGrpcFun(1, &monitor.DevRPC{})
-	return monitor.YwtEgn.Run()*/
 }

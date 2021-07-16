@@ -134,7 +134,7 @@ func (c *JobEngine) Put(job *jobSync) error {
 	e.jobwt.PushBack(job)
 	return nil
 }
-func (c *JobEngine) Pull(plugs []string) *runners.RunJob {
+func (c *JobEngine) Pull(name string, plugs []string) *runners.RunJob {
 	for _, v := range plugs {
 		if v == "" {
 			continue
