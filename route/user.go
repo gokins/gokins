@@ -178,6 +178,10 @@ func (UserController) upass(c *gin.Context, m *hbtp.Map) {
 		}
 	}
 
+	if comm.NotUpPass && !service.IsAdmin(lgusr) {
+		c.String(513, "can't update")
+		return
+	}
 	if usr.Id == lgusr.Id {
 		if olds == "" {
 			c.String(511, "param err1")

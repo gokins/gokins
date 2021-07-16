@@ -21,6 +21,7 @@ var (
 	HbtpEgn   *hbtp.Engine
 	IsMySQL   = false
 	Installed = false
+	NotUpPass = false
 	WorkPath  = ""
 	WebHost   = ""
 	//HbtpHost = ""
