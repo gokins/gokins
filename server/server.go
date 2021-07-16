@@ -24,6 +24,9 @@ func Run() error {
 		pth := filepath.Join(utils2.HomePath(), ".gokins")
 		comm.WorkPath = utils2.EnvDefault("GOKINS_WORKPATH", pth)
 	}
+	if !comm.NotUpPass {
+		comm.NotUpPass = utils2.EnvDefault("GOKINS_NOTUPDATEPASS") == "true"
+	}
 
 	os.MkdirAll(comm.WorkPath, 0750)
 	core.InitLog(comm.WorkPath)
