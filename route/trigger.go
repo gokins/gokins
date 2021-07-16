@@ -182,7 +182,7 @@ func (TriggerController) runs(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	var ls []*models.TTriggerRun
-	session := comm.Db.Where("tid = ?", tt.Id)
+	session := comm.Db.Where("tid = ?", tt.Id).Desc("created")
 	page, err := comm.FindPage(session, &ls, pg)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
