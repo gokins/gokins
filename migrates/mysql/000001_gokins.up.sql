@@ -413,7 +413,7 @@ VALUES
   (
     3,
     'Npm',
-    'version: 1.0\nvars:\nstages:\n  - stage:\n    displayName: build\n    name: build\n    steps:\n      - step: shell@sh\n        displayName: npm-build-1\n        name: build\n        env:\n        commands:\n          - npm build\n          - mvn install\n      - step: shell@sh\n        displayName: npm-build-2\n        name: publish\n        env:\n        commands:\n          - npm publish ',
+    'version: 1.0\nvars:\nstages:\n  - stage:\n    displayName: build\n    name: build\n    steps:\n      - step: shell@sh\n        displayName: npm-build-1\n        name: build\n        env:\n        commands:\n          - npm build\n      - step: shell@sh\n        displayName: npm-build-2\n        name: publish\n        env:\n        commands:\n          - npm publish ',
     0,
     NULL
   );

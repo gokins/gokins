@@ -149,7 +149,7 @@ func (c *BuildTask) run() {
 	err = c.getRepo()
 	if err != nil {
 		logrus.Errorf("clone repo err:%v", err)
-		c.status(common.BuildStatusError, "repo err", common.BuildEventGetRepo)
+		c.status(common.BuildStatusError, "repo err:"+err.Error(), common.BuildEventGetRepo)
 		return
 	}
 	c.build.Status = common.BuildStatusRunning
@@ -368,14 +368,15 @@ func (c *BuildTask) Write(bts []byte) (n int, err error) {
 }
 func (c *BuildTask) gitClone(ctx context.Context, dir string, repo *runtime.Repository) error {
 	clonePath := filepath.Join(dir)
-	bauth := &ghttp.BasicAuth{
-		Username: repo.Name,
-		Password: repo.Token,
-	}
 	gc := &git.CloneOptions{
 		URL:      repo.CloneURL,
-		Auth:     bauth,
 		Progress: c,
+	}
+	if repo.Name != "" {
+		gc.Auth = &ghttp.BasicAuth{
+			Username: repo.Name,
+			Password: repo.Token,
+		}
 	}
 	logrus.Debugf("gitClone : clone url: %s sha: %s", repo.CloneURL, repo.Sha)
 	repository, err := util.CloneRepo(clonePath, gc, ctx)
