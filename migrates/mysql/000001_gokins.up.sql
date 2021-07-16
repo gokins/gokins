@@ -322,13 +322,7 @@ CREATE TABLE `t_yml_plugin` (
     PRIMARY KEY (`aid`) USING BTREE
   ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 INSERT INTO
-  `t_yml_plugin`(
-    `aid`,
-    `name`,
-    `yml_content`,
-    `deleted`,
-    `deleted_time`
-  )
+  `t_yml_plugin`
 VALUES
   (
     1,
@@ -338,13 +332,7 @@ VALUES
     NULL
   );
 INSERT INTO
-  `t_yml_plugin`(
-    `aid`,
-    `name`,
-    `yml_content`,
-    `deleted`,
-    `deleted_time`
-  )
+  `t_yml_plugin`
 VALUES
   (
     2,
@@ -354,18 +342,22 @@ VALUES
     NULL
   );
 INSERT INTO
-  `t_yml_plugin`(
-    `aid`,
-    `name`,
-    `yml_content`,
-    `deleted`,
-    `deleted_time`
-  )
+  `t_yml_plugin`
 VALUES
   (
     3,
     'powershell',
     '      - step: shell@powershell\n        displayName: powershell\n        name: powershell\n        commands:\n          - echo hello world',
+    1,
+    NULL
+  );
+INSERT INTO
+  `t_yml_plugin`
+VALUES
+  (
+    4,
+    'ssh',
+    '      - step: shell@ssh\r\n        displayName: ssh\r\n        name: ssh\r\n        input:\r\n          host: localhost:22  #端口必填\r\n          user: root\r\n          pass: 123456\r\n          workspace: /root/test #为空就是 $HOME 用户目录\r\n        commands:\r\n          - echo hello world',
     0,
     NULL
   );

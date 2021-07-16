@@ -65,9 +65,9 @@ func midUiHandle(c *gin.Context) {
 		httpex.ResMsgUrl(c, "未安装,跳转中...", "/install")
 		return
 	}
-	r, err := getFile(pth)
+	r, err := getFile(pth[1:])
 	if err != nil {
-		r, err = getFile("/index.html")
+		r, err = getFile("index.html")
 	}
 	if err != nil {
 		//c.String(404, "rdr err:"+err.Error())
