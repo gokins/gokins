@@ -440,9 +440,14 @@ func (PipelineController) copy(c *gin.Context, m *hbtp.Map) {
 		c.String(500, "db err:"+err.Error())
 		return
 	}
-	tpc.PipelineId = pipe.Id
-	tpc.Aid = 0
-	_, err = comm.Db.InsertOne(tpc)
+	ne := &model.TPipelineConf{
+		PipelineId:  pipe.Id,
+		Url:         tpc.Url,
+		AccessToken: tpc.AccessToken,
+		YmlContent:  tpc.YmlContent,
+		Username:    tpc.Username,
+	}
+	_, err = comm.Db.InsertOne(ne)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
