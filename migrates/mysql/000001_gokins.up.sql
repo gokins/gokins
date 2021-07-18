@@ -396,7 +396,7 @@ INSERT INTO
 VALUES
   (
     2,
-    'Java',
+    'Maven',
     'version: 1.0\nvars:\nstages:\n  - stage:\n    displayName: build\n    name: build\n    steps:\n      - step: shell@sh\n        displayName: java-build-1\n        name: build\n        env:\n        commands:\n          - mvn clean\n          - mvn install\n      - step: shell@sh\n        displayName: java-build-2\n        name: test\n        env:\n        commands:\n          - mvn test -v',
     0,
     NULL
