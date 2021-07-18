@@ -441,6 +441,7 @@ func (PipelineController) copy(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	tpc.PipelineId = pipe.Id
+	tpc.Aid = 0
 	_, err = comm.Db.InsertOne(tpc)
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
