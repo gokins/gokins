@@ -12,7 +12,7 @@ ENV GOKINS_WORKPATH=/data/gokins
 
 RUN apk --no-cache add openssl ca-certificates curl git wget \
     && rm -rf /var/cache/apk \
-    && mkdir -p /app
+    && mkdir -p /app /data/gokins
 
 COPY --from=builder /build/bin/gokins /app
 WORKDIR /app
