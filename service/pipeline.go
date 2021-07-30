@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/runtime"
-	"github.com/gokins-main/core/utils"
-	"github.com/gokins-main/gokins/bean"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/model"
+	"github.com/gokins/core/common"
+	"github.com/gokins/core/runtime"
+	"github.com/gokins/core/utils"
+	"github.com/gokins/gokins/bean"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/model"
 	"gopkg.in/yaml.v3"
 )
 

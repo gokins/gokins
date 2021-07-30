@@ -10,13 +10,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gokins-main/gokins/util/httpex"
+	"github.com/gokins/gokins/util/httpex"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gokins-main/core"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/route"
-	"github.com/gokins-main/gokins/util"
+	"github.com/gokins/core"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/route"
+	"github.com/gokins/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 )

@@ -6,9 +6,9 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/runner/runners"
+	"github.com/gokins/core/common"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 )

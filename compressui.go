@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"github.com/gokins-main/core/utils"
+	"github.com/gokins/core/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"

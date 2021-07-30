@@ -5,11 +5,11 @@ import (
 	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gokins-main/core/runtime"
-	"github.com/gokins-main/core/utils"
-	"github.com/gokins-main/gokins/bean"
-	"github.com/gokins-main/gokins/engine"
-	"github.com/gokins-main/gokins/util"
+	"github.com/gokins/core/runtime"
+	"github.com/gokins/core/utils"
+	"github.com/gokins/gokins/bean"
+	"github.com/gokins/gokins/engine"
+	"github.com/gokins/gokins/util"
 	"gopkg.in/yaml.v3"
 )
 

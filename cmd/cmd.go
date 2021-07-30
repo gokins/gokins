@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/gokins-main/core"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/server"
+	"github.com/gokins/core"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/server"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"

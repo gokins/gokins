@@ -8,15 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gokins-main/gokins/util/httpex"
+	"github.com/gokins/gokins/util/httpex"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gokins-main/core"
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/utils"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/migrates"
-	"github.com/gokins-main/gokins/util"
+	"github.com/gokins/core"
+	"github.com/gokins/core/common"
+	"github.com/gokins/core/utils"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/migrates"
+	"github.com/gokins/gokins/util"
 	"gopkg.in/yaml.v3"
 )
 

@@ -1,10 +1,10 @@
 package engine
 
 import (
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/runtime"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/model"
+	"github.com/gokins/core/common"
+	"github.com/gokins/core/runtime"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/model"
 	"github.com/sirupsen/logrus"
 	"runtime/debug"
 	"time"

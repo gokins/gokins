@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/engine"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/engine"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 )

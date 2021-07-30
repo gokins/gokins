@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gokins-main/gokins/model"
+	"github.com/gokins/gokins/model"
 )
 
 func CheckPermission(uid string, perms string) bool {

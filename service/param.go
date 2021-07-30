@@ -3,8 +3,8 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/model"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/model"
 	"github.com/sirupsen/logrus"
 	"time"
 )

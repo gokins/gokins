@@ -1,19 +1,19 @@
 package route
 
 import (
-	"github.com/gokins-main/gokins/models"
+	"github.com/gokins/gokins/models"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/utils"
-	"github.com/gokins-main/gokins/bean"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/service"
-	"github.com/gokins-main/gokins/util"
+	"github.com/gokins/core/common"
+	"github.com/gokins/core/utils"
+	"github.com/gokins/gokins/bean"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/service"
+	"github.com/gokins/gokins/util"
 )
 
 type LoginController struct{}
