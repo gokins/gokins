@@ -37,6 +37,7 @@ func (c *baseRunner) PullJob(name string, plugs []string) (*runners.RunJob, erro
 		if v != nil {
 			return v, nil
 		}
+		time.Sleep(time.Millisecond * 100)
 	}
 	return nil, errors.New("not found")
 }
