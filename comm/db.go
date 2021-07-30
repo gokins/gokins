@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gokins-main/gokins/bean"
+	"github.com/gokins/gokins/bean"
 	"xorm.io/builder"
 	"xorm.io/xorm"
 )

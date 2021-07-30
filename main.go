@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/gokins-main/gokins/cmd"
+	"github.com/gokins/gokins/cmd"
 	//_ "github.com/mattn/go-sqlite3"
 )
 

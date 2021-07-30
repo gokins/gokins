@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/gokins/comm"
+	"github.com/gokins/core/common"
+	"github.com/gokins/gokins/comm"
 )
 
 type TArtifactVersion struct {

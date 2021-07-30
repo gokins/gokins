@@ -2,9 +2,9 @@ package engine
 
 import (
 	"container/list"
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/runtime"
-	"github.com/gokins-main/gokins/comm"
+	"github.com/gokins/core/common"
+	"github.com/gokins/core/runtime"
+	"github.com/gokins/gokins/comm"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 	"runtime/debug"

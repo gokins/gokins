@@ -2,7 +2,7 @@ package engine
 
 import (
 	"fmt"
-	"github.com/gokins-main/core/runtime"
+	"github.com/gokins/core/runtime"
 	"testing"
 )
 

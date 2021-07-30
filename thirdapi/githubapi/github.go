@@ -1,7 +1,7 @@
 package githubapi
 
 import (
-	"github.com/gokins-main/gokins/thirdapi"
+	"github.com/gokins/gokins/thirdapi"
 	"net/http"
 	"net/url"
 	"time"

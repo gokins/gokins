@@ -2,9 +2,9 @@ package route
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/models"
-	"github.com/gokins-main/gokins/util"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/models"
+	"github.com/gokins/gokins/util"
 )
 
 type YmlController struct{}

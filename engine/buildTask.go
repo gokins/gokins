@@ -13,10 +13,10 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	ghttp "github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/gokins-main/core/common"
-	"github.com/gokins-main/core/runtime"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/util"
+	"github.com/gokins/core/common"
+	"github.com/gokins/core/runtime"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
 )

@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/boltdb/bolt"
-	"github.com/gokins-main/core"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/migrates"
+	"github.com/gokins/core"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/migrates"
 	"github.com/sirupsen/logrus"
 	"xorm.io/xorm"
 )

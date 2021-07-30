@@ -1,4 +1,4 @@
-module github.com/gokins-main/gokins
+module github.com/gokins/gokins
 
 go 1.15
 
@@ -8,8 +8,8 @@ require (
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/gokins-main/core v0.0.0-20210718160656-01ed57f06c58
-	github.com/gokins-main/runner v0.0.0-20210722023302-e6ba8889bce8
+	github.com/gokins/core v0.0.0-20210730105437-f83bf70e44ae
+	github.com/gokins/runner v0.0.0-20210730110433-9fd5233e1a58
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.5
 	github.com/sirupsen/logrus v1.8.1

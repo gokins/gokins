@@ -1,12 +1,12 @@
 package comm
 
 import (
-	"github.com/gokins-main/gokins/thirdapi"
-	"github.com/gokins-main/gokins/thirdapi/giteaapi"
-	"github.com/gokins-main/gokins/thirdapi/giteeapi"
-	"github.com/gokins-main/gokins/thirdapi/giteepremiumapi"
-	"github.com/gokins-main/gokins/thirdapi/githubapi"
-	"github.com/gokins-main/gokins/thirdapi/gitlabapi"
+	"github.com/gokins/gokins/thirdapi"
+	"github.com/gokins/gokins/thirdapi/giteaapi"
+	"github.com/gokins/gokins/thirdapi/giteeapi"
+	"github.com/gokins/gokins/thirdapi/giteepremiumapi"
+	"github.com/gokins/gokins/thirdapi/githubapi"
+	"github.com/gokins/gokins/thirdapi/gitlabapi"
 	"github.com/sirupsen/logrus"
 )
 

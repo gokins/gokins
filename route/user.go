@@ -2,12 +2,12 @@ package route
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gokins-main/core/utils"
-	"github.com/gokins-main/gokins/comm"
-	"github.com/gokins-main/gokins/model"
-	"github.com/gokins-main/gokins/models"
-	"github.com/gokins-main/gokins/service"
-	"github.com/gokins-main/gokins/util"
+	"github.com/gokins/core/utils"
+	"github.com/gokins/gokins/comm"
+	"github.com/gokins/gokins/model"
+	"github.com/gokins/gokins/models"
+	"github.com/gokins/gokins/service"
+	"github.com/gokins/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"strings"
 	"time"

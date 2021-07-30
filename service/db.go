@@ -1,6 +1,6 @@
 package service
 
-import "github.com/gokins-main/gokins/comm"
+import "github.com/gokins/gokins/comm"
 
 func GetIdOrAid(id interface{}, e interface{}) bool {
 	if id == nil || e == nil {

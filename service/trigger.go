@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	"github.com/gokins-main/gokins/model"
+	"github.com/gokins/gokins/model"
 )
 
 func TriggerPerm(tt *model.TTrigger) error {

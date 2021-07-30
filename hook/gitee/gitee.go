@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gokins-main/gokins/hook"
+	"github.com/gokins/gokins/hook"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
