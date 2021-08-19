@@ -61,27 +61,27 @@ func (ArtifactController) orgList(c *gin.Context, m *hbtp.Map) {
 	ls := make([]*models.TArtifactory, 0)
 	var err error
 	var page *bean.Page
-	if comm.IsMySQL {
-		gen := &bean.PageGen{
-			CountCols: "art.aid",
-			FindCols:  "art.*",
-		}
-		gen.SQL = `
+	//if comm.IsMySQL {
+	gen := &bean.PageGen{
+		CountCols: "art.aid",
+		FindCols:  "art.*",
+	}
+	gen.SQL = `
 			select {{select}} from t_artifactory art 
 			where art.deleted != 1 and art.org_id=?
 		    `
-		gen.Args = append(gen.Args, perm.Org().Id)
-		if q != "" {
-			gen.SQL += "\nAND art.name like ? "
-			gen.Args = append(gen.Args, "%"+q+"%")
-		}
-		gen.SQL += "\nORDER BY art.aid DESC"
-		page, err = comm.FindPages(gen, &ls, pg, 20)
-		if err != nil {
-			c.String(500, "db err:"+err.Error())
-			return
-		}
+	gen.Args = append(gen.Args, perm.Org().Id)
+	if q != "" {
+		gen.SQL += "\nAND art.name like ? "
+		gen.Args = append(gen.Args, "%"+q+"%")
 	}
+	gen.SQL += "\nORDER BY art.aid DESC"
+	page, err = comm.FindPages(gen, &ls, pg, 20)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	//}
 	for _, v := range ls {
 		usr, ok := service.GetUser(v.Uid)
 		if ok {

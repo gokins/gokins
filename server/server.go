@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/gokins/core"
 	utils2 "github.com/gokins/core/utils"
 	"github.com/gokins/gokins/comm"

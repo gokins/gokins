@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/boltdb/bolt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gokins/core"
 	"github.com/gokins/gokins/comm"
 	"github.com/gokins/gokins/migrates"

@@ -101,7 +101,7 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 			return
 		}
 	} else {
-		m.Datasource.Driver = "sqlite"
+		m.Datasource.Driver = "sqlite3"
 	}
 
 	dataul := ""
@@ -250,9 +250,9 @@ func Install(c *gin.Context) {
 						<div class="layui-form-item">
 							<label class="layui-form-label">数据库</label>
 							<div class="layui-input-inline">
-								<select id="dbDriver" disabled="disabled">
-									<option value="sqlite">sqlite</option>
-									<option value="mysql" selected>mysql</option>
+								<select id="dbDriver">
+									<option value="sqlite3" selected>sqlite</option>
+									<option value="mysql">mysql</option>
 								</select>
 							</div>
 						</div>
