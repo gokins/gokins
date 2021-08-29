@@ -1,51 +1,17 @@
+# gokins+postgres安装示例说明
 
-# Gokins文档
-
-# Gokins: *More Power*
-
-![](https://static01.imgkr.com/temp/5ca8a54f7d6544b6a2c740d5f559e5c4.jpg)
-
-
-
-
-Gokins一款由Go语言和Vue编写的款轻量级、能够持续集成和持续交付的工具.
-
-* **持续集成和持续交付**
-
-  作为一个可扩展的自动化服务器，Gokins 可以用作简单的 CI 服务器，或者变成任何项目的持续交付中心
-
-* **简易安装**
-
-  Gokins 是一个基于 Go 的独立程序，可以立即运行，包含 Windows、Mac OS X 和其他类 Unix 操作系统。
-
-
-* **安全**
-
-  绝不收集任何用户、服务器信息，是一个独立安全的服务
-
-## Gokins 官网
-
-**地址 : http://gokins.cn**
-
-可在官网上获取最新的Gokins动态
-
-## Gokins Demo
-http://gokins.cn:8030
-```
-用户名: guest
-密码: 123456
-```
-
-## Quick Start
-
-It is super easy to get started with your first project.
-
+环境整体依赖于docker进行配置说明
 
 #### Step 1: 环境准备
 
-- Mysql
-- Dokcer(非必要)
-- Postgres（可选，[示例说明](document/gokins_postgres.md)）
+```shell script
+# 启动postgres
+sudo docker run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=password -d postgres
+
+# 然后在postgres中新建数据库`gokins`
+
+```
+
 #### Step 2: 下载
 - Linux下载:http://bin.gokins.cn/gokins-linux-amd64
 - Mac下载:http://bin.gokins.cn/gokins-darwin-amd64
@@ -64,6 +30,8 @@ It is super easy to get started with your first project.
 ![](https://static01.imgkr.com/temp/e484d9747dec43108325c22283abe39f.png)
 
 按页面上的提示填入信息
+
+数据库地址填写postgres的连接地址：`127.0.0.1:5432`，数据库名称：`gokins`，数据库用户：`postgres`，数据库密码：`password`。***实际配置信息请根据自己的实际环境信息进行填写***
 
 默认管理员账号密码
 
@@ -118,4 +86,3 @@ stages:
 - 查看运行结果
 
 ![](https://static01.imgkr.com/temp/681c8ea0a7dc45bcb9fe14234c5761be.png)
-
