@@ -94,16 +94,16 @@ CREATE TABLE "t_cmd_line" (
 
 CREATE TABLE "t_stage" (
   "id" varchar(64) NOT NULL,
-  "pipeline_version_id" varchar(64) NULL DEFAULT NULL COMMENT '流水线id',
+  "pipeline_version_id" varchar(64) NULL DEFAULT NULL,
   "build_id" varchar(64) NULL DEFAULT NULL,
-  "status" varchar(100) NULL DEFAULT NULL COMMENT '构建状态',
-  "error" varchar(500) NULL DEFAULT NULL COMMENT '错误信息',
-  "name" varchar(255) NULL DEFAULT NULL COMMENT '名字',
+  "status" varchar(100) NULL DEFAULT NULL,
+  "error" varchar(500) NULL DEFAULT NULL,
+  "name" varchar(255) NULL DEFAULT NULL,
   "display_name" varchar(255) NULL DEFAULT NULL,
-  "started" timestamp NULL DEFAULT NULL COMMENT '开始时间',
-  "finished" timestamp NULL DEFAULT NULL COMMENT '结束时间',
-  "created" timestamp NULL DEFAULT NULL COMMENT '创建时间',
-  "updated" timestamp NULL DEFAULT NULL COMMENT '更新时间',
+  "started" timestamp NULL DEFAULT NULL,
+  "finished" timestamp NULL DEFAULT NULL,
+  "created" timestamp NULL DEFAULT NULL,
+  "updated" timestamp NULL DEFAULT NULL,
   "sort" int2 NULL DEFAULT NULL,
   "stage" varchar(255) NULL DEFAULT NULL,
   PRIMARY KEY ("id")
@@ -127,7 +127,7 @@ CREATE TABLE "t_step" (
   "step" varchar(255) NULL DEFAULT NULL,
   "status" varchar(100) NULL DEFAULT NULL,
   "event" varchar(100) NULL DEFAULT NULL,
-  "exit_code" int(11) NULL DEFAULT NULL,
+  "exit_code" int8 NULL DEFAULT NULL,
   "error" varchar(500) NULL DEFAULT NULL,
   "name" varchar(100) NULL DEFAULT NULL,
   "started" timestamp NULL DEFAULT NULL,
@@ -138,20 +138,20 @@ CREATE TABLE "t_step" (
   "errignore" int4 NULL DEFAULT NULL,
   "commands" text NULL,
   "waits" jsonb NULL,
-  "sort" int(11) NULL DEFAULT NULL,
+  "sort" int2 NULL DEFAULT NULL,
   PRIMARY KEY ("id")
 );
-COMMENT on column "t_stage"."pipeline_version_id" IS '流水线id';
-COMMENT on column "t_stage"."stage_id" IS '流水线id';
-COMMENT on column "t_stage"."status" IS '构建状态';
-COMMENT on column "t_stage"."event" IS '事件';
-COMMENT on column "t_stage"."exit_code" IS '退出码';
-COMMENT on column "t_stage"."error" IS '错误信息';
-COMMENT on column "t_stage"."name" IS '名字';
-COMMENT on column "t_stage"."started" IS '开始时间';
-COMMENT on column "t_stage"."finished" IS '结束时间';
-COMMENT on column "t_stage"."created" IS '创建时间';
-COMMENT on column "t_stage"."updated" IS '更新时间';
+COMMENT on column "t_step"."pipeline_version_id" IS '流水线id';
+COMMENT on column "t_step"."stage_id" IS '流水线id';
+COMMENT on column "t_step"."status" IS '构建状态';
+COMMENT on column "t_step"."event" IS '事件';
+COMMENT on column "t_step"."exit_code" IS '退出码';
+COMMENT on column "t_step"."error" IS '错误信息';
+COMMENT on column "t_step"."name" IS '名字';
+COMMENT on column "t_step"."started" IS '开始时间';
+COMMENT on column "t_step"."finished" IS '结束时间';
+COMMENT on column "t_step"."created" IS '创建时间';
+COMMENT on column "t_step"."updated" IS '更新时间';
 
 
 
@@ -167,12 +167,11 @@ CREATE TABLE "t_trigger" (
   "enabled" int2 DEFAULT NULL,
   "created" timestamp DEFAULT NULL,
   "updated" timestamp DEFAULT NULL,
-  PRIMARY KEY ("aid", "id"),
-  KEY "uid" ("uid")
+  PRIMARY KEY ("aid", "id")
 );
 
 
-CREATE INDEX uid on t_trigger("uid");
+CREATE INDEX t_trigger_uid on t_trigger("uid");
 
 
 CREATE TABLE "t_trigger_run" (
@@ -185,7 +184,7 @@ CREATE TABLE "t_trigger_run" (
   "created" timestamp DEFAULT NULL,
   PRIMARY KEY ("aid", "id")
 );
-CREATE INDEX tid on t_trigger_run("tid");
+CREATE INDEX t_trigger_run_tid on t_trigger_run("tid");
 COMMENT on column "t_trigger_run"."tid" IS '触发器ID';
 
 
@@ -230,7 +229,7 @@ CREATE TABLE "t_org_pipe" (
   "public" smallint NULL DEFAULT 0,
   PRIMARY KEY ("aid")
 );
-CREATE INDEX org_id on t_org_pipe("org_id");
+CREATE INDEX t_org_pipe_org_id on t_org_pipe("org_id");
 COMMENT on column "t_org_pipe"."pipe_id" IS '收件人';
 COMMENT on column "t_org_pipe"."public" IS '公开';
 
@@ -300,7 +299,7 @@ INSERT INTO
   "t_user"
 VALUES
   (
-    "admin",
+    'admin',
     1,
     'gokins',
     'e10adc3949ba59abbe56e057f20f883e',
@@ -333,9 +332,9 @@ CREATE TABLE "t_user_org" (
     "perm_down" int2 DEFAULT NULL,
     PRIMARY KEY ("aid")
   );
-CREATE INDEX uid on t_user_org("uid");
-CREATE INDEX oid on t_user_org("org_id");
-CREATE INDEX uoid on t_user_org("uid","org_id");
+CREATE INDEX t_user_org_uid on t_user_org("uid");
+CREATE INDEX t_user_org_oid on t_user_org("org_id");
+CREATE INDEX t_user_org_uoid on t_user_org("uid","org_id");
 COMMENT on column "t_user_org"."perm_adm" IS '管理员';
 COMMENT on column "t_user_org"."perm_rw" IS '编辑权限';
 COMMENT on column "t_user_org"."perm_exec" IS '执行权限';
@@ -351,9 +350,9 @@ CREATE TABLE "t_user_msg" (
     "status" smallint NULL DEFAULT 0,
     "deleted" smallint NULL DEFAULT 0,
     "deleted_time" timestamp NULL DEFAULT NULL,
-    PRIMARY KEY ("aid"),
+    PRIMARY KEY ("aid")
   );
-CREATE INDEX uid on t_user_msg("uid");
+CREATE INDEX t_user_msg_uid on t_user_msg("uid");
 COMMENT on column "t_user_msg"."uid" IS '收件人';
 
 CREATE TABLE "t_user_token" (
@@ -374,8 +373,8 @@ CREATE TABLE "t_user_token" (
     "uinfos" text NULL,
     PRIMARY KEY ("aid")
   );
-CREATE INDEX uid on t_user_token("uid");
-CREATE INDEX openid on t_user_token("openid");
+CREATE INDEX t_user_token_uid on t_user_token("uid");
+CREATE INDEX t_user_token_openid on t_user_token("openid");
 CREATE TABLE "t_pipeline_var" (
     "aid" serial8 NOT NULL,
     "uid" varchar(64) DEFAULT NULL,
