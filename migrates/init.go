@@ -7,6 +7,7 @@ import (
 	"github.com/gokins/gokins/comm"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
@@ -152,4 +153,72 @@ func InitSqliteMigrate() (rtul string, errs error) {
 	}
 
 	return ul, nil
+}
+
+func InitPostgresMigrate(host, dbs, user, pass string) (wait bool, rtul string, errs error) {
+	wait = false
+	if host == "" || dbs == "" || user == "" {
+		errs = errors.New("database config not found")
+		return
+	}
+	wait = true
+	ul := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", user, pass, host, dbs)
+	db, err := sql.Open("postgres", ul)
+	if err != nil {
+		errs = err
+		return
+	}
+	err = db.Ping()
+	if err != nil {
+		db.Close()
+		errs = err
+		return
+	}
+	defer db.Close()
+	wait = false
+	if err != nil {
+		errs = err
+		return
+	}
+
+	// Run migrations
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		println("could not start sql migration... ", err.Error())
+		errs = err
+		return
+	}
+	defer driver.Close()
+	var nms []string
+	tms := comm.AssetNames()
+	for _, v := range tms {
+		if strings.HasPrefix(v, "postgres") {
+			nms = append(nms, strings.Replace(v, "postgres/", "", 1))
+		}
+	}
+	s := bindata.Resource(nms, func(name string) ([]byte, error) {
+		return comm.Asset("postgres/" + name)
+	})
+	sc, err := bindata.WithInstance(s)
+	if err != nil {
+		errs = err
+		return
+	}
+	defer sc.Close()
+	mgt, err := migrate.NewWithInstance(
+		"bindata", sc,
+		"postgres", driver)
+	if err != nil {
+		errs = err
+		return
+	}
+	defer mgt.Close()
+	err = mgt.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		mgt.Down()
+		errs = err
+		return
+	}
+
+	return false, ul, nil
 }

@@ -18,7 +18,7 @@ func UpMysqlMigrate(ul string) error {
 	}
 	db, err := sql.Open("mysql", ul)
 	if err != nil {
-		//core.Log.Errorf("could not connect to postgresql database... %v", err)
+		//core.Log.Errorf("could not connect to postgres database... %v", err)
 		println("open db err:" + err.Error())
 		return err
 	}
@@ -71,7 +71,7 @@ func UpSqliteMigrate(ul string) error {
 	}
 	db, err := sql.Open("sqlite3", ul)
 	if err != nil {
-		//core.Log.Errorf("could not connect to postgresql database... %v", err)
+		//core.Log.Errorf("could not connect to postgres database... %v", err)
 		println("open db err:" + err.Error())
 		return err
 	}
