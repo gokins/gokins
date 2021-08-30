@@ -62,28 +62,28 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 	ls := make([]*models.TPipeline, 0)
 	var err error
 	var page *bean.Page
-	if comm.IsMySQL {
-		gen := &bean.PageGen{
-			CountCols: "DISTINCT(pipe.id),pipe.id",
-			FindCols:  "DISTINCT(pipe.id),pipe.*",
-		}
-		gen.SQL = `
+	//if comm.IsMySQL {
+	gen := &bean.PageGen{
+		CountCols: "DISTINCT(pipe.id)",
+		FindCols:  "DISTINCT(pipe.id),pipe.*",
+	}
+	gen.SQL = `
 			select {{select}} from t_pipeline pipe 
 			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id 
 			where top.org_id = ? and pipe.deleted != 1
 		    `
-		gen.Args = append(gen.Args, perm.Org().Id)
-		if q != "" {
-			gen.SQL += "\nAND pipe.name like ? "
-			gen.Args = append(gen.Args, "%"+q+"%")
-		}
-		gen.SQL += "\nORDER BY pipe.id DESC"
-		page, err = comm.FindPages(gen, &ls, pg, 10)
-		if err != nil {
-			c.String(500, "db err:"+err.Error())
-			return
-		}
+	gen.Args = append(gen.Args, perm.Org().Id)
+	if q != "" {
+		gen.SQL += "\nAND pipe.name like ? "
+		gen.Args = append(gen.Args, "%"+q+"%")
 	}
+	gen.SQL += "\nORDER BY pipe.id DESC"
+	page, err = comm.FindPages(gen, &ls, pg, 10)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	//}
 	for _, v := range ls {
 		usr, ok := service.GetUser(v.Uid)
 		if ok {
@@ -108,28 +108,28 @@ func (PipelineController) getPipelines(c *gin.Context, m *hbtp.Map) {
 	ls := make([]*models.TPipeline, 0)
 	var err error
 	var page *bean.Page
-	if comm.IsMySQL {
-		gen := &bean.PageGen{
-			CountCols: "pipe.id",
-			FindCols:  "pipe.*",
-		}
-		gen.SQL = `
-			select {{select}} from t_pipeline pipe where pipe.deleted != 1 `
-		if !service.IsAdmin(lgusr) {
-			gen.SQL = gen.SQL + ` and pipe.uid = ? `
-			gen.Args = append(gen.Args, lgusr.Id)
-		}
-		if q != "" {
-			gen.SQL += "\nAND pipe.name like ? "
-			gen.Args = append(gen.Args, "%"+q+"%")
-		}
-		gen.SQL += "\nORDER BY pipe.id DESC"
-		page, err = comm.FindPages(gen, &ls, pg, 10)
-		if err != nil {
-			c.String(500, "db err:"+err.Error())
-			return
-		}
+	//if comm.IsMySQL {
+	gen := &bean.PageGen{
+		CountCols: "pipe.id",
+		FindCols:  "pipe.*",
 	}
+	gen.SQL = `
+			select {{select}} from t_pipeline pipe where pipe.deleted != 1 `
+	if !service.IsAdmin(lgusr) {
+		gen.SQL = gen.SQL + ` and pipe.uid = ? `
+		gen.Args = append(gen.Args, lgusr.Id)
+	}
+	if q != "" {
+		gen.SQL += "\nAND pipe.name like ? "
+		gen.Args = append(gen.Args, "%"+q+"%")
+	}
+	gen.SQL += "\nORDER BY pipe.id DESC"
+	page, err = comm.FindPages(gen, &ls, pg, 10)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	//}
 	for _, v := range ls {
 		usr, ok := service.GetUser(v.Uid)
 		if ok {
