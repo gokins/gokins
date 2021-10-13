@@ -42,25 +42,25 @@ func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 	var err error
 	var page *bean.Page
 	lgusr := service.GetMidLgUser(c)
-	if comm.IsMySQL {
-		gen := &bean.PageGen{
-			CountCols: "org.id",
-			FindCols:  "org.*",
-		}
-		gen.SQL = `
+	//if comm.IsMySQL {
+	gen := &bean.PageGen{
+		CountCols: "org.id",
+		FindCols:  "org.*",
+	}
+	gen.SQL = `
 		select {{select}} from t_org org
 		where org.deleted!=1
 		`
-		if !service.IsAdmin(lgusr) {
-			/*gen.FindCols = "org.*,urg.perm_adm,urg.perm_rw,urg.perm_exec"
-			gen.SQL = `
-			select {{select}} from t_org org
-			LEFT JOIN t_user_org urg on urg.uid=? and urg.org_id=org.id
-			where org.deleted!=1
-			and (org.public=1 or org.uid=?)
-			`*/
-			gen.FindCols = "org.*"
-			gen.SQL = `
+	if !service.IsAdmin(lgusr) {
+		/*gen.FindCols = "org.*,urg.perm_adm,urg.perm_rw,urg.perm_exec"
+		gen.SQL = `
+		select {{select}} from t_org org
+		LEFT JOIN t_user_org urg on urg.uid=? and urg.org_id=org.id
+		where org.deleted!=1
+		and (org.public=1 or org.uid=?)
+		`*/
+		gen.FindCols = "org.*"
+		gen.SQL = `
 			select {{select}} from t_org org
 			where org.deleted!=1 and
 			(
@@ -69,16 +69,16 @@ func (OrgController) list(c *gin.Context, m *hbtp.Map) {
 			or org.id in (select urg.org_id from t_user_org urg where urg.uid=?)
 			)
 			`
-			gen.Args = append(gen.Args, lgusr.Id)
-			gen.Args = append(gen.Args, lgusr.Id)
-		}
-		if q != "" {
-			gen.SQL += "\nAND org.name like ? "
-			gen.Args = append(gen.Args, "%"+q+"%")
-		}
-		gen.SQL += "\nORDER BY org.aid DESC"
-		page, err = comm.FindPages(gen, &ls, pg, 10)
+		gen.Args = append(gen.Args, lgusr.Id)
+		gen.Args = append(gen.Args, lgusr.Id)
 	}
+	if q != "" {
+		gen.SQL += "\nAND org.name like ? "
+		gen.Args = append(gen.Args, "%"+q+"%")
+	}
+	gen.SQL += "\nORDER BY org.aid DESC"
+	page, err = comm.FindPages(gen, &ls, pg, 10)
+	//}
 	if err != nil {
 		c.String(500, "db err:"+err.Error())
 		return
@@ -185,19 +185,19 @@ func (OrgController) users(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	var usrs []*models.TUserOrgInfo
-	if comm.IsMySQL {
-		ses := comm.Db.SQL(`
+	//if comm.IsMySQL {
+	ses := comm.Db.SQL(`
 		select usr.*,urg.perm_adm,urg.perm_rw,urg.perm_exec,urg.perm_down,urg.created as join_time from t_user usr
 		JOIN t_user_org urg ON urg.org_id=?
 		where usr.id=urg.uid
 		ORDER BY urg.created ASC
 		`, perm.Org().Id)
-		err := ses.Find(&usrs)
-		if err != nil {
-			c.String(500, "db err:"+err.Error())
-			return
-		}
+	err := ses.Find(&usrs)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
 	}
+	//}
 	var usrsAdm []*models.TUserOrgInfo
 	var usrsOtr []*models.TUserOrgInfo
 	for _, v := range usrs {
