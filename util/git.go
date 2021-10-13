@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -17,10 +18,14 @@ func CloneRepo(path string, option *git.CloneOptions, ctx context.Context) (*git
 }
 
 func CheckOutHash(repository *git.Repository, hash string) error {
+	if !plumbing.IsHash(hash) {
+		return fmt.Errorf("%s Is Not Hash", hash)
+	}
 	options := &git.CheckoutOptions{
 		Force: true,
 		Hash: plumbing.NewHash(hash),
 	}
+	options.Hash = plumbing.NewHash(hash)
 	return CheckOut(repository, options)
 }
 

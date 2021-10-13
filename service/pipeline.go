@@ -121,7 +121,7 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha, 
 		Repo: &runtime.Repository{
 			Name:     tpipe.Username,
 			Token:    tpipe.AccessToken,
-			Sha:      sha,
+			Sha:      tpv.Sha,
 			CloneURL: tpipe.Url,
 		},
 		Vars: m,

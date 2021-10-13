@@ -380,6 +380,9 @@ func (c *BuildTask) gitClone(ctx context.Context, dir string, repo *runtime.Repo
 			Password: repo.Token,
 		}
 	}
+	if !plumbing.IsHash(repo.Sha) {
+		gc.ReferenceName = plumbing.NewBranchReferenceName(repo.Sha)
+	}
 	logrus.Debugf("gitClone : clone url: %s sha: %s", repo.CloneURL, repo.Sha)
 	repository, err := util.CloneRepo(clonePath, gc, ctx)
 	if err != nil {
@@ -391,7 +394,6 @@ func (c *BuildTask) gitClone(ctx context.Context, dir string, repo *runtime.Repo
 		}else{
 			err = util.CheckOutBranch(repository, repo.Sha)
 		}
-
 		if err != nil {
 			return err
 		}
