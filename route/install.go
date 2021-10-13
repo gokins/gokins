@@ -87,7 +87,7 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 		c.String(500, "hbtp host err:%s", m.Server.HbtpHost)
 		return
 	}
-	if m.Datasource.Driver == "mysql" {
+	if m.Datasource.Driver == comm.DATASOURCE_DRIVER_MYSQL ||m.Datasource.Driver == comm.DATASOURCE_DRIVER_POSTGRES {
 		if !common.RegHost2.MatchString(m.Datasource.Host) {
 			c.String(500, "dbhost err:%s", m.Datasource.Host)
 			return
@@ -101,13 +101,15 @@ func (InstallController) install(c *gin.Context, m *installConfig) {
 			return
 		}
 	} else {
-		m.Datasource.Driver = "sqlite"
+		m.Datasource.Driver = "sqlite3"
 	}
 
 	dataul := ""
 	var err error
 	if m.Datasource.Driver == "mysql" {
 		_, dataul, err = migrates.InitMysqlMigrate(m.Datasource.Host, m.Datasource.Name, m.Datasource.User, m.Datasource.Pass)
+	} else if m.Datasource.Driver == "postgres" {
+		_, dataul, err = migrates.InitPostgresMigrate(m.Datasource.Host, m.Datasource.Name, m.Datasource.User, m.Datasource.Pass)
 	} else {
 		dataul, err = migrates.InitSqliteMigrate()
 	}
@@ -250,9 +252,12 @@ func Install(c *gin.Context) {
 						<div class="layui-form-item">
 							<label class="layui-form-label">数据库</label>
 							<div class="layui-input-inline">
-								<select id="dbDriver" disabled="disabled">
+								<select id="dbDriver">
+
 									<option value="sqlite">sqlite</option>
 									<option value="mysql" selected>mysql</option>
+									<option value="postgres">postgres</option>
+                  
 								</select>
 							</div>
 						</div>
@@ -262,7 +267,7 @@ func Install(c *gin.Context) {
 								<input type="text" id="dbhostTxt" name="txt4" lay-verify="required" value="localhost:3306"
 									autocomplete="off" class="layui-input">
 							</div>
-							<div class="layui-form-mid layui-word-aux">Mysql链接地址</div>
+							<div class="layui-form-mid layui-word-aux">Mysql或Postgres链接地址</div>
 						</div>
 						<div class="layui-form-item">
 							<label class="layui-form-label">数据库名称</label>
@@ -397,6 +402,7 @@ func Install(c *gin.Context) {
 					}
 					switch ($('#dbDriver').val()) {
 						case 'mysql':
+						case 'postgres':
 							var dburl = '';
 							var dbhost = $('#dbhostTxt').val();
 							var dbname = $('#dbnameTxt').val();
@@ -414,7 +420,7 @@ func Install(c *gin.Context) {
 								layer.msg('数据库用户必填', { icon: 2 });
 								return
 							}
-							csjs.datasource.driver = 'mysql';
+							csjs.datasource.driver = $('#dbDriver').val();
 							csjs.datasource.host = dbhost;
 							csjs.datasource.name = dbname;
 							csjs.datasource.user = dbuser;

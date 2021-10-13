@@ -15,3 +15,7 @@ type Config struct {
 		Url    string `yaml:"url"`
 	} `yaml:"datasource"`
 }
+
+const DATASOURCE_DRIVER_MYSQL = "mysql"
+const DATASOURCE_DRIVER_POSTGRES = "postgres"
+const DATASOURCE_DRIVER_SQLITE = "sqlite"
