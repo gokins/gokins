@@ -149,6 +149,7 @@ func (c *BuildTask) run() {
 	err = c.getRepo()
 	if err != nil {
 		logrus.Errorf("clone repo err:%v", err)
+		logrus.Error(err)
 		c.status(common.BuildStatusError, "repo err:"+err.Error(), common.BuildEventGetRepo)
 		return
 	}

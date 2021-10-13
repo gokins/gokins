@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	"github.com/gokins/core/runtime"
 	"testing"
@@ -8,13 +9,17 @@ import (
 
 func TestGitClone(t *testing.T) {
 	task := BuildTask{
+		repoPath: "E:\\workspace\\tst\\abc",
+		repoPaths: "E:\\workspace\\tst\\abc",
+		isClone: true,
+		ctx: context.Background(),
 		build: &runtime.Build{
 			Id: "1231",
 			Repo: &runtime.Repository{
 				Name:     "",
 				Token:    "",
-				Sha:      "c202ee042db1fc8b8c16c6c968195cec6185d7db",
-				CloneURL: "https://gitee.com/SuperHeroJim/gokins-test",
+				Sha:      "testing",
+				CloneURL: "https://foot/foo.git",
 			},
 		},
 	}
