@@ -30,16 +30,31 @@ func CheckOutHash(repository *git.Repository, hash string) error {
 }
 
 func CheckOutBranch(repository *git.Repository, branch string) error {
+
 	// refs/heads/<localBranchName>
 	localBranchReferenceName := plumbing.NewBranchReferenceName(branch)
 	// refs/remotes/origin/<remoteBranchName>
 	remoteReferenceName := plumbing.NewRemoteReferenceName("origin", branch)
 
-	err := repository.CreateBranch(&config.Branch{Name: branch,
-		Remote: "origin", Merge: localBranchReferenceName, })
+	branches, err := repository.Branches()
 	if err!=nil{
 		return err
 	}
+	needCreatedBranch := true
+	branches.ForEach(func(reference *plumbing.Reference) error {
+		if reference.Name().IsBranch() && reference.Name().String() == localBranchReferenceName.String() {
+			needCreatedBranch = false
+		}
+		return nil
+	})
+	if needCreatedBranch{
+		err = repository.CreateBranch(&config.Branch{Name: branch,
+			Remote: "origin", Merge: localBranchReferenceName, })
+		if err!=nil{
+			return err
+		}
+	}
+
 	newReference := plumbing.NewSymbolicReference(localBranchReferenceName , remoteReferenceName)
 	err = repository.Storer.SetReference(newReference)
 	if err != nil {
