@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"github.com/go-git/go-git/v5/plumbing"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -385,7 +386,12 @@ func (c *BuildTask) gitClone(ctx context.Context, dir string, repo *runtime.Repo
 		return err
 	}
 	if repo.Sha != "" {
-		err = util.CheckOutHash(repository, repo.Sha)
+		if plumbing.IsHash(repo.Sha){
+			err = util.CheckOutHash(repository, repo.Sha)
+		}else{
+			err = util.CheckOutBranch(repository, repo.Sha)
+		}
+
 		if err != nil {
 			return err
 		}

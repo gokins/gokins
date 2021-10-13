@@ -6,7 +6,6 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/sirupsen/logrus"
 )
 
 func CloneRepo(path string, option *git.CloneOptions, ctx context.Context) (*git.Repository, error) {
@@ -20,12 +19,7 @@ func CloneRepo(path string, option *git.CloneOptions, ctx context.Context) (*git
 func CheckOutHash(repository *git.Repository, hash string) error {
 	options := &git.CheckoutOptions{
 		Force: true,
-	}
-	if len(hash)!=40{
-		return CheckOutBranch(repository, hash)
-	}else{
-		options.Hash = plumbing.NewHash(hash)
-		logrus.Debugf("CheckOut by hash, hash = %s", hash)
+		Hash: plumbing.NewHash(hash),
 	}
 	return CheckOut(repository, options)
 }
@@ -50,13 +44,12 @@ func CheckOutBranch(repository *git.Repository, branch string) error {
 	if err != nil {
 		return err
 	}
-	err = worktree.Checkout(&git.CheckoutOptions{
+	return worktree.Checkout(&git.CheckoutOptions{
 		Create: false,
 		Force: true,
 		Keep: true,
 		Branch: localBranchReferenceName,
 	})
-	return err
 }
 
 func CheckOut(repository *git.Repository, option *git.CheckoutOptions) error {
