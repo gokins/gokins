@@ -3,6 +3,11 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"os"
+	"runtime/debug"
+	"strings"
+	"time"
+
 	"github.com/gokins/core/common"
 	"github.com/gokins/core/runtime"
 	"github.com/gokins/core/utils"
@@ -10,10 +15,6 @@ import (
 	"github.com/gokins/gokins/model"
 	"github.com/gokins/runner/runners"
 	"github.com/sirupsen/logrus"
-	"os"
-	"runtime/debug"
-	"strings"
-	"time"
 )
 
 func (c *BuildTask) check() bool {
@@ -151,6 +152,9 @@ func (c *BuildTask) genRunjob(stage *runtime.Stage, job *jobSync) (rterr error) 
 		Env:          job.step.Env,
 		Artifacts:    job.step.Artifacts,
 		UseArtifacts: job.step.UseArtifacts,
+	}
+	if !c.isClone && job.step.NoCopy {
+		runjb.OriginRepo = c.repoPath
 	}
 	var err error
 	switch job.step.Commands.(type) {
