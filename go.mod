@@ -9,7 +9,7 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gokins/core v0.0.0-20220305133436-1fbdb20fb8e7
-	github.com/gokins/runner v0.0.0-20220305132349-2f1aeb837d86
+	github.com/gokins/runner v0.0.0-20220305134928-005cf85e2d6c
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.5
@@ -19,3 +19,5 @@ require (
 	xorm.io/builder v0.3.8
 	xorm.io/xorm v1.1.0
 )
+
+// replace github.com/gokins/runner => ../runner
