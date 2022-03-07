@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/gokins/core v0.0.0-20220305133436-1fbdb20fb8e7
+	github.com/gokins/core v0.0.0-20220307065914-9a48258a32e6
 	github.com/gokins/runner v0.0.0-20220305134928-005cf85e2d6c
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/mattn/go-sqlite3 v1.14.6
