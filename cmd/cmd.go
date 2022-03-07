@@ -1,18 +1,20 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+	"os/exec"
+	"os/signal"
+	"syscall"
+
 	"github.com/gokins/core"
 	"github.com/gokins/gokins/comm"
 	"github.com/gokins/gokins/server"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"os"
-	"os/exec"
-	"os/signal"
-	"syscall"
 )
 
-const Version = "0.1.1"
+const Version = "1.0.1"
 
 var app = kingpin.New("gokins", "A golang workflow application.")
 
@@ -32,6 +34,9 @@ func regs() {
 
 	cmd = app.Command("daemon", "run process background").
 		Action(start)
+
+	cmd = app.Command("version", "show verison").
+		Action(showvs)
 }
 func getArgs() []string {
 	args := make([]string, 0)
@@ -79,4 +84,7 @@ func run(pc *kingpin.ParseContext) error {
 		hbtp.Debug = true
 	}
 	return server.Run()
+}
+func showvs(pc *kingpin.ParseContext) error {
+	fmt.Println("gokins version:" + Version)
 }
