@@ -87,4 +87,5 @@ func run(pc *kingpin.ParseContext) error {
 }
 func showvs(pc *kingpin.ParseContext) error {
 	fmt.Println("gokins version:" + Version)
+	return nil
 }
