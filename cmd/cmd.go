@@ -14,7 +14,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const Version = "1.0.1"
+const Version = "1.0.3"
 
 var app = kingpin.New("gokins", "A golang workflow application.")
 
