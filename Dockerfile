@@ -1,4 +1,4 @@
-FROM golang:1.16.6-alpine3.14 AS builder
+FROM golang:1.16.15-alpine3.15 AS builder
 # ENV GOPROXY=https://goproxy.cn,direct
 # RUN apk add git build-base && git clone https://gitee.com/gokins/gokins.git /build
 RUN apk add git build-base && git clone https://github.com/gokins/gokins.git /build
