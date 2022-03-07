@@ -1,0 +1,11 @@
+FROM alpine:latest AS final
+
+ENV GOKINS_WORKPATH=/data/gokins
+
+RUN apk --no-cache add openssl ca-certificates curl git wget \
+    && rm -rf /var/cache/apk \
+    && mkdir -p /app /data/gokins
+
+COPY ../bin/gokins /app
+WORKDIR /app
+ENTRYPOINT ["/app/gokins"]
