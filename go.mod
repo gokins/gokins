@@ -9,9 +9,8 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gokins/core v0.0.0-20220307065914-9a48258a32e6
-	github.com/gokins/runner v0.0.0-20220305134928-005cf85e2d6c
+	github.com/gokins/runner v0.0.0-20220307074410-234bd57aa012
 	github.com/golang-migrate/migrate/v4 v4.14.1
-	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.5
 	github.com/sirupsen/logrus v1.8.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
