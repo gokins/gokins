@@ -24,8 +24,9 @@ func (ArtPublicController) GetPath() string {
 }
 func (c *ArtPublicController) Routes(g gin.IRoutes) {
 	g.GET("/down/:id/*pth", c.down)
+	g.GET("/downs/:id/:name/*pth", c.downs)
 }
-func (ArtPublicController) down(c *gin.Context) {
+func (cs *ArtPublicController) down(c *gin.Context) {
 	id := c.Param("id")
 	pth := c.Param("pth")
 	tms := c.Query("times")
@@ -64,8 +65,48 @@ func (ArtPublicController) down(c *gin.Context) {
 		c.String(404, "Not Found repo")
 		return
 	}
-
 	fls := filepath.Join(comm.WorkPath, common.PathArtifacts, artv.Id, pth)
+	cs.downFile(c, fls)
+}
+func (cs *ArtPublicController) downs(c *gin.Context) {
+	id := c.Param("id")
+	name := c.Param("name")
+	pth := c.Param("pth")
+	tms := c.Query("times")
+	random := c.Query("random")
+	sign := c.Query("sign")
+	if tms == "" || random == "" || sign == "" {
+		c.String(500, "param err")
+		return
+	}
+
+	tm, err := time.Parse(time.RFC3339Nano, tms)
+	if err != nil {
+		c.String(500, "param err:times")
+		return
+	}
+	if time.Since(tm).Hours() > 20 {
+		c.String(500, "the url timeout")
+		return
+	}
+
+	signs := utils.Md5String(id + name + tms + random + comm.Cfg.Server.DownToken)
+	if sign != signs {
+		c.String(403, "No Permission")
+		return
+	}
+
+	job := &model.TStep{}
+	ok := service.GetIdOrAid(id, job)
+	if !ok {
+		c.String(404, "Not Found")
+		return
+	}
+	bdpth := filepath.Join(comm.WorkPath, common.PathBuild, job.BuildId)
+	fls := filepath.Join(bdpth, common.PathJobs, job.Id, common.PathArts, name, pth)
+	cs.downFile(c, fls)
+}
+func (ArtPublicController) downFile(c *gin.Context, fls string) {
 	stat, err := os.Stat(fls)
 	if err != nil {
 		c.String(404, "Not Found File")
