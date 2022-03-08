@@ -3,6 +3,9 @@ package route
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gokins/core/common"
 	"github.com/gokins/gokins/bean"
@@ -13,8 +16,6 @@ import (
 	"github.com/gokins/gokins/service"
 	"github.com/gokins/gokins/util"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"os"
-	"path/filepath"
 )
 
 type RuntimeController struct{}
@@ -178,32 +179,33 @@ func (RuntimeController) logs(c *gin.Context, m *hbtp.Map) {
 	linebuf := &bytes.Buffer{}
 	for !hbtp.EndContext(c) {
 		rn, err := fl.Read(bts)
-		if rn > 0 {
-			for i := 0; i < rn; i++ {
-				off++
-				b := bts[i]
-				if linebuf == nil && b == '{' {
+		if rn <= 0 {
+			break
+		}
+		for i := 0; i < rn; i++ {
+			off++
+			b := bts[i]
+			if linebuf == nil && b == '{' {
+				linebuf.Reset()
+			}
+			if linebuf != nil {
+				if b == '\n' {
+					e := &bean.LogOutJsonRes{}
+					err := json.Unmarshal(linebuf.Bytes(), e)
 					linebuf.Reset()
-				}
-				if linebuf != nil {
-					if b == '\n' {
-						e := &bean.LogOutJsonRes{}
-						err := json.Unmarshal(linebuf.Bytes(), e)
-						linebuf.Reset()
-						if err == nil {
-							/*if e.Type == hbtpBean.TypeCmdLogLineSys {
-								continue
-							}*/
-							e.Offset = off - 1
-							ls = append(ls, e)
-							lastoff = e.Offset
-						}
-						if limit > 0 && limit >= int64(len(ls)) {
-							break
-						}
-					} else {
-						linebuf.WriteByte(b)
+					if err == nil {
+						/*if e.Type == hbtpBean.TypeCmdLogLineSys {
+							continue
+						}*/
+						e.Offset = off - 1
+						ls = append(ls, e)
+						lastoff = e.Offset
 					}
+					if limit > 0 && limit >= int64(len(ls)) {
+						break
+					}
+				} else {
+					linebuf.WriteByte(b)
 				}
 			}
 		}
