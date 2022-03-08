@@ -104,9 +104,10 @@ func midUiHandle(c *gin.Context) {
 	bts := make([]byte, 1024)
 	for !hbtp.EndContext(c) {
 		n, err := rd.Read(bts)
-		if n > 0 {
-			c.Writer.Write(bts[:n])
+		if n <= 0 {
+			break
 		}
+		c.Writer.Write(bts[:n])
 		if err != nil {
 			break
 		}

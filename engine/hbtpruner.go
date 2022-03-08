@@ -2,13 +2,14 @@ package engine
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/gokins/core/common"
 	"github.com/gokins/core/utils"
 	"github.com/gokins/gokins/comm"
 	"github.com/gokins/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
-	"strconv"
-	"time"
 )
 
 type HbtpRunner struct {
@@ -146,11 +147,12 @@ func (HbtpRunner) ReadFile(c *hbtp.Context) {
 	bts := make([]byte, 10240)
 	for !hbtp.EndContext(comm.Ctx) {
 		n, err := flr.Read(bts)
-		if n > 0 {
-			_, err = c.Conn().Write(bts[:n])
-			if err != nil {
-				break
-			}
+		if n <= 0 {
+			break
+		}
+		_, err = c.Conn().Write(bts[:n])
+		if err != nil {
+			break
 		}
 		if err != nil {
 			break
@@ -199,11 +201,12 @@ func (HbtpRunner) UploadFile(c *hbtp.Context) {
 	bts := make([]byte, 10240)
 	for !hbtp.EndContext(comm.Ctx) {
 		n, err := c.Conn().Read(bts)
-		if n > 0 {
-			_, err = flw.Write(bts[:n])
-			if err != nil {
-				break
-			}
+		if n <= 0 {
+			break
+		}
+		_, err = flw.Write(bts[:n])
+		if err != nil {
+			break
 		}
 		if err != nil {
 			break

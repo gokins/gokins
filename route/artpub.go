@@ -111,9 +111,10 @@ func (ArtPublicController) down(c *gin.Context) {
 	bts := make([]byte, 10240)
 	for !hbtp.EndContext(c) {
 		n, err := rdr.Read(bts)
-		if n > 0 {
-			c.Writer.Write(bts[:n])
+		if n <= 0 {
+			break
 		}
+		c.Writer.Write(bts[:n])
 		if err != nil {
 			break
 		}
