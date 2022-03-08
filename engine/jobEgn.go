@@ -4,15 +4,16 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
+	"runtime/debug"
+	"sync"
+	"time"
+
 	"github.com/gokins/core/runtime"
 	"github.com/gokins/core/utils"
 	"github.com/gokins/gokins/comm"
 	"github.com/gokins/runner/runners"
 	hbtp "github.com/mgr9525/HyperByte-Transfer-Protocol"
 	"github.com/sirupsen/logrus"
-	"runtime/debug"
-	"sync"
-	"time"
 )
 
 type JobEngine struct {
@@ -169,6 +170,16 @@ func (c *JobEngine) Pull(name string, plugs []string) *runners.RunJob {
 		}
 	}
 	return nil
+}
+
+func (c *JobEngine) Plugins() []string {
+	var rts []string
+	c.exelk.Lock()
+	defer c.exelk.Unlock()
+	for _, v := range c.execs {
+		rts = append(rts, v.plug)
+	}
+	return rts
 }
 
 /*func (c *JobEngine) GetJob(id string) (*jobSync, bool) {
