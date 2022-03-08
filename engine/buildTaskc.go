@@ -154,7 +154,7 @@ func (c *BuildTask) genRunjob(stage *runtime.Stage, job *jobSync) (rterr error) 
 		UseArtifacts: job.step.UseArtifacts,
 		OriginRepo:   c.repoPath,
 	}
-	if c.isClone || c.step.MustCopy {
+	if c.isClone || job.step.MustCopy {
 		runjb.OriginRepo = ""
 	}
 	var err error
