@@ -26,11 +26,12 @@ func (YmlController) templates(c *gin.Context) {
 }
 
 func (YmlController) plugins(c *gin.Context) {
-	const conts = `      - step: %PLUGIN_NAME%
-  displayName: xxx
-  name: xxx
-  commands:
-    - echo hello world`
+	const conts = `
+  - step: %PLUGIN_NAME%
+    displayName: xxx
+    name: xxx
+    commands:
+      - echo hello world`
 	ls := make([]*models.TYmlPlugin, 0)
 	comm.Db.Where("deleted != 1").Find(&ls)
 	plugs := engine.Mgr.Plugins()
