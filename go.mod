@@ -8,8 +8,8 @@ require (
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/gokins/core v0.0.0-20220307065914-9a48258a32e6
-	github.com/gokins/runner v0.0.0-20220308093142-f74e89bf6c1f
+	github.com/gokins/core v0.0.0-20220314061935-0bdebd6c9e47
+	github.com/gokins/runner v0.0.0-20220314064754-786b694e9fbb
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.5
 	github.com/sirupsen/logrus v1.8.1

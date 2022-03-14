@@ -152,6 +152,7 @@ func (c *BuildTask) genRunjob(stage *runtime.Stage, job *jobSync) (rterr error) 
 		Env:          job.step.Env,
 		Artifacts:    job.step.Artifacts,
 		UseArtifacts: job.step.UseArtifacts,
+		UsersRepo:    job.step.RepoPath,
 		OriginRepo:   c.repoPath,
 	}
 	if c.isClone || job.step.MustCopy {

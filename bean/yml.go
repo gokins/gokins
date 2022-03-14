@@ -45,6 +45,7 @@ type Step struct {
 	DisplayName  string            `yaml:"displayName,omitempty" json:"displayName"`
 	Name         string            `yaml:"name,omitempty" json:"name"`
 	MustCopy     bool              `yaml:"mustCopy,omitempty" json:"mustCopy"`
+	Repo         string            `yaml:"repo,omitempty" json:"repo"`
 	Input        map[string]string `yaml:"input,omitempty" json:"input"`
 	Env          map[string]string `yaml:"env,omitempty" json:"env"`
 	Commands     interface{}       `yaml:"commands,omitempty" json:"commands"`
