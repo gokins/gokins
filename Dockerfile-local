@@ -1,11 +1,12 @@
-FROM mgr9525/ubuntu:21-ali
+FROM alpine:latest
 
 ENV GOKINS_WORKPATH=/data/gokins
 
-RUN apt update \
-    && apt install -y openssl ca-certificates curl git wget \
+RUN apk update \
+    && apk --no-cache add openssl ca-certificates curl git wget \
+    && rm -rf /var/cache/apk \
     && mkdir -p /data/gokins
 
-COPY bin/gokins /usr/bin
+COPY bin/gokins-alpine /usr/bin/gokins
 WORKDIR /data
 ENTRYPOINT ["/usr/bin/gokins"]
