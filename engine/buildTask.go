@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"fmt"
-	"github.com/go-git/go-git/v5/plumbing"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/go-git/go-git/v5/plumbing"
 
 	"github.com/go-git/go-git/v5"
 	ghttp "github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -382,7 +383,7 @@ func (c *BuildTask) gitClone(ctx context.Context, dir string, repo *runtime.Repo
 	if !plumbing.IsHash(repo.Sha) {
 		gc.ReferenceName = plumbing.NewBranchReferenceName(repo.Sha)
 	}
-	logrus.Debugf("gitClone : clone url: %s sha: %s", repo.CloneURL, repo.Sha)
+	logrus.Debugf("gitClone : clone url: %s, sha: %s => %s", repo.CloneURL, repo.Sha, clonePath)
 	repository, err := util.CloneRepo(clonePath, gc, ctx)
 	if err != nil {
 		return err
