@@ -368,8 +368,7 @@ func (c *BuildTask) Write(bts []byte) (n int, err error) {
 	println("BuildTask git log:", line)
 	return ln, nil
 }
-func (c *BuildTask) gitClone(ctx context.Context, dir string, repo *runtime.Repository) error {
-	clonePath := filepath.Join(dir)
+func (c *BuildTask) gitClone(ctx context.Context, clonePath string, repo *runtime.Repository) error {
 	gc := &git.CloneOptions{
 		URL:      repo.CloneURL,
 		Progress: c,
