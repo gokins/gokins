@@ -19,3 +19,5 @@ require (
 	xorm.io/builder v0.3.8
 	xorm.io/xorm v1.1.0
 )
+
+// replace github.com/gokins/runner => ../runner

@@ -80,3 +80,7 @@ func (c *Manager) HRun() *HbtpRunner {
 func (c *Manager) TimerEng() *TimerEngine {
 	return c.timerEgn
 }
+
+func (c *Manager) Plugins() []string {
+	return c.jobEgn.Plugins()
+}
