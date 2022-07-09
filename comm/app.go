@@ -9,6 +9,8 @@ import (
 	"xorm.io/xorm"
 )
 
+const Version = "1.1.0"
+
 var (
 	Ctx  context.Context
 	cncl context.CancelFunc
