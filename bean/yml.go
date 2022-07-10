@@ -44,6 +44,7 @@ type Step struct {
 	Step         string            `yaml:"step" json:"step"`
 	DisplayName  string            `yaml:"displayName,omitempty" json:"displayName"`
 	Name         string            `yaml:"name,omitempty" json:"name"`
+	Disable      bool              `yaml:"disable,omitempty" json:"disable"`
 	MustCopy     bool              `yaml:"mustCopy,omitempty" json:"mustCopy"`
 	Repo         string            `yaml:"repo,omitempty" json:"repo"`
 	Input        map[string]string `yaml:"input,omitempty" json:"input"`
