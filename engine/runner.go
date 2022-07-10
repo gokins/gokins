@@ -153,6 +153,9 @@ func (c *baseRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.Dir
 	}
 	fls, err := os.ReadDir(pths)
 	if err != nil {
+		if build.repoPath == "" {
+			return nil, nil
+		}
 		return nil, err
 	}
 	var ls []*runners.DirEntry
