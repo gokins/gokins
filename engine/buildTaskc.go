@@ -22,21 +22,23 @@ func (c *BuildTask) check() bool {
 		c.status(common.BuildEventCheckParam, "repo param err")
 		return false
 	}
-	if c.build.Repo.CloneURL == "" {
+	/*if c.build.Repo.CloneURL == "" {
 		c.status(common.BuildEventCheckParam, "repo param err:clone url")
 		return false
-	}
-	c.repoPath = c.build.Repo.CloneURL
-	s, err := os.Stat(c.repoPath)
-	if err == nil && s.IsDir() {
-		c.isClone = false
-		c.repoPaths = c.repoPath
-	} else {
-		if !common.RegUrl.MatchString(c.build.Repo.CloneURL) {
-			c.status(common.BuildEventCheckParam, "repo param err:clone url")
-			return false
+	}*/
+	if c.build.Repo.CloneURL != "" {
+		c.repoPath = c.build.Repo.CloneURL
+		s, err := os.Stat(c.repoPath)
+		if err == nil && s.IsDir() {
+			c.isClone = false
+			c.repoPaths = c.repoPath
+		} else {
+			if !common.RegUrl.MatchString(c.build.Repo.CloneURL) {
+				c.status(common.BuildEventCheckParam, "repo param err:clone url")
+				return false
+			}
+			c.isClone = true
 		}
-		c.isClone = true
 	}
 	if c.build.Stages == nil || len(c.build.Stages) <= 0 {
 		c.build.Event = common.BuildEventCheckParam
@@ -102,7 +104,7 @@ func (c *BuildTask) check() bool {
 				step:  e,
 				cmdmp: make(map[string]*cmdSync),
 			}
-			err = c.genRunjob(v, job)
+			err := c.genRunjob(v, job)
 			if err != nil {
 				c.build.Event = common.BuildEventCheckParam
 				c.build.Error = fmt.Sprintf("build Job.%s Commands err", e.Name)

@@ -8,6 +8,7 @@ import (
 	"github.com/gokins/core/runtime"
 	"github.com/gokins/core/utils"
 	"github.com/gokins/gokins/bean"
+	"github.com/gokins/gokins/comm"
 	"github.com/gokins/gokins/engine"
 	"github.com/gokins/gokins/util"
 	"gopkg.in/yaml.v3"
@@ -20,10 +21,14 @@ func (ApiController) GetPath() string {
 }
 func (c *ApiController) Routes(g gin.IRoutes) {
 	g.Any("/", c.hello)
+	g.Any("/version", c.version)
 	g.POST("/builds", util.GinReqParseJson(c.test))
 }
 func (ApiController) hello(c *gin.Context) {
 	c.String(200, "hello world")
+}
+func (ApiController) version(c *gin.Context) {
+	c.String(200, comm.Version)
 }
 func (ApiController) test(c *gin.Context) {
 	all, err := ioutil.ReadAll(c.Request.Body)

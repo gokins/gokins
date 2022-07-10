@@ -153,6 +153,9 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha, 
 			return nil, nil, err
 		}
 		for j, step := range stage.Steps {
+			if step.Disable {
+				continue
+			}
 			cmds, err := json.Marshal(step.Commands)
 			if err != nil {
 				return nil, nil, err

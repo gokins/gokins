@@ -142,8 +142,9 @@ func getFile(pth string) (*zip.File, error) {
 		return nil, err
 	}
 	for _, f := range r.File {
-		//println("f.name:", f.Name)
-		if pth == f.Name {
+		nm := strings.ReplaceAll(f.Name, "\\", "/")
+		//println(fmt.Sprintf("find zip file:%s, %s",pth, nm))
+		if pth == nm {
 			return f, nil
 		}
 	}
