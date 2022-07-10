@@ -285,6 +285,8 @@ func replaceStep(step *bean.Step, mVars map[string]*runtime.Variables) {
 	step.DisplayName = s
 	s, _ = replace(step.Image, mVars)
 	step.Image = s
+	s, _ = replace(step.Repo, mVars)
+	step.Repo = s
 	if step.Env != nil && len(step.Env) > 0 {
 		step.Env = replaceMaps(step.Env, mVars)
 	}
