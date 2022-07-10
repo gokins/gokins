@@ -33,6 +33,7 @@ type Stage struct {
 	Stage       string  `yaml:"stage" json:"stage"`
 	Name        string  `yaml:"name,omitempty" json:"name"`
 	DisplayName string  `yaml:"displayName,omitempty" json:"displayName"`
+	Repo        string  `yaml:"repo,omitempty" json:"repo"`
 	Steps       []*Step `yaml:"steps,omitempty" json:"steps"`
 }
 

@@ -193,6 +193,9 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha, 
 				MustCopy:    step.MustCopy,
 				RepoPath:    step.Repo,
 			}
+			if rtp.RepoPath == "" && stage.Repo != "" {
+				rtp.RepoPath = stage.Repo
+			}
 			for _, v := range step.Artifacts {
 				rtp.Artifacts = append(rtp.Artifacts, &runtime.Artifact{
 					Scope:      v.Scope,
@@ -267,6 +270,8 @@ func replaceStage(stage *bean.Stage, mVars map[string]*runtime.Variables) {
 	stage.Name = s
 	s, _ = replace(stage.DisplayName, mVars)
 	stage.DisplayName = s
+	s, _ = replace(stage.Repo, mVars)
+	stage.Repo = s
 	if stage.Steps != nil && len(stage.Steps) > 0 {
 		replaceSteps(stage.Steps, mVars)
 	}
