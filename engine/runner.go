@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gokins/gokins/service"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/gokins/gokins/service"
 
 	"github.com/gokins/core/common"
 	"github.com/gokins/core/utils"
@@ -172,7 +173,7 @@ func (c *baseRunner) ReadDir(fs int, buildId string, pth string) ([]*runners.Dir
 	}
 	return ls, nil
 }
-func (c *baseRunner) ReadFile(fs int, buildId string, pth string) (int64, io.ReadCloser, error) {
+func (c *baseRunner) ReadFile(fs int, buildId string, pth string, start int64) (int64, io.ReadCloser, error) {
 	if buildId == "" || pth == "" {
 		return 0, nil, errors.New("param err")
 	}
@@ -198,6 +199,9 @@ func (c *baseRunner) ReadFile(fs int, buildId string, pth string) (int64, io.Rea
 	fl, err := os.Open(pths)
 	if err != nil {
 		return 0, nil, err
+	}
+	if start > 0 {
+		fl.Seek(start, io.SeekStart)
 	}
 	return stat.Size(), fl, nil
 }
@@ -251,7 +255,38 @@ func (c *baseRunner) GenEnv(buildId, jobId string, env utils.EnvVal) error {
 	return err
 }
 
-func (c *baseRunner) UploadFile(fs int, buildId, jobId string, dir, pth string) (io.WriteCloser, error) {
+func (c *baseRunner) StatFile(fs int, buildId, jobId string, dir, pth string) (*runners.FileStat, error) {
+	if jobId == "" || pth == "" {
+		return nil, errors.New("param err")
+	}
+	tsk, ok := Mgr.buildEgn.Get(buildId)
+	if !ok {
+		return nil, errors.New("not found build")
+	}
+	job, ok := tsk.GetJob(jobId)
+	if !ok {
+		return nil, errors.New("not found job")
+	}
+	pths := ""
+	if fs == 1 {
+		pths = filepath.Join(comm.WorkPath, common.PathArtifacts, dir, pth)
+	} else if fs == 2 {
+		pths = filepath.Join(job.task.buildPath, common.PathJobs, job.step.Id, common.PathArts, dir, pth)
+	}
+	if pths == "" {
+		return nil, errors.New("path param err")
+	}
+	stat, err := os.Stat(pths)
+	if err != nil {
+		return nil, err
+	}
+	return &runners.FileStat{
+		Name:  stat.Name(),
+		IsDir: stat.IsDir(),
+		Size:  stat.Size(),
+	}, err
+}
+func (c *baseRunner) UploadFile(fs int, buildId, jobId string, dir, pth string, start int64) (io.WriteCloser, error) {
 	if jobId == "" || pth == "" {
 		return nil, errors.New("param err")
 	}
@@ -275,10 +310,13 @@ func (c *baseRunner) UploadFile(fs int, buildId, jobId string, dir, pth string) 
 	dirs := filepath.Dir(pths)
 	os.MkdirAll(dirs, 0750)
 	fl, err := os.OpenFile(pths, os.O_CREATE|os.O_RDWR, 0640)
-	/*if err!=nil{
-		return nil,err
-	}*/
-	return fl, err
+	if err != nil {
+		return nil, err
+	}
+	if start > 0 {
+		fl.Seek(start, io.SeekStart)
+	}
+	return fl, nil
 }
 func (c *baseRunner) FindArtVersionId(buildId, idnt string, names string) (string, error) {
 	tnms := strings.Split(strings.TrimSpace(names), "@")

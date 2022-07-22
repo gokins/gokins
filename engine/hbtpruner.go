@@ -133,11 +133,12 @@ func (HbtpRunner) ReadFile(c *hbtp.Context) {
 	buildId := c.ReqHeader().GetString("buildId")
 	pth := c.ReqHeader().GetString("pth")
 	fs, err := c.ReqHeader().GetInt("fs")
+	start, _ := c.ReqHeader().GetInt("start")
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
 	}
-	flsz, flr, err := Mgr.brun.ReadFile(int(fs), buildId, pth)
+	flsz, flr, err := Mgr.brun.ReadFile(int(fs), buildId, pth, start)
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
@@ -180,7 +181,7 @@ func (HbtpRunner) GenEnv(c *hbtp.Context, env utils.EnvVal) {
 	}
 	c.ResString(hbtp.ResStatusOk, "ok")
 }
-func (HbtpRunner) UploadFile(c *hbtp.Context) {
+func (HbtpRunner) StatFile(c *hbtp.Context) {
 	buildId := c.ReqHeader().GetString("buildId")
 	jobId := c.ReqHeader().GetString("jobId")
 	dir := c.ReqHeader().GetString("dir")
@@ -190,7 +191,25 @@ func (HbtpRunner) UploadFile(c *hbtp.Context) {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
 	}
-	flw, err := Mgr.brun.UploadFile(int(fs), buildId, jobId, dir, pth)
+	stat, err := Mgr.brun.StatFile(int(fs), buildId, jobId, dir, pth)
+	if err != nil {
+		c.ResString(hbtp.ResStatusErr, err.Error())
+		return
+	}
+	c.ResJson(hbtp.ResStatusOk, stat)
+}
+func (HbtpRunner) UploadFile(c *hbtp.Context) {
+	buildId := c.ReqHeader().GetString("buildId")
+	jobId := c.ReqHeader().GetString("jobId")
+	dir := c.ReqHeader().GetString("dir")
+	pth := c.ReqHeader().GetString("pth")
+	start, _ := c.ReqHeader().GetInt("start")
+	fs, err := c.ReqHeader().GetInt("fs")
+	if err != nil {
+		c.ResString(hbtp.ResStatusErr, err.Error())
+		return
+	}
+	flw, err := Mgr.brun.UploadFile(int(fs), buildId, jobId, dir, pth, start)
 	if err != nil {
 		c.ResString(hbtp.ResStatusErr, err.Error())
 		return
