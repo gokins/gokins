@@ -14,13 +14,11 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const Version = "1.0.3"
-
 var app = kingpin.New("gokins", "A golang workflow application.")
 
 func Run() {
 	regs()
-	kingpin.Version(Version)
+	kingpin.Version(comm.Version)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 func regs() {
