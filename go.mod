@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-sql-driver/mysql v1.5.0
-	github.com/gokins/core v0.0.0-20220314061935-0bdebd6c9e47
+	github.com/gokins/core v0.0.0-20220802013657-abe943553934
 	github.com/gokins/runner v0.0.0-20220504053722-52541ce71b91
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.6-0.20220721065229-af916c8393ed
