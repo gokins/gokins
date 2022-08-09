@@ -32,6 +32,9 @@ func (c *OrgController) Routes(g gin.IRoutes) {
 	g.POST("/user/rm", util.GinReqParseJson(c.userRm))
 	g.POST("/pipe/add", util.GinReqParseJson(c.pipeAdd))
 	g.POST("/pipe/rm", util.GinReqParseJson(c.pipeRm))
+	g.POST("/vars", util.GinReqParseJson(c.vars))
+	g.POST("/var/save", util.GinReqParseJson(c.varSave))
+	g.POST("/var/del", util.GinReqParseJson(c.varDel))
 }
 
 func (OrgController) list(c *gin.Context, m *hbtp.Map) {
@@ -434,4 +437,124 @@ func (OrgController) pipeRm(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	c.String(200, fmt.Sprintf("%d", ne.Aid))
+}
+
+func (OrgController) vars(c *gin.Context, m *hbtp.Map) {
+	orgId := m.GetString("orgId")
+	q := m.GetString("q")
+	pg, _ := m.GetInt("page")
+	if orgId == "" {
+		c.String(500, "param err")
+		return
+	}
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), orgId)
+	if perm.Org() == nil {
+		c.String(404, "not found org")
+		return
+	}
+	if !perm.CanRead() {
+		c.String(405, "no permission")
+		return
+	}
+	var ls []*model.TOrgVar
+	var page *bean.Page
+	var err error
+	session := comm.Db.Where("org_id = ?", orgId)
+	if q != "" {
+		session.And("(name like '%" + q + "%' or value like '%" + q + "'%)")
+	}
+	page, err = comm.FindPage(session, &ls, pg)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	if !perm.CanWrite() {
+		for _, v := range ls {
+			if v.Public != 0 {
+				v.Value = "***"
+			}
+		}
+	}
+	c.JSON(200, page)
+}
+func (OrgController) varSave(c *gin.Context, pv *bean.OrgVar) {
+	if pv.Value == "" || pv.Name == "" || pv.OrgId == "" {
+		c.String(500, "param err")
+		return
+	}
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), pv.OrgId)
+	if perm.Org() == nil {
+		c.String(404, "not found org")
+		return
+	}
+	if !perm.CanWrite() {
+		c.String(405, "no permission")
+		return
+	}
+	orgVar := &model.TOrgVar{}
+	err := utils.Struct2Struct(orgVar, pv)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	if pv.Public {
+		orgVar.Public = 1
+	}
+	tpv := &model.TOrgVar{}
+	ok, err := comm.Db.Where("org_id = ? and name = ?", pv.OrgId, pv.Name).Get(tpv)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	if pv.Aid > 0 {
+		if ok && tpv.Aid != pv.Aid {
+			c.String(500, "变量名重复")
+			return
+		}
+		_, err = comm.Db.Cols("name,value,remarks,public").Where("aid = ?", pv.Aid).Update(orgVar)
+		if err != nil {
+			c.String(500, "db err:"+err.Error())
+			return
+		}
+		c.String(200, "ok")
+		return
+	}
+	if ok {
+		c.String(500, "变量名重复")
+		return
+	}
+	_, err = comm.Db.InsertOne(orgVar)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, "ok")
+}
+func (OrgController) varDel(c *gin.Context, m *hbtp.Map) {
+	aId, err := m.GetInt("aid")
+	if err != nil || aId <= 0 {
+		c.String(500, "param err")
+		return
+	}
+	orgVar := &model.TOrgVar{}
+	ok, _ := comm.Db.Where("aid = ? ", aId).Get(orgVar)
+	if !ok {
+		c.String(404, "not found pipe_var")
+		return
+	}
+	perm := service.NewOrgPerm(service.GetMidLgUser(c), orgVar.OrgId)
+	if perm.Org() == nil {
+		c.String(404, "not found org")
+		return
+	}
+	if !perm.CanWrite() {
+		c.String(405, "no permission")
+		return
+	}
+	_, err = comm.Db.Where("aid = ?", aId).Delete(orgVar)
+	if err != nil {
+		c.String(500, "db err:"+err.Error())
+		return
+	}
+	c.String(200, "ok")
 }

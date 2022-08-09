@@ -27,6 +27,8 @@ func Run() error {
 		comm.NotUpPass = utils2.EnvDefault("GOKINS_NOTUPDATEPASS") == "true"
 	}
 
+	logrus.Infof("gokins Run workpath:%s", comm.WorkPath)
+
 	os.MkdirAll(comm.WorkPath, 0750)
 	core.InitLog(comm.WorkPath)
 	go runWeb()
