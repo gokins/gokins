@@ -2,10 +2,11 @@ package route
 
 import (
 	"fmt"
-	"github.com/gokins/gokins/engine"
-	"github.com/gokins/gokins/models"
 	"net/http"
 	"time"
+
+	"github.com/gokins/gokins/engine"
+	"github.com/gokins/gokins/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gokins/core/utils"
@@ -68,8 +69,8 @@ func (PipelineController) orgPipelines(c *gin.Context, m *hbtp.Map) {
 		FindCols:  "DISTINCT(pipe.id),pipe.*",
 	}
 	gen.SQL = `
-			select {{select}} from t_pipeline pipe 
-			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id 
+			select {{select}} from t_pipeline pipe
+			LEFT JOIN t_org_pipe top on pipe.id = top.pipe_id
 			where top.org_id = ? and pipe.deleted != 1
 		    `
 	gen.Args = append(gen.Args, perm.Org().Id)
@@ -656,7 +657,7 @@ func (PipelineController) vars(c *gin.Context, m *hbtp.Map) {
 		c.String(405, "no permission")
 		return
 	}
-	ls := make([]*models.TPipelineVar, 0)
+	var ls []*model.TPipelineVar
 	var page *bean.Page
 	var err error
 	session := comm.Db.Where("pipeline_id = ?", pipelineId)
@@ -669,14 +670,11 @@ func (PipelineController) vars(c *gin.Context, m *hbtp.Map) {
 		return
 	}
 	if !perm.CanWrite() {
-		lss := make([]*models.TPipelineVar, 0)
 		for _, v := range ls {
 			if v.Public != 0 {
 				v.Value = "***"
 			}
-			lss = append(lss, v)
 		}
-		page.Data = lss
 	}
 	c.JSON(200, page)
 }

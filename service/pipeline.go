@@ -228,13 +228,34 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha, 
 	return tpv, rb, nil
 }
 
-func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Variables, error) {
-	var tVars []*model.TPipelineVar
-	err := comm.Db.Where("pipeline_id = ? ", pipelineId).Find(&tVars)
-	if err != nil {
-		return nil, err
+func getOrgVars(pipelineId string) []*model.TOrgVar {
+	var rts []*model.TOrgVar
+	var orgs []*model.TOrgPipe
+	comm.Db.Where("pipe_id = ? ", pipelineId).Find(&orgs)
+	for _, v := range orgs {
+		var ls []*model.TOrgVar
+		comm.Db.Where("org_id = ? ", v.OrgId).Find(&ls)
+		if len(ls) > 0 {
+			rts = append(rts, ls...)
+		}
 	}
+	return rts
+}
+
+func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Variables, error) {
 	vms := make(map[string]*runtime.Variables, 0)
+
+	oVars := getOrgVars(pipelineId)
+	for _, v := range oVars {
+		vms[v.Name] = &runtime.Variables{
+			Name:   v.Name,
+			Value:  v.Value,
+			Secret: v.Public == 1,
+		}
+	}
+
+	var tVars []*model.TPipelineVar
+	comm.Db.Where("pipeline_id = ? ", pipelineId).Find(&tVars)
 	for _, v := range tVars {
 		vms[v.Name] = &runtime.Variables{
 			Name:   v.Name,
@@ -242,6 +263,7 @@ func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Va
 			Secret: v.Public == 1,
 		}
 	}
+
 	for k, v := range vm {
 		s, b := replace(v, vms, true)
 		vms[k] = &runtime.Variables{
