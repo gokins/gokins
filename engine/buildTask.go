@@ -370,8 +370,9 @@ func (c *BuildTask) Write(bts []byte) (n int, err error) {
 }
 func (c *BuildTask) gitClone(ctx context.Context, clonePath string, repo *runtime.Repository) error {
 	gc := &git.CloneOptions{
-		URL:      repo.CloneURL,
-		Progress: c,
+		URL:          repo.CloneURL,
+		Progress:     c,
+		SingleBranch: true,
 	}
 	if repo.Name != "" {
 		gc.Auth = &ghttp.BasicAuth{
@@ -379,13 +380,14 @@ func (c *BuildTask) gitClone(ctx context.Context, clonePath string, repo *runtim
 			Password: repo.Token,
 		}
 	}
-	if !plumbing.IsHash(repo.Sha) {
+	if repo.Sha != "" && !plumbing.IsHash(repo.Sha) {
+		logrus.Debugf("gitClone plumbing.IsHash:%s,refname up:%s=>%s", repo.Sha, gc.ReferenceName, plumbing.NewBranchReferenceName(repo.Sha))
 		gc.ReferenceName = plumbing.NewBranchReferenceName(repo.Sha)
 	}
 	logrus.Debugf("gitClone : clone url: %s, sha: %s => %s", repo.CloneURL, repo.Sha, clonePath)
 	repository, err := util.CloneRepo(clonePath, gc, ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("cloneRepo err:%v", err)
 	}
 	if plumbing.IsHash(repo.Sha) {
 		err = util.CheckOutHash(repository, repo.Sha)
