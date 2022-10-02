@@ -9,7 +9,7 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gokins/core v0.0.0-20220802013657-abe943553934
-	github.com/gokins/runner v0.0.0-20220802040052-ecc3476d47cd
+	github.com/gokins/runner v0.0.0-20221002083504-fc86169e3656
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/mgr9525/HyperByte-Transfer-Protocol v1.1.6-0.20220721065229-af916c8393ed
 	github.com/sirupsen/logrus v1.8.1
