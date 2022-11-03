@@ -30,7 +30,7 @@ Gokins一款由Go语言和Vue编写的款轻量级、能够持续集成和持续
 可在官网上获取最新的Gokins动态
 
 ## Gokins Demo
-http://gokins.cn:8030
+http://demo.gokins.cn
 ```
 用户名: guest
 密码: 123456
