@@ -9,7 +9,7 @@ import (
 	"xorm.io/xorm"
 )
 
-const Version = "1.3.3"
+const Version = "1.3.4"
 
 var (
 	Ctx  context.Context
