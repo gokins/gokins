@@ -154,6 +154,8 @@ github.com/gokins/runner v0.0.0-20221002083504-fc86169e3656 h1:KvhS3l2N6yyCVobx2
 github.com/gokins/runner v0.0.0-20221002083504-fc86169e3656/go.mod h1:dIc0vvNEV7PPWIlgE30HqMFRfTl89i0FYRgt0DENajM=
 github.com/gokins/runner v0.0.0-20221016163054-edffdcc1e1fb h1:fyDCnutY8a+ky7j1u+4jLFueYtCxhB74JiZclVlftTU=
 github.com/gokins/runner v0.0.0-20221016163054-edffdcc1e1fb/go.mod h1:srnzvIPWdaKzsf6ADxxMTruKKInK7Rx/3hezJqlhFDk=
+github.com/gokins/runner v0.0.0-20221107075130-8205f31fefb0 h1:r+Ylg//z+OVNX70vFylaV/YAjXPJkLienJ3pZ20ufZ8=
+github.com/gokins/runner v0.0.0-20221107075130-8205f31fefb0/go.mod h1:srnzvIPWdaKzsf6ADxxMTruKKInK7Rx/3hezJqlhFDk=
 github.com/golang-migrate/migrate/v4 v4.14.1 h1:qmRd/rNGjM1r3Ve5gHd5ZplytrD02UcItYNxJ3iUHHE=
 github.com/golang-migrate/migrate/v4 v4.14.1/go.mod h1:l7Ks0Au6fYHuUIxUhQ0rcVX1uLlJg54C/VvW7tvxSz0=
 github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe/go.mod h1:8vg3r2VgvsThLBIFL93Qb5yWzgyZWhEmBwUJWevAkK0=
