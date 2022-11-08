@@ -374,10 +374,16 @@ func (c *BuildTask) gitClone(ctx context.Context, clonePath string, repo *runtim
 		Progress:     c,
 		SingleBranch: true,
 	}
-	if repo.Name != "" {
-		gc.Auth = &ghttp.BasicAuth{
-			Username: repo.Name,
-			Password: repo.Token,
+	if repo.Token != "" {
+		if repo.Name != "" {
+			gc.Auth = &ghttp.BasicAuth{
+				Username: repo.Name,
+				Password: repo.Token,
+			}
+		} else {
+			gc.Auth = &ghttp.TokenAuth{
+				Token: repo.Token,
+			}
 		}
 	}
 	if repo.Sha != "" && !plumbing.IsHash(repo.Sha) {
