@@ -398,7 +398,7 @@ func (c *BuildTask) gitClone(ctx context.Context, clonePath string, repo *runtim
 	if plumbing.IsHash(repo.Sha) {
 		err = util.CheckOutHash(repository, repo.Sha)
 		if err != nil {
-			return err
+			return fmt.Errorf("CheckOutHash [%s] err:%v", repo.Sha, err)
 		}
 	}
 	return nil
