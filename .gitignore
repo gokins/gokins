@@ -21,3 +21,5 @@ bin/
 # vendor/
 __debug_bin
 .idea/
+
+dev.sh

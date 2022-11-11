@@ -259,11 +259,11 @@ func (c *baseRunner) StatFile(fs int, buildId, jobId string, dir, pth string) (*
 	if jobId == "" || pth == "" {
 		return nil, errors.New("param err")
 	}
-	tsk, ok := Mgr.buildEgn.Get(buildId)
+	build, ok := Mgr.buildEgn.Get(buildId)
 	if !ok {
 		return nil, errors.New("not found build")
 	}
-	job, ok := tsk.GetJob(jobId)
+	job, ok := build.GetJob(jobId)
 	if !ok {
 		return nil, errors.New("not found job")
 	}
@@ -272,6 +272,8 @@ func (c *baseRunner) StatFile(fs int, buildId, jobId string, dir, pth string) (*
 		pths = filepath.Join(comm.WorkPath, common.PathArtifacts, dir, pth)
 	} else if fs == 2 {
 		pths = filepath.Join(job.task.buildPath, common.PathJobs, job.step.Id, common.PathArts, dir, pth)
+	} else if fs == 3 {
+		pths = filepath.Join(build.repoPaths, dir, pth)
 	}
 	if pths == "" {
 		return nil, errors.New("path param err")
@@ -290,11 +292,11 @@ func (c *baseRunner) UploadFile(fs int, buildId, jobId string, dir, pth string, 
 	if jobId == "" || pth == "" {
 		return nil, errors.New("param err")
 	}
-	tsk, ok := Mgr.buildEgn.Get(buildId)
+	build, ok := Mgr.buildEgn.Get(buildId)
 	if !ok {
 		return nil, errors.New("not found build")
 	}
-	job, ok := tsk.GetJob(jobId)
+	job, ok := build.GetJob(jobId)
 	if !ok {
 		return nil, errors.New("not found job")
 	}
@@ -303,6 +305,8 @@ func (c *baseRunner) UploadFile(fs int, buildId, jobId string, dir, pth string, 
 		pths = filepath.Join(comm.WorkPath, common.PathArtifacts, dir, pth)
 	} else if fs == 2 {
 		pths = filepath.Join(job.task.buildPath, common.PathJobs, job.step.Id, common.PathArts, dir, pth)
+	} else if fs == 3 {
+		pths = filepath.Join(build.repoPaths, dir, pth)
 	}
 	if pths == "" {
 		return nil, errors.New("path param err")
