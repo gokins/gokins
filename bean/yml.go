@@ -89,13 +89,15 @@ func (c *Pipeline) ConvertCmd() {
 			case string:
 				step.Commands = v.(string)
 			case []interface{}:
-				ls := make([]string, 0)
+				var ls []string
 				for _, v1 := range v.([]interface{}) {
 					ls = append(ls, fmt.Sprintf("%v", v1))
 				}
 				step.Commands = ls
 			default:
-				step.Commands = fmt.Sprintf("%v", v)
+				if v != nil {
+					step.Commands = fmt.Sprintf("%v", v)
+				}
 			}
 		}
 	}

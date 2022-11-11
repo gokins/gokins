@@ -238,10 +238,10 @@ func (c *BuildTask) runStep(stage *taskStage, job *jobSync) {
 		}
 	}()
 
-	if len(job.runjb.Commands) <= 0 {
+	/* if len(job.runjb.Commands) <= 0 {
 		job.status(common.BuildStatusError, "command format empty", common.BuildEventJobCmds)
 		return
-	}
+	} */
 
 	job.RLock()
 	dendons := job.step.Waits
@@ -338,9 +338,11 @@ func (c *BuildTask) getRepo() error {
 		return nil
 	}
 	os.MkdirAll(c.repoPaths, 0750)
-	err := c.gitClone(c.ctx, c.repoPaths, c.build.Repo)
-	if err != nil {
-		return err
+	if c.repoPath != "" {
+		err := c.gitClone(c.ctx, c.repoPaths, c.build.Repo)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

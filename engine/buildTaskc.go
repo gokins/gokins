@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -26,19 +25,19 @@ func (c *BuildTask) check() bool {
 		c.status(common.BuildEventCheckParam, "repo param err:clone url")
 		return false
 	}*/
+	c.isClone = true
 	if c.build.Repo.CloneURL != "" {
 		c.repoPath = c.build.Repo.CloneURL
 		s, err := os.Stat(c.repoPath)
 		if err == nil && s.IsDir() {
 			c.isClone = false
 			c.repoPaths = c.repoPath
-		} else {
+		} /*  else {
 			if !common.RegUrl.MatchString(c.build.Repo.CloneURL) {
 				c.status(common.BuildEventCheckParam, "repo param err:clone url")
 				return false
 			}
-			c.isClone = true
-		}
+		} */
 	}
 	if c.build.Stages == nil || len(c.build.Stages) <= 0 {
 		c.build.Event = common.BuildEventCheckParam
@@ -107,7 +106,7 @@ func (c *BuildTask) check() bool {
 			err := c.genRunjob(v, job)
 			if err != nil {
 				c.build.Event = common.BuildEventCheckParam
-				c.build.Error = fmt.Sprintf("build Job.%s Commands err", e.Name)
+				c.build.Error = fmt.Sprintf("build Job.%s Commands err:%v", e.Name, err)
 				return false
 			}
 			vs.RLock()
@@ -161,6 +160,10 @@ func (c *BuildTask) genRunjob(stage *runtime.Stage, job *jobSync) (rterr error) 
 		runjb.OriginRepo = ""
 	}
 	var err error
+	if runjb.Step == "gokins@git" {
+		runjb.OriginRepo = c.repoPaths
+		job.step.Commands = []string{"git works"}
+	}
 	switch job.step.Commands.(type) {
 	case string:
 		c.appendcmds(runjb, job.step.Commands.(string))
@@ -173,15 +176,15 @@ func (c *BuildTask) genRunjob(stage *runtime.Stage, job *jobSync) (rterr error) 
 			ls = append(ls, v)
 		}
 		err = c.gencmds(runjb, ls)
-	default:
-		err = errors.New("commands format err")
+		// default:
+		// err = errors.New("commands format err")
 	}
 	if err != nil {
 		return err
 	}
-	if len(runjb.Commands) <= 0 {
+	/* if len(runjb.Commands) <= 0 {
 		return errors.New("command format empty")
-	}
+	} */
 	job.runjb = runjb
 	for i, v := range runjb.Commands {
 		job.cmdmp[v.Id] = &cmdSync{

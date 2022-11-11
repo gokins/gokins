@@ -32,20 +32,20 @@ func Start() error {
 	Mgr.brun = &baseRunner{}
 	Mgr.hrun = &HbtpRunner{}
 	//runners
-	comm.Cfg.Server.Shells = append(comm.Cfg.Server.Shells, "shell@ssh")
-	if len(comm.Cfg.Server.Shells) > 0 {
-		Mgr.shellRun = runners.NewEngine(runners.Config{
-			Name:      "mainRunner",
-			Workspace: filepath.Join(comm.WorkPath, common.PathRunner),
-			Plugin:    comm.Cfg.Server.Shells,
-		}, Mgr.brun)
-		go func() {
-			err := Mgr.shellRun.Run(comm.Ctx)
-			if err != nil {
-				logrus.Errorf("runner err:%v", err)
-			}
-		}()
-	}
+	comm.Cfg.Server.Shells = append(comm.Cfg.Server.Shells, "shell@ssh", "gokins@git")
+	// if len(comm.Cfg.Server.Shells) > 0 {
+	Mgr.shellRun = runners.NewEngine(runners.Config{
+		Name:      "mainRunner",
+		Workspace: filepath.Join(comm.WorkPath, common.PathRunner),
+		Plugin:    comm.Cfg.Server.Shells,
+	}, Mgr.brun)
+	go func() {
+		err := Mgr.shellRun.Run(comm.Ctx)
+		if err != nil {
+			logrus.Errorf("runner err:%v", err)
+		}
+	}()
+	// }
 
 	go func() {
 		os.RemoveAll(filepath.Join(comm.WorkPath, common.PathTmp))
