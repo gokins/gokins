@@ -46,7 +46,7 @@ func ReBuild(uid string, tvp *model.TPipelineVersion) (*model.TPipelineVersion, 
 	if err != nil {
 		return nil, nil, err
 	}
-	return preBuild(uid, pipe, tpipe, "", "rebuild", tvp)
+	return preBuild(uid, pipe, tpipe, tvp.Sha, "rebuild", tvp)
 }
 
 func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha, event string,
