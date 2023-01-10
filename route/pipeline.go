@@ -620,7 +620,7 @@ func (PipelineController) searchSha(c *gin.Context, m *hbtp.Map) {
 	shas := []string{}
 	session := comm.Db.Table("t_pipeline_version").
 		Distinct("sha").Cols("sha").
-		Where("pipeline_id = ?", id).Desc("sha")
+		Where("pipeline_id = ?", id).OrderBy("created DESC").Desc("sha")
 	if q != "" {
 		session.And("sha like '%" + q + "%'")
 	}
