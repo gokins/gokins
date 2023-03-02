@@ -46,7 +46,7 @@ func ReBuild(uid string, tvp *model.TPipelineVersion) (*model.TPipelineVersion, 
 	if err != nil {
 		return nil, nil, err
 	}
-	return preBuild(uid, pipe, tpipe, "", "rebuild", tvp)
+	return preBuild(uid, pipe, tpipe, tvp.Sha, "rebuild", tvp)
 }
 
 func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha, event string,
@@ -62,9 +62,16 @@ func preBuild(uid string, pipe *bean.Pipeline, tpipe *model.TPipelineConf, sha, 
 	}
 	pipe.ConvertCmd()
 
-	m, err := convertVar(tpipe.PipelineId, pipe.Vars)
-	if err != nil {
-		return nil, nil, err
+	m := convertVar(tpipe.PipelineId, pipe.Vars)
+	m["GOKINSV_GIT_SHA"] = &runtime.Variables{
+		Name:   "GOKINSV_GIT_SHA",
+		Value:  sha,
+		Secret: true,
+	}
+	m["GOKINSV_RUNNER_REPOPATH"] = &runtime.Variables{
+		Name:   "GOKINSV_RUNNER_REPOPATH",
+		Value:  "{{RUNNER_REPOPATH}}",
+		Secret: false,
 	}
 	replaceStages(pipe.Stages, m)
 
@@ -242,7 +249,7 @@ func getOrgVars(pipelineId string) []*model.TOrgVar {
 	return rts
 }
 
-func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Variables, error) {
+func convertVar(pipelineId string, vm map[string]string) map[string]*runtime.Variables {
 	vms := make(map[string]*runtime.Variables, 0)
 
 	oVars := getOrgVars(pipelineId)
@@ -277,7 +284,7 @@ func convertVar(pipelineId string, vm map[string]string) (map[string]*runtime.Va
 		s, _ := replace(v.Value, vms, true)
 		vms[k].Value = s
 	}
-	return vms, nil
+	return vms
 }
 
 func replaceStages(stages []*bean.Stage, mVars map[string]*runtime.Variables) {

@@ -146,10 +146,12 @@ github.com/gobuffalo/here v0.6.0/go.mod h1:wAG085dHOYqUpf+Ap+WOdrPTp5IYcDAs/x7PL
 github.com/gocql/gocql v0.0.0-20190301043612-f6df8288f9b4/go.mod h1:4Fw1eo5iaEhDUs8XyuhSVCVy52Jq3L+/3GJgYkwc+/0=
 github.com/gogo/protobuf v1.3.1 h1:DqDEcV5aeaTmdFBePNpYsp3FlcVH/2ISVVM9Qf8PSls=
 github.com/gogo/protobuf v1.3.1/go.mod h1:SlYgWuQ5SjCEi6WLHjHCa1yvBfUnHcTbrrZtXPKa29o=
-github.com/gokins/core v0.0.0-20220802013657-abe943553934 h1:fXF1ZxQaE4I+ce3sFWHXg5eGss2Mrb/gWmbbeE7sNtI=
-github.com/gokins/core v0.0.0-20220802013657-abe943553934/go.mod h1:zB+5ezSWcHTCsEIyQD30jUBFBo98htP3Ft0GqcdAbf8=
-github.com/gokins/runner v0.0.0-20221111090316-616dbb5448bc h1:GXCOP8h/67it9hfFw69h+TsdN2GQj8VsbZbB+7Sh1xI=
-github.com/gokins/runner v0.0.0-20221111090316-616dbb5448bc/go.mod h1:eeU3f5hvqp5Abz+a0DJzuoorCR6447l9AEq+OU+G/cA=
+github.com/gokins/core v0.0.0-20221114063511-e32796e39c37 h1:sL+XYKIhVQuzjKa4kd8AuMDXCLnn8BG/Fo5pu5tDK4w=
+github.com/gokins/core v0.0.0-20221114063511-e32796e39c37/go.mod h1:zB+5ezSWcHTCsEIyQD30jUBFBo98htP3Ft0GqcdAbf8=
+github.com/gokins/runner v0.0.0-20221114064103-f0456c6c7438 h1:dWV/2fQUwfIMyf4P0AQjCz5WKeIt8BpJ+DGxsUbI2uQ=
+github.com/gokins/runner v0.0.0-20221114064103-f0456c6c7438/go.mod h1:6UlcrORzwbNmaEAkK7lD6JCfhibjpwBdvl4JHPGfkA0=
+github.com/gokins/runner v0.0.0-20230302104705-dbc0aeb397ce h1:fc4FpW0x3wlbhWGgpe/cak6E7L9/uX+TeZO14TqSQfo=
+github.com/gokins/runner v0.0.0-20230302104705-dbc0aeb397ce/go.mod h1:6UlcrORzwbNmaEAkK7lD6JCfhibjpwBdvl4JHPGfkA0=
 github.com/golang-migrate/migrate/v4 v4.14.1 h1:qmRd/rNGjM1r3Ve5gHd5ZplytrD02UcItYNxJ3iUHHE=
 github.com/golang-migrate/migrate/v4 v4.14.1/go.mod h1:l7Ks0Au6fYHuUIxUhQ0rcVX1uLlJg54C/VvW7tvxSz0=
 github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe/go.mod h1:8vg3r2VgvsThLBIFL93Qb5yWzgyZWhEmBwUJWevAkK0=
