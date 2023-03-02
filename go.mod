@@ -19,4 +19,4 @@ require (
 	xorm.io/xorm v1.1.0
 )
 
-// replace github.com/gokins/runner => ../runner_dev
+replace github.com/gokins/runner => ../runner_dev

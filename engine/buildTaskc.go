@@ -144,6 +144,7 @@ func (c *BuildTask) genRunjob(stage *runtime.Stage, job *jobSync) (rterr error) 
 	}()
 	runjb := &runners.RunJob{
 		Id:           job.step.Id,
+		PipelineId:   job.task.build.PipelineId,
 		StageId:      job.step.StageId,
 		BuildId:      job.step.BuildId,
 		StageName:    stage.Name,
